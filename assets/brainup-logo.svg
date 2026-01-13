@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="BrainUp logo">
+  <defs>
+    <linearGradient id="gBlue" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#2aa7ff"/>
+      <stop offset="1" stop-color="#0f5db0"/>
+    </linearGradient>
+    <linearGradient id="gOrange" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffb24a"/>
+      <stop offset="1" stop-color="#ff5a4f"/>
+    </linearGradient>
+  </defs>
+
+  <!-- two hemispheres -->
+  <path d="M60 12c-22 0-40 18-40 40 0 16.7 10.3 31 24.9 36.8 4.3 1.7 8.8 2.6 13.1 2.6V12z"
+        fill="url(#gBlue)" stroke="rgba(255,255,255,.65)" stroke-width="2"/>
+  <path d="M60 12c22 0 40 18 40 40 0 16.7-10.3 31-24.9 36.8-4.3 1.7-8.8 2.6-13.1 2.6V12z"
+        fill="url(#gOrange)" stroke="rgba(255,255,255,.65)" stroke-width="2"/>
+
+  <!-- "brain folds" -->
+  <g fill="none" stroke="rgba(255,255,255,.7)" stroke-width="3" stroke-linecap="round">
+    <path d="M33 36c8-8 18-8 27 0"/>
+    <path d="M33 52c8-8 18-8 27 0"/>
+    <path d="M33 68c8-8 18-8 27 0"/>
+    <path d="M87 36c-8-8-18-8-27 0"/>
+    <path d="M87 52c-8-8-18-8-27 0"/>
+    <path d="M87 68c-8-8-18-8-27 0"/>
+  </g>
+
+  <!-- up arrow -->
+  <path d="M60 30l12 14h-8v26h-8V44h-8z" fill="rgba(255,255,255,.92)"/>
+</svg>
