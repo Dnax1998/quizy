@@ -23,6 +23,7 @@
             color: #fff;
             position: relative;
             overflow-x: hidden;
+            transition: background-color 0.5s ease;
         }
 
         /* Tło - zastąp tym swoim zdjęciem */
@@ -34,12 +35,11 @@
             height: 100%;
             z-index: -1;
             background: 
-                /* Gradient ciemny na zdjęcie */
                 linear-gradient(rgba(10, 10, 10, 0.85), rgba(10, 10, 10, 0.9)),
-                /* ZASTĄP TEN URL SWOIM ZDJĘCIEM */
-                url('IMG_1562.png')
+                url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80')
                 center/cover no-repeat;
             filter: brightness(0.9);
+            transition: opacity 0.8s ease;
         }
 
         .time-display {
@@ -53,12 +53,13 @@
             z-index: 100;
         }
 
-        .main-container {
-            flex: 1;
+        /* Strona logowania/rejestracji */
+        .auth-page {
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            min-height: 100vh;
             padding: 40px 20px;
             max-width: 500px;
             margin: 0 auto;
@@ -319,8 +320,280 @@
             color: #666;
         }
 
+        /* Strona Dashboard - ukryta domyślnie */
+        .dashboard-page {
+            display: none;
+            min-height: 100vh;
+            background-color: #0f172a;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dashboard-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            z-index: -1;
+        }
+
+        /* Nawigacja Dashboard */
+        .dashboard-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            background-color: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-logo {
+            font-size: 28px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .nav-logo span {
+            color: #4dabf7;
+        }
+
+        .nav-user {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4dabf7, #339af0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .user-name {
+            font-weight: 500;
+            color: #fff;
+        }
+
+        .logout-btn {
+            padding: 8px 16px;
+            background-color: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .logout-btn:hover {
+            background-color: rgba(239, 68, 68, 0.3);
+        }
+
+        /* Zawartość Dashboard */
+        .dashboard-content {
+            padding: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .dashboard-header {
+            margin-bottom: 40px;
+        }
+
+        .dashboard-title {
+            font-size: 36px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        .dashboard-subtitle {
+            color: #94a3b8;
+            font-size: 18px;
+        }
+
+        /* Karty Dashboard */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .dashboard-card {
+            background-color: rgba(30, 41, 59, 0.7);
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(77, 171, 247, 0.3);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title i {
+            color: #4dabf7;
+        }
+
+        .card-content {
+            color: #cbd5e1;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .card-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #4dabf7;
+        }
+
+        .stat-label {
+            color: #94a3b8;
+            font-size: 14px;
+        }
+
+        /* Tabela treningów */
+        .workouts-table {
+            width: 100%;
+            background-color: rgba(30, 41, 59, 0.7);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .table-header {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            padding: 20px 25px;
+            background-color: rgba(15, 23, 42, 0.9);
+            font-weight: 600;
+            color: #4dabf7;
+        }
+
+        .table-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            padding: 20px 25px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            transition: background-color 0.2s;
+        }
+
+        .table-row:hover {
+            background-color: rgba(255, 255, 255, 0.03);
+        }
+
+        .workout-name {
+            font-weight: 500;
+            color: #fff;
+        }
+
+        .workout-date, .workout-duration, .workout-calories {
+            color: #cbd5e1;
+        }
+
+        /* Przycisk nowego treningu */
+        .new-workout-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 24px;
+            background: linear-gradient(135deg, #4dabf7 0%, #339af0 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 30px;
+        }
+
+        .new-workout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(51, 154, 240, 0.3);
+        }
+
+        /* Animacje */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .time-change {
+            animation: timeChange 0.5s ease;
+        }
+
+        @keyframes timeChange {
+            0% { opacity: 0.5; transform: translateY(-5px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsywność */
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .dashboard-nav {
+                padding: 15px 20px;
+            }
+            
+            .dashboard-content {
+                padding: 20px;
+            }
+            
+            .table-header, .table-row {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+            
+            .nav-user {
+                flex-direction: column;
+                align-items: flex-end;
+                gap: 8px;
+            }
+        }
+
         @media (max-width: 600px) {
-            .main-container {
+            .auth-page {
                 padding: 30px 15px;
             }
             
@@ -342,30 +615,16 @@
                 top: 15px;
             }
         }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(15px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Efekt zmiany czasu */
-        .time-change {
-            animation: timeChange 0.5s ease;
-        }
-
-        @keyframes timeChange {
-            0% { opacity: 0.5; transform: translateY(-5px); }
-            100% { opacity: 1; transform: translateY(0); }
-        }
     </style>
 </head>
 <body>
-    <!-- Tło - ZASTĄP URL SWOIM ZDJĘCIEM -->
-    <div class="background-container"></div>
-    
-    <div class="time-display" id="current-time">13:00</div>
-    
-    <div class="main-container">
+    <!-- Strona logowania/rejestracji -->
+    <div class="auth-page" id="authPage">
+        <!-- Tło - ZASTĄP URL SWOIM ZDJĘCIEM -->
+        <div class="background-container"></div>
+        
+        <div class="time-display" id="currentTime">13:00</div>
+        
         <div class="header">
             <div class="logo">Zgrany<span>Trener</span>.pl</div>
             <div class="subtitle">Twoje narzędzie do planowania treningów</div>
@@ -373,71 +632,71 @@
         </div>
 
         <div class="auth-tabs">
-            <div class="tab active" id="login-tab">Logowanie</div>
-            <div class="tab" id="register-tab">Rejestracja</div>
+            <div class="tab active" id="loginTab">Logowanie</div>
+            <div class="tab" id="registerTab">Rejestracja</div>
         </div>
 
         <div class="auth-form-container">
             <!-- Formularz logowania -->
-            <form class="auth-form active" id="login-form">
+            <form class="auth-form active" id="loginForm">
                 <h2 class="form-title">Logowanie</h2>
                 <p class="form-subtitle">Zaloguj się, aby uzyskać dostęp do swojego konta</p>
                 
                 <div class="form-group">
-                    <label class="form-label" for="login-email">Adres e-mail</label>
-                    <input type="email" id="login-email" class="form-input" placeholder="Wpisz swój adres e-mail" required>
+                    <label class="form-label" for="loginEmail">Adres e-mail</label>
+                    <input type="email" id="loginEmail" class="form-input" placeholder="Wpisz swój adres e-mail" required>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label" for="login-password">Hasło</label>
-                    <input type="password" id="login-password" class="form-input" placeholder="Wpisz swoje hasło" required>
-                    <a href="#" class="forgot-password" id="forgot-password-link">Nie pamiętasz hasła?</a>
+                    <label class="form-label" for="loginPassword">Hasło</label>
+                    <input type="password" id="loginPassword" class="form-input" placeholder="Wpisz swoje hasło" required>
+                    <a href="#" class="forgot-password" id="forgotPasswordLink">Nie pamiętasz hasła?</a>
                 </div>
                 
-                <button type="submit" class="submit-btn">Zaloguj się</button>
+                <button type="submit" class="submit-btn" id="loginSubmitBtn">Zaloguj się</button>
                 
                 <div class="divider">
                     <span>lub</span>
                 </div>
                 
-                <button type="button" class="google-btn" id="google-login-btn">
+                <button type="button" class="google-btn" id="googleLoginBtn">
                     <i class="fab fa-google"></i>
                     Zaloguj przez Google
                 </button>
             </form>
 
             <!-- Formularz rejestracji -->
-            <form class="auth-form" id="register-form">
+            <form class="auth-form" id="registerForm">
                 <h2 class="form-title">Rejestracja</h2>
                 <p class="form-subtitle">Utwórz nowe konto, aby korzystać z platformy</p>
                 
                 <div class="form-group">
-                    <label class="form-label" for="register-name">Imię i nazwisko</label>
-                    <input type="text" id="register-name" class="form-input" placeholder="Wpisz swoje imię i nazwisko" required>
+                    <label class="form-label" for="registerName">Imię i nazwisko</label>
+                    <input type="text" id="registerName" class="form-input" placeholder="Wpisz swoje imię i nazwisko" required>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label" for="register-email">Adres e-mail</label>
-                    <input type="email" id="register-email" class="form-input" placeholder="Wpisz swój adres e-mail" required>
+                    <label class="form-label" for="registerEmail">Adres e-mail</label>
+                    <input type="email" id="registerEmail" class="form-input" placeholder="Wpisz swój adres e-mail" required>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label" for="register-password">Hasło</label>
-                    <input type="password" id="register-password" class="form-input" placeholder="Utwórz bezpieczne hasło" required>
+                    <label class="form-label" for="registerPassword">Hasło</label>
+                    <input type="password" id="registerPassword" class="form-input" placeholder="Utwórz bezpieczne hasło" required>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label" for="register-confirm-password">Potwierdź hasło</label>
-                    <input type="password" id="register-confirm-password" class="form-input" placeholder="Powtórz hasło" required>
+                    <label class="form-label" for="registerConfirmPassword">Potwierdź hasło</label>
+                    <input type="password" id="registerConfirmPassword" class="form-input" placeholder="Powtórz hasło" required>
                 </div>
                 
-                <button type="submit" class="submit-btn">Zarejestruj się</button>
+                <button type="submit" class="submit-btn" id="registerSubmitBtn">Zarejestruj się</button>
                 
                 <div class="divider">
                     <span>lub</span>
                 </div>
                 
-                <button type="button" class="google-btn" id="google-register-btn">
+                <button type="button" class="google-btn" id="googleRegisterBtn">
                     <i class="fab fa-google"></i>
                     Zarejestruj przez Google
                 </button>
@@ -445,16 +704,133 @@
         </div>
 
         <div class="footer">
-            <p>Korzystając z serwisu, akceptujesz <a href="#" id="terms-link">Regulamin</a> oraz <a href="#" id="privacy-link">Politykę prywatności</a></p>
+            <p>Korzystając z serwisu, akceptujesz <a href="#" id="termsLink">Regulamin</a> oraz <a href="#" id="privacyLink">Politykę prywatności</a></p>
             <p class="copyright">&copy; 2023 ZgranyTrener.pl. Wszelkie prawa zastrzeżone.</p>
         </div>
     </div>
 
+    <!-- Strona Dashboard -->
+    <div class="dashboard-page" id="dashboardPage">
+        <div class="dashboard-bg"></div>
+        
+        <nav class="dashboard-nav">
+            <div class="nav-logo">Zgrany<span>Trener</span>.pl</div>
+            
+            <div class="nav-user">
+                <div class="user-avatar" id="userAvatar">U</div>
+                <div class="user-name" id="userName">Użytkownik</div>
+                <button class="logout-btn" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt"></i> Wyloguj
+                </button>
+            </div>
+        </nav>
+        
+        <div class="dashboard-content">
+            <div class="dashboard-header">
+                <h1 class="dashboard-title">Witaj na Dashboardzie!</h1>
+                <p class="dashboard-subtitle">Twoje centrum zarządzania treningami i postępami</p>
+            </div>
+            
+            <div class="dashboard-grid">
+                <div class="dashboard-card">
+                    <h3 class="card-title"><i class="fas fa-dumbbell"></i> Ostatni trening</h3>
+                    <p class="card-content">Trening siłowy - klatka piersiowa i triceps</p>
+                    <div class="card-stats">
+                        <div>
+                            <div class="stat-value">45 min</div>
+                            <div class="stat-label">Czas trwania</div>
+                        </div>
+                        <div>
+                            <div class="stat-value">420</div>
+                            <div class="stat-label">Spalone kcal</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="dashboard-card">
+                    <h3 class="card-title"><i class="fas fa-chart-line"></i> Tygodniowy progres</h3>
+                    <p class="card-content">Średnio 4 treningi tygodniowo</p>
+                    <div class="card-stats">
+                        <div>
+                            <div class="stat-value">+12%</div>
+                            <div class="stat-label">Siła</div>
+                        </div>
+                        <div>
+                            <div class="stat-value">-2kg</div>
+                            <div class="stat-label">Waga</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="dashboard-card">
+                    <h3 class="card-title"><i class="fas fa-calendar-alt"></i> Nadchodzące</h3>
+                    <p class="card-content">Trening cardio zaplanowany na jutro</p>
+                    <div class="card-stats">
+                        <div>
+                            <div class="stat-value">3</div>
+                            <div class="stat-label">Zaplanowane</div>
+                        </div>
+                        <div>
+                            <div class="stat-value">1</div>
+                            <div class="stat-label">Dziś</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <h2 style="color: #fff; margin-bottom: 20px;">Ostatnie treningi</h2>
+            
+            <div class="workouts-table">
+                <div class="table-header">
+                    <div>Nazwa treningu</div>
+                    <div>Data</div>
+                    <div>Czas</div>
+                    <div>Kalorie</div>
+                </div>
+                
+                <div class="table-row">
+                    <div class="workout-name">Trening siłowy - nogi</div>
+                    <div class="workout-date">20.10.2023</div>
+                    <div class="workout-duration">55 min</div>
+                    <div class="workout-calories">520 kcal</div>
+                </div>
+                
+                <div class="table-row">
+                    <div class="workout-name">Cardio - interwały</div>
+                    <div class="workout-date">18.10.2023</div>
+                    <div class="workout-duration">40 min</div>
+                    <div class="workout-calories">380 kcal</div>
+                </div>
+                
+                <div class="table-row">
+                    <div class="workout-name">Trening górnych partii</div>
+                    <div class="workout-date">16.10.2023</div>
+                    <div class="workout-duration">60 min</div>
+                    <div class="workout-calories">480 kcal</div>
+                </div>
+                
+                <div class="table-row">
+                    <div class="workout-name">Joga i rozciąganie</div>
+                    <div class="workout-date">14.10.2023</div>
+                    <div class="workout-duration">35 min</div>
+                    <div class="workout-calories">210 kcal</div>
+                </div>
+            </div>
+            
+            <button class="new-workout-btn" id="newWorkoutBtn">
+                <i class="fas fa-plus"></i> Dodaj nowy trening
+            </button>
+        </div>
+    </div>
+
     <script>
+        // Dane użytkownika
+        let currentUser = null;
+
         // Aktualizacja czasu (13:00 -> 13:05 jak na obrazku)
         let currentHour = 13;
         let currentMinute = 0;
-        const timeElement = document.getElementById('current-time');
+        const timeElement = document.getElementById('currentTime');
         
         // Ustaw początkowy czas na 13:00
         updateTimeDisplay();
@@ -478,10 +854,10 @@
         }
 
         // Przełączanie między logowaniem a rejestracją
-        const loginTab = document.getElementById('login-tab');
-        const registerTab = document.getElementById('register-tab');
-        const loginForm = document.getElementById('login-form');
-        const registerForm = document.getElementById('register-form');
+        const loginTab = document.getElementById('loginTab');
+        const registerTab = document.getElementById('registerTab');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
 
         loginTab.addEventListener('click', () => {
             loginTab.classList.add('active');
@@ -497,11 +873,87 @@
             loginForm.classList.remove('active');
         });
 
-        // Obsługa formularza logowania - KLIKALNY
-        document.getElementById('login-form').addEventListener('submit', function(e) {
+        // Funkcja przejścia do Dashboard
+        function goToDashboard(userData) {
+            currentUser = userData;
+            
+            // Animacja wyjścia ze strony logowania
+            document.getElementById('authPage').style.opacity = '0';
+            document.getElementById('authPage').style.transform = 'translateY(-20px)';
+            
+            setTimeout(() => {
+                // Ukryj stronę logowania, pokaż Dashboard
+                document.getElementById('authPage').style.display = 'none';
+                document.getElementById('dashboardPage').style.display = 'block';
+                
+                // Ustaw dane użytkownika w Dashboard
+                document.getElementById('userName').textContent = userData.name;
+                document.getElementById('userAvatar').textContent = userData.name.charAt(0).toUpperCase();
+                
+                // Animacja wejścia na Dashboard
+                document.getElementById('dashboardPage').style.opacity = '0';
+                document.getElementById('dashboardPage').style.transform = 'translateY(20px)';
+                
+                setTimeout(() => {
+                    document.getElementById('dashboardPage').style.opacity = '1';
+                    document.getElementById('dashboardPage').style.transform = 'translateY(0)';
+                    document.getElementById('dashboardPage').style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                }, 10);
+                
+                // Zmień tło body na ciemniejsze
+                document.body.style.backgroundColor = '#0f172a';
+                
+                // Ukryj tło ze zdjęciem
+                document.querySelector('.background-container').style.opacity = '0';
+                
+            }, 500);
+        }
+
+        // Funkcja wylogowania
+        function logout() {
+            // Animacja wyjścia z Dashboard
+            document.getElementById('dashboardPage').style.opacity = '0';
+            document.getElementById('dashboardPage').style.transform = 'translateY(20px)';
+            
+            setTimeout(() => {
+                // Ukryj Dashboard, pokaż stronę logowania
+                document.getElementById('dashboardPage').style.display = 'none';
+                document.getElementById('authPage').style.display = 'flex';
+                
+                // Zresetuj formularze
+                document.getElementById('loginForm').reset();
+                document.getElementById('registerForm').reset();
+                
+                // Ustaw aktywny formularz logowania
+                loginTab.click();
+                
+                // Animacja wejścia na stronę logowania
+                document.getElementById('authPage').style.opacity = '0';
+                document.getElementById('authPage').style.transform = 'translateY(20px)';
+                
+                setTimeout(() => {
+                    document.getElementById('authPage').style.opacity = '1';
+                    document.getElementById('authPage').style.transform = 'translateY(0)';
+                    document.getElementById('authPage').style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                }, 10);
+                
+                // Przywróć tło body
+                document.body.style.backgroundColor = '#0a0a0a';
+                
+                // Przywróć tło ze zdjęciem
+                document.querySelector('.background-container').style.opacity = '1';
+                
+                // Wyczyść dane użytkownika
+                currentUser = null;
+                
+            }, 500);
+        }
+
+        // Obsługa formularza logowania
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
             
             if (!email || !password) {
                 alert('Proszę wypełnić wszystkie pola!');
@@ -509,24 +961,30 @@
             }
             
             // Symulacja logowania
-            document.querySelector('.submit-btn').textContent = 'Logowanie...';
-            document.querySelector('.submit-btn').disabled = true;
+            const loginBtn = document.getElementById('loginSubmitBtn');
+            loginBtn.textContent = 'Logowanie...';
+            loginBtn.disabled = true;
             
             setTimeout(() => {
-                alert(`Zalogowano pomyślnie!\nEmail: ${email}`);
-                document.querySelector('.submit-btn').textContent = 'Zaloguj się';
-                document.querySelector('.submit-btn').disabled = false;
+                // Przejdź do Dashboard
+                goToDashboard({
+                    name: email.split('@')[0], // Użyj części przed @ jako nazwy
+                    email: email
+                });
+                
+                loginBtn.textContent = 'Zaloguj się';
+                loginBtn.disabled = false;
                 this.reset();
             }, 1500);
         });
 
-        // Obsługa formularza rejestracji - KLIKALNY
-        document.getElementById('register-form').addEventListener('submit', function(e) {
+        // Obsługa formularza rejestracji
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            const name = document.getElementById('register-name').value;
-            const email = document.getElementById('register-email').value;
-            const password = document.getElementById('register-password').value;
-            const confirmPassword = document.getElementById('register-confirm-password').value;
+            const name = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('registerConfirmPassword').value;
             
             if (!name || !email || !password || !confirmPassword) {
                 alert('Proszę wypełnić wszystkie pola!');
@@ -545,62 +1003,83 @@
             }
             
             // Symulacja rejestracji
-            document.querySelector('#register-form .submit-btn').textContent = 'Rejestracja...';
-            document.querySelector('#register-form .submit-btn').disabled = true;
+            const registerBtn = document.getElementById('registerSubmitBtn');
+            registerBtn.textContent = 'Rejestracja...';
+            registerBtn.disabled = true;
             
             setTimeout(() => {
-                alert(`Rejestracja zakończona sukcesem!\nWitamy, ${name}!`);
-                document.querySelector('#register-form .submit-btn').textContent = 'Zarejestruj się';
-                document.querySelector('#register-form .submit-btn').disabled = false;
-                this.reset();
+                // Przejdź do Dashboard
+                goToDashboard({
+                    name: name,
+                    email: email
+                });
                 
-                // Przełącz na logowanie po rejestracji
-                loginTab.click();
+                registerBtn.textContent = 'Zarejestruj się';
+                registerBtn.disabled = false;
+                this.reset();
             }, 1500);
         });
 
-        // Obsługa przycisku Google - KLIKALNY
-        document.getElementById('google-login-btn').addEventListener('click', function() {
+        // Obsługa przycisku Google
+        document.getElementById('googleLoginBtn').addEventListener('click', function() {
             this.innerHTML = '<i class="fab fa-google"></i> Przekierowywanie do Google...';
             this.disabled = true;
             
             setTimeout(() => {
-                alert('Przekierowanie do Google - w rzeczywistej aplikacji nastąpiłoby przekierowanie do OAuth Google.');
+                // Symulacja logowania przez Google
+                goToDashboard({
+                    name: "Użytkownik Google",
+                    email: "google.user@example.com"
+                });
+                
                 this.innerHTML = '<i class="fab fa-google"></i> Zaloguj przez Google';
                 this.disabled = false;
-            }, 1000);
+            }, 1500);
         });
 
-        document.getElementById('google-register-btn').addEventListener('click', function() {
+        document.getElementById('googleRegisterBtn').addEventListener('click', function() {
             this.innerHTML = '<i class="fab fa-google"></i> Przekierowywanie do Google...';
             this.disabled = true;
             
             setTimeout(() => {
-                alert('Przekierowanie do Google - w rzeczywistej aplikacji nastąpiłoby przekierowanie do OAuth Google.');
+                // Symulacja rejestracji przez Google
+                goToDashboard({
+                    name: "Nowy Użytkownik Google",
+                    email: "new.google.user@example.com"
+                });
+                
                 this.innerHTML = '<i class="fab fa-google"></i> Zarejestruj przez Google';
                 this.disabled = false;
-            }, 1000);
+            }, 1500);
         });
 
-        // Obsługa linku "Nie pamiętasz hasła?" - KLIKALNY
-        document.getElementById('forgot-password-link').addEventListener('click', function(e) {
+        // Obsługa linku "Nie pamiętasz hasła?"
+        document.getElementById('forgotPasswordLink').addEventListener('click', function(e) {
             e.preventDefault();
-            const email = document.getElementById('login-email').value || prompt("Podaj swój adres e-mail, aby zresetować hasło:");
+            const email = document.getElementById('loginEmail').value || prompt("Podaj swój adres e-mail, aby zresetować hasło:");
             
             if (email) {
                 alert(`Link do resetowania hasła został wysłany na adres: ${email}\nSprawdź swoją skrzynkę odbiorczą.`);
             }
         });
 
-        // Obsługa linków w stopce - KLIKALNE
-        document.getElementById('terms-link').addEventListener('click', function(e) {
+        // Obsługa linków w stopce
+        document.getElementById('termsLink').addEventListener('click', function(e) {
             e.preventDefault();
             alert('Otwieranie regulaminu...');
         });
 
-        document.getElementById('privacy-link').addEventListener('click', function(e) {
+        document.getElementById('privacyLink').addEventListener('click', function(e) {
             e.preventDefault();
             alert('Otwieranie polityki prywatności...');
+        });
+
+        // Obsługa wylogowania
+        document.getElementById('logoutBtn').addEventListener('click', logout);
+
+        // Obsługa dodawania nowego treningu
+        document.getElementById('newWorkoutBtn').addEventListener('click', function() {
+            alert('Otwieranie formularza dodawania nowego treningu...');
         });
 
         // Efekt najechania na przyciski
