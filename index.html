@@ -3,77 +3,394 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FootCoach - Logowanie</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>ZgranyTrener.pl - Logowanie i rejestracja</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-</head>
-<body class="auth-page">
-    <div class="container">
-        <div class="auth-container">
-            <div class="logo-section">
-                <h1><i class="fas fa-futbol"></i> FootCoach</h1>
-                <p>Platforma dla trenerów piłki nożnej</p>
-                <p class="subtitle">Umawiaj mecze, zarządzaj drużyną, rozwijaj się!</p>
-            </div>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f8f9fa;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1a73e8;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+        .auth-tabs {
+            display: flex;
+            background-color: #fff;
+            border-radius: 8px 8px 0 0;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 16px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #666;
+        }
+
+        .tab.active {
+            color: #1a73e8;
+            border-bottom: 3px solid #1a73e8;
+        }
+
+        .auth-form-container {
+            background-color: #fff;
+            border-radius: 0 0 8px 8px;
+            padding: 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .auth-form {
+            display: none;
+        }
+
+        .auth-form.active {
+            display: block;
+        }
+
+        .form-title {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .form-subtitle {
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #1a73e8;
+        }
+
+        .forgot-password {
+            display: block;
+            text-align: right;
+            margin-top: 5px;
+            font-size: 14px;
+            color: #1a73e8;
+            text-decoration: none;
+        }
+
+        .forgot-password:hover {
+            text-decoration: underline;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            background-color: #0d62d9;
+        }
+
+        .divider {
+            text-align: center;
+            margin: 25px 0;
+            position: relative;
+            color: #999;
+            font-size: 14px;
+        }
+
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background-color: #eee;
+            z-index: 1;
+        }
+
+        .divider span {
+            background-color: #fff;
+            padding: 0 15px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .google-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #fff;
+            color: #333;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .google-btn:hover {
+            background-color: #f8f9fa;
+        }
+
+        .google-btn i {
+            color: #4285f4;
+            font-size: 18px;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .footer a {
+            color: #1a73e8;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                max-width: 100%;
+            }
             
-            <div class="form-container">
-                <!-- Formularz Logowania -->
-                <div class="form-box active" id="login-form">
-                    <h2>Zaloguj się</h2>
-                    <form id="loginForm">
-                        <div class="form-group">
-                            <label for="login-email"><i class="fas fa-envelope"></i> Email</label>
-                            <input type="email" id="login-email" required placeholder="trener@example.com">
-                        </div>
-                        <div class="form-group">
-                            <label for="login-password"><i class="fas fa-lock"></i> Hasło</label>
-                            <input type="password" id="login-password" required placeholder="••••••••">
-                        </div>
-                        <button type="submit" class="btn-primary">
-                            <i class="fas fa-sign-in-alt"></i> Zaloguj
-                        </button>
-                    </form>
-                    <p class="form-switch">
-                        Nie masz konta? <a href="#" id="switch-to-register">Zarejestruj się</a>
-                    </p>
+            .auth-form-container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">ZgranyTrener.pl</div>
+            <div class="subtitle">Twoje narzędzie do planowania treningów</div>
+        </div>
+
+        <div class="auth-tabs">
+            <div class="tab active" id="login-tab">Logowanie</div>
+            <div class="tab" id="register-tab">Rejestracja</div>
+        </div>
+
+        <div class="auth-form-container">
+            <!-- Formularz logowania -->
+            <form class="auth-form active" id="login-form">
+                <h2 class="form-title">Logowanie</h2>
+                <p class="form-subtitle">Zaloguj się, aby uzyskać dostęp do swojego konta</p>
+                
+                <div class="form-group">
+                    <label class="form-label" for="login-email">Adres e-mail</label>
+                    <input type="email" id="login-email" class="form-input" placeholder="Wpisz swój adres e-mail" required>
                 </div>
                 
-                <!-- Formularz Rejestracji -->
-                <div class="form-box" id="register-form">
-                    <h2>Zarejestruj się</h2>
-                    <form id="registerForm">
-                        <div class="form-group">
-                            <label for="register-name"><i class="fas fa-user"></i> Imię i nazwisko</label>
-                            <input type="text" id="register-name" required placeholder="Jan Kowalski">
-                        </div>
-                        <div class="form-group">
-                            <label for="register-email"><i class="fas fa-envelope"></i> Email</label>
-                            <input type="email" id="register-email" required placeholder="trener@example.com">
-                        </div>
-                        <div class="form-group">
-                            <label for="register-password"><i class="fas fa-lock"></i> Hasło</label>
-                            <input type="password" id="register-password" required placeholder="••••••••">
-                        </div>
-                        <div class="form-group">
-                            <label for="register-password-confirm"><i class="fas fa-lock"></i> Potwierdź hasło</label>
-                            <input type="password" id="register-password-confirm" required placeholder="••••••••">
-                        </div>
-                        <button type="submit" class="btn-primary">
-                            <i class="fas fa-user-plus"></i> Zarejestruj
-                        </button>
-                    </form>
-                    <p class="form-switch">
-                        Masz już konto? <a href="#" id="switch-to-login">Zaloguj się</a>
-                    </p>
+                <div class="form-group">
+                    <label class="form-label" for="login-password">Hasło</label>
+                    <input type="password" id="login-password" class="form-input" placeholder="Wpisz swoje hasło" required>
+                    <a href="#" class="forgot-password">Nie pamiętasz hasła?</a>
                 </div>
-            </div>
-            
-            <div class="demo-info">
-                <p><strong>Demo:</strong> Wpisz dowolne dane, dane są przechowywane lokalnie</p>
-            </div>
+                
+                <button type="submit" class="submit-btn">Zaloguj się</button>
+                
+                <div class="divider">
+                    <span>lub</span>
+                </div>
+                
+                <button type="button" class="google-btn">
+                    <i class="fab fa-google"></i>
+                    Zaloguj przez Google
+                </button>
+            </form>
+
+            <!-- Formularz rejestracji -->
+            <form class="auth-form" id="register-form">
+                <h2 class="form-title">Rejestracja</h2>
+                <p class="form-subtitle">Utwórz nowe konto, aby korzystać z platformy</p>
+                
+                <div class="form-group">
+                    <label class="form-label" for="register-name">Imię i nazwisko</label>
+                    <input type="text" id="register-name" class="form-input" placeholder="Wpisz swoje imię i nazwisko" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="register-email">Adres e-mail</label>
+                    <input type="email" id="register-email" class="form-input" placeholder="Wpisz swój adres e-mail" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="register-password">Hasło</label>
+                    <input type="password" id="register-password" class="form-input" placeholder="Utwórz bezpieczne hasło" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="register-confirm-password">Potwierdź hasło</label>
+                    <input type="password" id="register-confirm-password" class="form-input" placeholder="Powtórz hasło" required>
+                </div>
+                
+                <button type="submit" class="submit-btn">Zarejestruj się</button>
+                
+                <div class="divider">
+                    <span>lub</span>
+                </div>
+                
+                <button type="button" class="google-btn">
+                    <i class="fab fa-google"></i>
+                    Zarejestruj przez Google
+                </button>
+            </form>
+        </div>
+
+        <div class="footer">
+            <p>Korzystając z serwisu, akceptujesz <a href="#">Regulamin</a> oraz <a href="#">Politykę prywatności</a></p>
+            <p>&copy; 2023 ZgranyTrener.pl. Wszelkie prawa zastrzeżone.</p>
         </div>
     </div>
-    
-    <script src="js/auth.js"></script>
+
+    <script>
+        // Przełączanie między logowaniem a rejestracją
+        const loginTab = document.getElementById('login-tab');
+        const registerTab = document.getElementById('register-tab');
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+
+        loginTab.addEventListener('click', () => {
+            loginTab.classList.add('active');
+            registerTab.classList.remove('active');
+            loginForm.classList.add('active');
+            registerForm.classList.remove('active');
+        });
+
+        registerTab.addEventListener('click', () => {
+            registerTab.classList.add('active');
+            loginTab.classList.remove('active');
+            registerForm.classList.add('active');
+            loginForm.classList.remove('active');
+        });
+
+        // Obsługa formularza logowania
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            
+            // Tu w rzeczywistej aplikacji byłoby wysłanie danych do serwera
+            console.log('Logowanie:', { email, password });
+            
+            // Tymczasowe powiadomienie
+            alert('Logowanie w toku... W rzeczywistej aplikacji dane zostałyby wysłane do serwera.');
+            
+            // Czyszczenie formularza
+            this.reset();
+        });
+
+        // Obsługa formularza rejestracji
+        document.getElementById('register-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const name = document.getElementById('register-name').value;
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            const confirmPassword = document.getElementById('register-confirm-password').value;
+            
+            // Sprawdzenie czy hasła są zgodne
+            if (password !== confirmPassword) {
+                alert('Hasła nie są identyczne!');
+                return;
+            }
+            
+            // Tu w rzeczywistej aplikacji byłoby wysłanie danych do serwera
+            console.log('Rejestracja:', { name, email, password });
+            
+            // Tymczasowe powiadomienie
+            alert('Rejestracja w toku... W rzeczywistej aplikacji dane zostałyby wysłane do serwera.');
+            
+            // Czyszczenie formularza
+            this.reset();
+        });
+
+        // Obsługa przycisku Google
+        document.querySelectorAll('.google-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                alert('Logowanie/rejestracja przez Google - w rzeczywistej aplikacji zostałaby wywołana odpowiednia integracja OAuth.');
+            });
+        });
+
+        // Obsługa linku "Nie pamiętasz hasła?"
+        document.querySelector('.forgot-password').addEventListener('click', function(e) {
+            e.preventDefault();
+            alert('Funkcja resetowania hasła - w rzeczywistej aplikacji użytkownik zostałby przekierowany do formularza resetowania hasła.');
+        });
+    </script>
 </body>
 </html>
