@@ -541,6 +541,37 @@
             color: var(--primary-color);
         }
 
+        /* Toast notifications */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            background-color: var(--success-color);
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateX(150%);
+            transition: transform 0.3s ease;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.error {
+            background-color: var(--error-color);
+        }
+
+        .toast.warning {
+            background-color: var(--accent-color);
+            color: var(--dark-color);
+        }
+
         /* Responsive Styles */
         @media (max-width: 992px) {
             .sidebar {
@@ -651,8 +682,8 @@
                 JT
             </div>
             <div class="user-info">
-                <h4>Jan Kowalski</h4>
-                <p>Trener seniorów</p>
+                <h4 id="userName">Jan Kowalski</h4>
+                <p id="userRole">Trener seniorów</p>
                 <button class="logout-btn" id="logoutBtn">
                     <i class="fas fa-sign-out-alt"></i> Wyloguj się
                 </button>
@@ -662,6 +693,12 @@
     
     <!-- Overlay for mobile menu -->
     <div class="overlay" id="overlay"></div>
+    
+    <!-- Toast notification -->
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage">Zmiany zostały zapisane!</span>
+    </div>
     
     <!-- Main Content -->
     <div class="main-content">
@@ -684,11 +721,11 @@
             <!-- Welcome Banner -->
             <div class="welcome-banner">
                 <div class="welcome-text">
-                    <h2>Witaj, Jan!</h2>
+                    <h2 id="welcomeMessage">Witaj, Jan!</h2>
                     <p>Masz dzisiaj 1 zaplanowany mecz i 2 propozycje spotkań. Sprawdź najnowsze aktualności!</p>
                 </div>
                 <div class="stats-card">
-                    <span class="stats-number">7</span>
+                    <span class="stats-number" id="matchesCount">7</span>
                     <span class="stats-label">Umówionych meczów</span>
                 </div>
             </div>
@@ -702,7 +739,7 @@
                             <i class="fas fa-futbol"></i>
                         </div>
                     </div>
-                    <p>Masz 1 mecz w tym tygodniu:<br>
+                    <p id="nextMatchInfo">Masz 1 mecz w tym tygodniu:<br>
                     <strong>Legia Warszawa vs. Wisła Kraków</strong><br>
                     Data: 15.10.2023, godz. 18:00</p>
                 </div>
@@ -714,7 +751,7 @@
                             <i class="fas fa-users"></i>
                         </div>
                     </div>
-                    <p><strong>Legia Warszawa</strong><br>
+                    <p id="teamInfo"><strong>Legia Warszawa</strong><br>
                     22 zawodników<br>
                     Ostatni wynik: Wygrana 3:1</p>
                 </div>
@@ -743,31 +780,8 @@
                             <th>Status</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <td>12.10.2023</td>
-                            <td>Mecz sparingowy</td>
-                            <td>Legia vs. Lech Poznań</td>
-                            <td><span class="status-badge status-confirmed">Rozegrany</span></td>
-                        </tr>
-                        <tr>
-                            <td>10.10.2023</td>
-                            <td>Trening</td>
-                            <td>Trening techniczny - 18 zawodników</td>
-                            <td><span class="status-badge status-confirmed">Zakończony</span></td>
-                        </tr>
-                        <tr>
-                            <td>08.10.2023</td>
-                            <td>Propozycja meczu</td>
-                            <td>Od trenera Górnika Zabrze</td>
-                            <td><span class="status-badge status-pending">Oczekuje</span></td>
-                        </tr>
-                        <tr>
-                            <td>05.10.2023</td>
-                            <td>Turniej</td>
-                            <td>Turniej Mistrzów - zgłoszenie</td>
-                            <td><span class="status-badge status-confirmed">Potwierdzone</span></td>
-                        </tr>
+                    <tbody id="activityTable">
+                        <!-- Aktywności będą ładowane dynamicznie -->
                     </tbody>
                 </table>
             </div>
@@ -782,34 +796,47 @@
                     <div class="card-header">
                         <h3 class="card-title">Informacje osobiste</h3>
                     </div>
-                    <form class="profile-form">
+                    <form class="profile-form" id="personalInfoForm">
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="firstName">Imię</label>
-                                <input type="text" id="firstName" value="Jan">
+                                <input type="text" id="firstName" required>
                             </div>
                             <div class="form-group">
                                 <label for="lastName">Nazwisko</label>
-                                <input type="text" id="lastName" value="Kowalski">
+                                <input type="text" id="lastName" required>
                             </div>
                         </div>
                         
                         <div class="form-group">
                             <label for="email">Email</label>
-                            <input type="email" id="email" value="jan.kowalski@example.com">
+                            <input type="email" id="email" required>
                         </div>
                         
                         <div class="form-group">
                             <label for="phone">Telefon</label>
-                            <input type="tel" id="phone" value="+48 123 456 789">
+                            <input type="tel" id="phone">
                         </div>
                         
                         <div class="form-group">
                             <label for="experience">Doświadczenie (lata)</label>
-                            <input type="number" id="experience" value="12">
+                            <input type="number" id="experience" min="0" max="50">
                         </div>
                         
-                        <button type="submit" class="btn">Zapisz zmiany</button>
+                        <div class="form-group">
+                            <label for="role">Rola</label>
+                            <select id="role">
+                                <option value="Trener seniorów">Trener seniorów</option>
+                                <option value="Trener juniorów">Trener juniorów</option>
+                                <option value="Trener bramkarzy">Trener bramkarzy</option>
+                                <option value="Asystent trenera">Asystent trenera</option>
+                                <option value="Trener kondycyjny">Trener kondycyjny</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn">
+                            <i class="fas fa-save"></i> Zapisz zmiany
+                        </button>
                     </form>
                 </div>
                 
@@ -817,17 +844,17 @@
                     <div class="card-header">
                         <h3 class="card-title">Informacje o drużynie</h3>
                     </div>
-                    <form class="profile-form">
+                    <form class="profile-form" id="teamInfoForm">
                         <div class="form-group">
                             <label for="teamName">Nazwa drużyny</label>
-                            <input type="text" id="teamName" value="Legia Warszawa">
+                            <input type="text" id="teamName">
                         </div>
                         
                         <div class="form-group">
                             <label for="teamLevel">Poziom drużyny</label>
                             <select id="teamLevel">
                                 <option value="professional">Profesjonalny</option>
-                                <option value="semipro" selected>Półprofesjonalny</option>
+                                <option value="semipro">Półprofesjonalny</option>
                                 <option value="amateur">Amatorski</option>
                                 <option value="youth">Młodzieżowy</option>
                             </select>
@@ -835,15 +862,17 @@
                         
                         <div class="form-group">
                             <label for="playersCount">Liczba zawodników</label>
-                            <input type="number" id="playersCount" value="22">
+                            <input type="number" id="playersCount" min="1" max="50">
                         </div>
                         
                         <div class="form-group">
                             <label for="teamDescription">Opis drużyny</label>
-                            <textarea id="teamDescription">Drużyna seniorska Legii Warszawa, grająca w ekstraklasie. Skupiamy się na rozwoju młodych talentów i grze ofensywnej.</textarea>
+                            <textarea id="teamDescription"></textarea>
                         </div>
                         
-                        <button type="submit" class="btn">Zapisz zmiany</button>
+                        <button type="submit" class="btn">
+                            <i class="fas fa-save"></i> Zapisz zmiany
+                        </button>
                     </form>
                 </div>
             </div>
@@ -865,59 +894,63 @@
                             <th>Akcje</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <td>15.10.2023, 18:00</td>
-                            <td><strong>Wisła Kraków</strong></td>
-                            <td>Stadion Miejski, Warszawa</td>
-                            <td>Sparing</td>
-                            <td><span class="status-badge status-confirmed">Potwierdzony</span></td>
-                            <td>
-                                <button class="btn btn-small">Szczegóły</button>
-                                <button class="btn btn-small btn-accent">Anuluj</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>22.10.2023, 16:30</td>
-                            <td><strong>Lech Poznań</strong></td>
-                            <td>Stadion Miejski, Poznań</td>
-                            <td>Turniej</td>
-                            <td><span class="status-badge status-pending">Oczekuje</span></td>
-                            <td>
-                                <button class="btn btn-small">Szczegóły</button>
-                                <button class="btn btn-small btn-accent">Potwierdź</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>28.10.2023, 14:00</td>
-                            <td><strong>Górnik Zabrze</strong></td>
-                            <td>Stadion Górnika, Zabrze</td>
-                            <td>Sparing</td>
-                            <td><span class="status-badge status-confirmed">Potwierdzony</span></td>
-                            <td>
-                                <button class="btn btn-small">Szczegóły</button>
-                                <button class="btn btn-small btn-accent">Anuluj</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>05.11.2023, 12:00</td>
-                            <td><strong>Śląsk Wrocław</strong></td>
-                            <td>Stadion Miejski, Warszawa</td>
-                            <td>Turniej</td>
-                            <td><span class="status-badge status-pending">Oczekuje</span></td>
-                            <td>
-                                <button class="btn btn-small">Szczegóły</button>
-                                <button class="btn btn-small">Odrzuć</button>
-                            </td>
-                        </tr>
+                    <tbody id="matchesTable">
+                        <!-- Mecze będą ładowane dynamicznie -->
                     </tbody>
                 </table>
             </div>
             
             <div style="text-align: center; margin-top: 2rem;">
-                <button class="btn btn-accent">
+                <button class="btn btn-accent" id="addMatchBtn">
                     <i class="fas fa-plus"></i> Dodaj nowy mecz
                 </button>
+            </div>
+            
+            <!-- Formularz dodawania meczu (ukryty) -->
+            <div id="addMatchForm" style="display: none; margin-top: 2rem;" class="card">
+                <h3 style="margin-bottom: 1rem; color: var(--primary-color);">Dodaj nowy mecz</h3>
+                <form id="newMatchForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="matchOpponent">Przeciwnik</label>
+                            <input type="text" id="matchOpponent" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="matchDate">Data</label>
+                            <input type="datetime-local" id="matchDate" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="matchLocation">Miejsce</label>
+                            <input type="text" id="matchLocation" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="matchType">Typ meczu</label>
+                            <select id="matchType" required>
+                                <option value="sparing">Sparing</option>
+                                <option value="tournament">Turniej</option>
+                                <option value="friendly">Towarzyski</option>
+                                <option value="league">Liga</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="matchNotes">Notatki (opcjonalnie)</label>
+                        <textarea id="matchNotes" rows="3"></textarea>
+                    </div>
+                    
+                    <div style="display: flex; gap: 1rem;">
+                        <button type="submit" class="btn">
+                            <i class="fas fa-check"></i> Zapisz mecz
+                        </button>
+                        <button type="button" class="btn btn-accent" id="cancelAddMatch">
+                            <i class="fas fa-times"></i> Anuluj
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
         
@@ -951,8 +984,8 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="matchType">Typ meczu</label>
-                            <select id="matchType">
+                            <label for="matchTypeSearch">Typ meczu</label>
+                            <select id="matchTypeSearch">
                                 <option value="">Dowolny</option>
                                 <option value="sparing">Sparing</option>
                                 <option value="tournament">Turniej</option>
@@ -968,57 +1001,8 @@
             </div>
             
             <h3 style="margin-bottom: 1rem; color: var(--primary-color);">Dostępne drużyny</h3>
-            <div class="cards-grid">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Lechia Gdańsk</h3>
-                        <div class="card-icon">
-                            <i class="fas fa-users"></i>
-                        </div>
-                    </div>
-                    <p><strong>Poziom:</strong> Półprofesjonalny<br>
-                    <strong>Lokalizacja:</strong> Gdańsk<br>
-                    <strong>Dostępność:</strong> Weekendy<br>
-                    <strong>Typ meczu:</strong> Sparing/Turniej</p>
-                    <div style="margin-top: 1rem;">
-                        <button class="btn btn-small">Wyślij propozycję</button>
-                        <button class="btn btn-small btn-accent">Profil drużyny</button>
-                    </div>
-                </div>
-                
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Zagłębie Lubin</h3>
-                        <div class="card-icon">
-                            <i class="fas fa-users"></i>
-                        </div>
-                    </div>
-                    <p><strong>Poziom:</strong> Profesjonalny<br>
-                    <strong>Lokalizacja:</strong> Lubin<br>
-                    <strong>Dostępność:</strong> Środy, Piątki<br>
-                    <strong>Typ meczu:</strong> Sparing</p>
-                    <div style="margin-top: 1rem;">
-                        <button class="btn btn-small">Wyślij propozycję</button>
-                        <button class="btn btn-small btn-accent">Profil drużyny</button>
-                    </div>
-                </div>
-                
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Raków Częstochowa</h3>
-                        <div class="card-icon">
-                            <i class="fas fa-users"></i>
-                        </div>
-                    </div>
-                    <p><strong>Poziom:</strong> Profesjonalny<br>
-                    <strong>Lokalizacja:</strong> Częstochowa<br>
-                    <strong>Dostępność:</strong> Weekendy<br>
-                    <strong>Typ meczu:</strong> Turniej</p>
-                    <div style="margin-top: 1rem;">
-                        <button class="btn btn-small">Wyślij propozycję</button>
-                        <button class="btn btn-small btn-accent">Profil drużyny</button>
-                    </div>
-                </div>
+            <div class="cards-grid" id="availableTeams">
+                <!-- Drużyny będą ładowane dynamicznie -->
             </div>
         </div>
         
@@ -1027,66 +1011,64 @@
             <h2 style="margin-bottom: 1.5rem; color: var(--primary-color);">Baza ćwiczeń treningowych</h2>
             
             <div style="margin-bottom: 2rem;">
-                <button class="btn btn-accent">
+                <button class="btn btn-accent" id="addExerciseBtn">
                     <i class="fas fa-plus"></i> Dodaj nowe ćwiczenie
                 </button>
-                <button class="btn" style="margin-left: 10px;">
+                <button class="btn" id="filterExercisesBtn" style="margin-left: 10px;">
                     <i class="fas fa-filter"></i> Filtruj ćwiczenia
                 </button>
             </div>
             
-            <div class="exercises-grid">
-                <div class="exercise-card">
-                    <div class="exercise-img" style="background-image: url('https://images.unsplash.com/photo-1575361204480-aadea25e6e68?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80');"></div>
-                    <div class="exercise-content">
-                        <span class="exercise-category">Technika</span>
-                        <h3 class="exercise-title">Podania i przyjęcia piłki</h3>
-                        <p class="exercise-desc">Ćwiczenia doskonalące precyzję podań oraz kontrolę piłki przy przyjęciach.</p>
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-size: 0.9rem; color: #64748b;">Czas: 45 min</span>
-                            <button class="btn btn-small">Szczegóły</button>
+            <div class="exercises-grid" id="exercisesGrid">
+                <!-- Ćwiczenia będą ładowane dynamicznie -->
+            </div>
+            
+            <!-- Formularz dodawania ćwiczenia (ukryty) -->
+            <div id="addExerciseForm" style="display: none; margin-top: 2rem;" class="card">
+                <h3 style="margin-bottom: 1rem; color: var(--primary-color);">Dodaj nowe ćwiczenie</h3>
+                <form id="newExerciseForm">
+                    <div class="form-group">
+                        <label for="exerciseTitle">Nazwa ćwiczenia</label>
+                        <input type="text" id="exerciseTitle" required>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="exerciseCategory">Kategoria</label>
+                            <select id="exerciseCategory" required>
+                                <option value="technika">Technika</option>
+                                <option value="kondycja">Kondycja</option>
+                                <option value="taktyka">Taktyka</option>
+                                <option value="strzały">Strzały</option>
+                                <option value="obrona">Obrona</option>
+                                <option value="atak">Atak</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="exerciseDuration">Czas trwania (min)</label>
+                            <input type="number" id="exerciseDuration" min="5" max="180" required>
                         </div>
                     </div>
-                </div>
-                
-                <div class="exercise-card">
-                    <div class="exercise-img" style="background-image: url('https://images.unsplash.com/photo-1529900748604-07564a03e7a6?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80');"></div>
-                    <div class="exercise-content">
-                        <span class="exercise-category">Kondycja</span>
-                        <h3 class="exercise-title">Trening interwałowy</h3>
-                        <p class="exercise-desc">Ćwiczenia wytrzymałościowe z interwałami, poprawiające wydolność zawodników.</p>
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-size: 0.9rem; color: #64748b;">Czas: 60 min</span>
-                            <button class="btn btn-small">Szczegóły</button>
-                        </div>
+                    
+                    <div class="form-group">
+                        <label for="exerciseDescription">Opis ćwiczenia</label>
+                        <textarea id="exerciseDescription" rows="4" required></textarea>
                     </div>
-                </div>
-                
-                <div class="exercise-card">
-                    <div class="exercise-img" style="background-image: url('https://images.unsplash.com/photo-1599058917212-d750089bc07e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80');"></div>
-                    <div class="exercise-content">
-                        <span class="exercise-category">Taktyka</span>
-                        <h3 class="exercise-title">Ustawienie defensywne</h3>
-                        <p class="exercise-desc">Ćwiczenia kształtujące współpracę w obronie i przesuwanie się linii obronnej.</p>
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-size: 0.9rem; color: #64748b;">Czas: 50 min</span>
-                            <button class="btn btn-small">Szczegóły</button>
-                        </div>
+                    
+                    <div class="form-group">
+                        <label for="exerciseEquipment">Potrzebny sprzęt (opcjonalnie)</label>
+                        <input type="text" id="exerciseEquipment" placeholder="np. pachołki, piłki, drabinka koordynacyjna">
                     </div>
-                </div>
-                
-                <div class="exercise-card">
-                    <div class="exercise-img" style="background-image: url('https://images.unsplash.com/photo-1517466787929-bc90951d0974?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80');"></div>
-                    <div class="exercise-content">
-                        <span class="exercise-category">Strzały</span>
-                        <h3 class="exercise-title">Strzały z dystansu</h3>
-                        <p class="exercise-desc">Ćwiczenia doskonalące celność i siłę strzałów z różnych odległości.</p>
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-size: 0.9rem; color: #64748b;">Czas: 40 min</span>
-                            <button class="btn btn-small">Szczegóły</button>
-                        </div>
+                    
+                    <div style="display: flex; gap: 1rem;">
+                        <button type="submit" class="btn">
+                            <i class="fas fa-check"></i> Zapisz ćwiczenie
+                        </button>
+                        <button type="button" class="btn btn-accent" id="cancelAddExercise">
+                            <i class="fas fa-times"></i> Anuluj
+                        </button>
                     </div>
-                </div>
+                </form>
             </div>
         </div>
         
@@ -1102,15 +1084,9 @@
                             <i class="fas fa-calendar-alt"></i>
                         </div>
                     </div>
-                    <p><strong>Turniej Mistrzów 2023</strong><br>
-                    Data: 12-14.11.2023<br>
-                    Miejsce: Warszawa<br>
-                    Status: <span class="status-badge status-confirmed">Zgłoszony</span></p>
-                    
-                    <p style="margin-top: 1rem;"><strong>Puchar Polski Juniorów</strong><br>
-                    Data: 25-26.11.2023<br>
-                    Miejsce: Kraków<br>
-                    Status: <span class="status-badge status-pending">Oczekuje</span></p>
+                    <div id="upcomingTournaments">
+                        <!-- Turnieje będą ładowane dynamicznie -->
+                    </div>
                 </div>
                 
                 <div class="card">
@@ -1122,7 +1098,7 @@
                     </div>
                     <p>Zorganizuj własny turniej i zaproś inne drużyny do udziału.</p>
                     <div style="margin-top: 1.5rem;">
-                        <button class="btn btn-accent">
+                        <button class="btn btn-accent" id="createTournamentBtn">
                             <i class="fas fa-plus"></i> Utwórz nowy turniej
                         </button>
                     </div>
@@ -1130,148 +1106,851 @@
             </div>
             
             <h3 style="margin-bottom: 1rem; color: var(--primary-color);">Dostępne turnieje</h3>
-            
-            <div class="tournament-card">
-                <div class="tournament-header">
-                    <h3>Turniej Jesienny 2023</h3>
-                    <span class="tournament-date">18-19.11.2023</span>
-                </div>
-                <p><strong>Miejsce:</strong> Stadion Narodowy, Warszawa<br>
-                <strong>Drużyny:</strong> 8 (6 wolnych miejsc)<br>
-                <strong>Nagroda:</strong> 20 000 PLN + puchar<br>
-                <strong>Poziom:</strong> Półprofesjonalny</p>
-                <div style="margin-top: 1rem;">
-                    <button class="btn">Szczegóły</button>
-                    <button class="btn btn-accent" style="margin-left: 10px;">Zgłoś drużynę</button>
-                </div>
+            <div id="availableTournaments">
+                <!-- Turnieje będą ładowane dynamicznie -->
             </div>
             
-            <div class="tournament-card">
-                <div class="tournament-header">
-                    <h3>Winter Cup 2023</h3>
-                    <span class="tournament-date">09-10.12.2023</span>
-                </div>
-                <p><strong>Miejsce:</strong> Hala Sportowa, Gdańsk<br>
-                <strong>Drużyny:</strong> 12 (3 wolne miejsca)<br>
-                <strong>Nagroda:</strong> 15 000 PLN<br>
-                <strong>Poziom:</strong> Amatorski</p>
-                <div style="margin-top: 1rem;">
-                    <button class="btn">Szczegóły</button>
-                    <button class="btn btn-accent" style="margin-left: 10px;">Zgłoś drużynę</button>
-                </div>
+            <!-- Formularz tworzenia turnieju (ukryty) -->
+            <div id="createTournamentForm" style="display: none; margin-top: 2rem;" class="card">
+                <h3 style="margin-bottom: 1rem; color: var(--primary-color);">Utwórz nowy turniej</h3>
+                <form id="newTournamentForm">
+                    <div class="form-group">
+                        <label for="tournamentName">Nazwa turnieju</label>
+                        <input type="text" id="tournamentName" required>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="tournamentStartDate">Data rozpoczęcia</label>
+                            <input type="datetime-local" id="tournamentStartDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="tournamentEndDate">Data zakończenia</label>
+                            <input type="datetime-local" id="tournamentEndDate" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="tournamentLocation">Miejsce</label>
+                            <input type="text" id="tournamentLocation" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="tournamentTeams">Maksymalna liczba drużyn</label>
+                            <input type="number" id="tournamentTeams" min="2" max="32" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tournamentDescription">Opis turnieju</label>
+                        <textarea id="tournamentDescription" rows="3" required></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tournamentLevel">Poziom turnieju</label>
+                        <select id="tournamentLevel" required>
+                            <option value="professional">Profesjonalny</option>
+                            <option value="semipro">Półprofesjonalny</option>
+                            <option value="amateur">Amatorski</option>
+                            <option value="youth">Młodzieżowy</option>
+                            <option value="mixed">Mieszany</option>
+                        </select>
+                    </div>
+                    
+                    <div style="display: flex; gap: 1rem;">
+                        <button type="submit" class="btn">
+                            <i class="fas fa-check"></i> Utwórz turniej
+                        </button>
+                        <button type="button" class="btn btn-accent" id="cancelCreateTournament">
+                            <i class="fas fa-times"></i> Anuluj
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 
     <script>
-        // Tab switching functionality
-        const navLinks = document.querySelectorAll('.nav-links a');
-        const dashboardContents = document.querySelectorAll('.dashboard-content');
-        const pageTitle = document.getElementById('pageTitle');
+        // System przechowywania danych
+        const Storage = {
+            // Pobierz dane z localStorage
+            getData: function(key) {
+                const data = localStorage.getItem(key);
+                return data ? JSON.parse(data) : null;
+            },
+            
+            // Zapisz dane do localStorage
+            saveData: function(key, data) {
+                localStorage.setItem(key, JSON.stringify(data));
+            },
+            
+            // Inicjalizuj domyślne dane jeśli nie istnieją
+            initDefaultData: function() {
+                // Domyślne dane użytkownika
+                if (!this.getData('userProfile')) {
+                    const defaultProfile = {
+                        firstName: 'Jan',
+                        lastName: 'Kowalski',
+                        email: 'jan.kowalski@example.com',
+                        phone: '+48 123 456 789',
+                        experience: 12,
+                        role: 'Trener seniorów',
+                        teamName: 'Legia Warszawa',
+                        teamLevel: 'semipro',
+                        playersCount: 22,
+                        teamDescription: 'Drużyna seniorska Legii Warszawa, grająca w ekstraklasie. Skupiamy się na rozwoju młodych talentów i grze ofensywnej.'
+                    };
+                    this.saveData('userProfile', defaultProfile);
+                }
+                
+                // Domyślne mecze
+                if (!this.getData('matches')) {
+                    const defaultMatches = [
+                        {
+                            id: 1,
+                            opponent: 'Wisła Kraków',
+                            date: '2023-10-15T18:00:00',
+                            location: 'Stadion Miejski, Warszawa',
+                            type: 'sparing',
+                            status: 'confirmed',
+                            notes: ''
+                        },
+                        {
+                            id: 2,
+                            opponent: 'Lech Poznań',
+                            date: '2023-10-22T16:30:00',
+                            location: 'Stadion Miejski, Poznań',
+                            type: 'tournament',
+                            status: 'pending',
+                            notes: 'Półfinał turnieju'
+                        },
+                        {
+                            id: 3,
+                            opponent: 'Górnik Zabrze',
+                            date: '2023-10-28T14:00:00',
+                            location: 'Stadion Górnika, Zabrze',
+                            type: 'sparing',
+                            status: 'confirmed',
+                            notes: 'Trening kontrolny'
+                        }
+                    ];
+                    this.saveData('matches', defaultMatches);
+                }
+                
+                // Domyślne ćwiczenia
+                if (!this.getData('exercises')) {
+                    const defaultExercises = [
+                        {
+                            id: 1,
+                            title: 'Podania i przyjęcia piłki',
+                            category: 'technika',
+                            duration: 45,
+                            description: 'Ćwiczenia doskonalące precyzję podań oraz kontrolę piłki przy przyjęciach.',
+                            equipment: 'piłki, pachołki'
+                        },
+                        {
+                            id: 2,
+                            title: 'Trening interwałowy',
+                            category: 'kondycja',
+                            duration: 60,
+                            description: 'Ćwiczenia wytrzymałościowe z interwałami, poprawiające wydolność zawodników.',
+                            equipment: 'stożki, stopery'
+                        },
+                        {
+                            id: 3,
+                            title: 'Ustawienie defensywne',
+                            category: 'taktyka',
+                            duration: 50,
+                            description: 'Ćwiczenia kształtujące współpracę w obronie i przesuwanie się linii obronnej.',
+                            equipment: 'piłki, znaczniki'
+                        },
+                        {
+                            id: 4,
+                            title: 'Strzały z dystansu',
+                            category: 'strzały',
+                            duration: 40,
+                            description: 'Ćwiczenia doskonalące celność i siłę strzałów z różnych odległości.',
+                            equipment: 'piłki, bramki'
+                        }
+                    ];
+                    this.saveData('exercises', defaultExercises);
+                }
+                
+                // Domyślne turnieje
+                if (!this.getData('tournaments')) {
+                    const defaultTournaments = [
+                        {
+                            id: 1,
+                            name: 'Turniej Mistrzów 2023',
+                            startDate: '2023-11-12T10:00:00',
+                            endDate: '2023-11-14T18:00:00',
+                            location: 'Warszawa',
+                            maxTeams: 8,
+                            description: 'Turniej dla najlepszych drużyn półprofesjonalnych',
+                            level: 'semipro',
+                            status: 'registered',
+                            teams: 6
+                        },
+                        {
+                            id: 2,
+                            name: 'Winter Cup 2023',
+                            startDate: '2023-12-09T09:00:00',
+                            endDate: '2023-12-10T17:00:00',
+                            location: 'Gdańsk',
+                            maxTeams: 12,
+                            description: 'Turniej zimowy dla drużyn amatorskich',
+                            level: 'amateur',
+                            status: 'available',
+                            teams: 9
+                        }
+                    ];
+                    this.saveData('tournaments', defaultTournaments);
+                }
+                
+                // Domyślne aktywności
+                if (!this.getData('activities')) {
+                    const defaultActivities = [
+                        {
+                            id: 1,
+                            date: '2023-10-12',
+                            type: 'Mecz sparingowy',
+                            details: 'Legia vs. Lech Poznań',
+                            status: 'completed'
+                        },
+                        {
+                            id: 2,
+                            date: '2023-10-10',
+                            type: 'Trening',
+                            details: 'Trening techniczny - 18 zawodników',
+                            status: 'completed'
+                        },
+                        {
+                            id: 3,
+                            date: '2023-10-08',
+                            type: 'Propozycja meczu',
+                            details: 'Od trenera Górnika Zabrze',
+                            status: 'pending'
+                        },
+                        {
+                            id: 4,
+                            date: '2023-10-05',
+                            type: 'Turniej',
+                            details: 'Turniej Mistrzów - zgłoszenie',
+                            status: 'confirmed'
+                        }
+                    ];
+                    this.saveData('activities', defaultActivities);
+                }
+            }
+        };
         
-        navLinks.forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
+        // System powiadomień
+        const Toast = {
+            show: function(message, type = 'success') {
+                const toast = document.getElementById('toast');
+                const toastMessage = document.getElementById('toastMessage');
                 
-                // Get the target tab ID
-                const targetTab = this.getAttribute('data-tab');
+                toastMessage.textContent = message;
+                toast.className = 'toast';
                 
-                // Update active nav link
-                navLinks.forEach(navLink => navLink.classList.remove('active'));
-                this.classList.add('active');
+                if (type === 'error') {
+                    toast.classList.add('error');
+                    toast.innerHTML = `<i class="fas fa-exclamation-circle"></i><span id="toastMessage">${message}</span>`;
+                } else if (type === 'warning') {
+                    toast.classList.add('warning');
+                    toast.innerHTML = `<i class="fas fa-exclamation-triangle"></i><span id="toastMessage">${message}</span>`;
+                } else {
+                    toast.innerHTML = `<i class="fas fa-check-circle"></i><span id="toastMessage">${message}</span>`;
+                }
                 
-                // Update active content
-                dashboardContents.forEach(content => {
-                    content.classList.remove('active');
-                    if (content.id === targetTab) {
-                        content.classList.add('active');
-                        
-                        // Update page title based on active tab
-                        const tabName = this.querySelector('span').textContent;
-                        pageTitle.textContent = tabName;
+                toast.classList.add('show');
+                
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 3000);
+            }
+        };
+        
+        // System zarządzania danymi
+        const DataManager = {
+            // Załaduj dane użytkownika
+            loadUserProfile: function() {
+                const profile = Storage.getData('userProfile');
+                if (profile) {
+                    // Wypełnij formularz profilu
+                    document.getElementById('firstName').value = profile.firstName || '';
+                    document.getElementById('lastName').value = profile.lastName || '';
+                    document.getElementById('email').value = profile.email || '';
+                    document.getElementById('phone').value = profile.phone || '';
+                    document.getElementById('experience').value = profile.experience || '';
+                    document.getElementById('role').value = profile.role || 'Trener seniorów';
+                    document.getElementById('teamName').value = profile.teamName || '';
+                    document.getElementById('teamLevel').value = profile.teamLevel || 'semipro';
+                    document.getElementById('playersCount').value = profile.playersCount || '';
+                    document.getElementById('teamDescription').value = profile.teamDescription || '';
+                    
+                    // Zaktualizuj UI
+                    document.getElementById('userName').textContent = `${profile.firstName} ${profile.lastName}`;
+                    document.getElementById('userRole').textContent = profile.role;
+                    document.getElementById('welcomeMessage').textContent = `Witaj, ${profile.firstName}!`;
+                    
+                    // Zaktualizuj informacje o drużynie na dashboard
+                    if (profile.teamName) {
+                        document.getElementById('teamInfo').innerHTML = `
+                            <strong>${profile.teamName}</strong><br>
+                            ${profile.playersCount || '0'} zawodników<br>
+                            Ostatni wynik: Wygrana 3:1
+                        `;
                     }
+                }
+            },
+            
+            // Zapisz profil użytkownika
+            saveUserProfile: function(formData) {
+                const profile = {
+                    firstName: formData.get('firstName'),
+                    lastName: formData.get('lastName'),
+                    email: formData.get('email'),
+                    phone: formData.get('phone'),
+                    experience: parseInt(formData.get('experience')) || 0,
+                    role: formData.get('role')
+                };
+                
+                Storage.saveData('userProfile', {...Storage.getData('userProfile'), ...profile});
+                this.loadUserProfile();
+                Toast.show('Dane osobiste zostały zapisane!');
+            },
+            
+            // Zapisz informacje o drużynie
+            saveTeamInfo: function(formData) {
+                const teamInfo = {
+                    teamName: formData.get('teamName'),
+                    teamLevel: formData.get('teamLevel'),
+                    playersCount: parseInt(formData.get('playersCount')) || 0,
+                    teamDescription: formData.get('teamDescription')
+                };
+                
+                Storage.saveData('userProfile', {...Storage.getData('userProfile'), ...teamInfo});
+                this.loadUserProfile();
+                Toast.show('Informacje o drużynie zostały zapisane!');
+            },
+            
+            // Załaduj mecze
+            loadMatches: function() {
+                const matches = Storage.getData('matches') || [];
+                const matchesTable = document.getElementById('matchesTable');
+                matchesTable.innerHTML = '';
+                
+                matches.forEach(match => {
+                    const date = new Date(match.date);
+                    const formattedDate = date.toLocaleDateString('pl-PL', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    let statusBadge = '';
+                    if (match.status === 'confirmed') {
+                        statusBadge = '<span class="status-badge status-confirmed">Potwierdzony</span>';
+                    } else if (match.status === 'pending') {
+                        statusBadge = '<span class="status-badge status-pending">Oczekuje</span>';
+                    } else {
+                        statusBadge = '<span class="status-badge status-cancelled">Anulowany</span>';
+                    }
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${formattedDate}</td>
+                        <td><strong>${match.opponent}</strong></td>
+                        <td>${match.location}</td>
+                        <td>${this.getMatchTypeLabel(match.type)}</td>
+                        <td>${statusBadge}</td>
+                        <td>
+                            <button class="btn btn-small" onclick="DataManager.viewMatch(${match.id})">Szczegóły</button>
+                            <button class="btn btn-small btn-accent" onclick="DataManager.cancelMatch(${match.id})">Anuluj</button>
+                        </td>
+                    `;
+                    matchesTable.appendChild(row);
                 });
                 
-                // Close mobile menu if open
-                if (window.innerWidth <= 992) {
-                    sidebar.classList.remove('active');
-                    overlay.classList.remove('active');
+                // Zaktualizuj statystyki na dashboard
+                document.getElementById('matchesCount').textContent = matches.filter(m => m.status === 'confirmed').length;
+                
+                // Znajdź następny mecz
+                const upcomingMatches = matches.filter(m => {
+                    const matchDate = new Date(m.date);
+                    const today = new Date();
+                    return matchDate > today && m.status === 'confirmed';
+                }).sort((a, b) => new Date(a.date) - new Date(b.date));
+                
+                if (upcomingMatches.length > 0) {
+                    const nextMatch = upcomingMatches[0];
+                    const nextDate = new Date(nextMatch.date);
+                    document.getElementById('nextMatchInfo').innerHTML = `
+                        Masz 1 mecz w tym tygodniu:<br>
+                        <strong>${Storage.getData('userProfile').teamName} vs. ${nextMatch.opponent}</strong><br>
+                        Data: ${nextDate.toLocaleDateString('pl-PL')}, godz. ${nextDate.toLocaleTimeString('pl-PL', {hour: '2-digit', minute:'2-digit'})}
+                    `;
+                }
+            },
+            
+            // Dodaj nowy mecz
+            addMatch: function(formData) {
+                const matches = Storage.getData('matches') || [];
+                const newMatch = {
+                    id: matches.length > 0 ? Math.max(...matches.map(m => m.id)) + 1 : 1,
+                    opponent: formData.get('opponent'),
+                    date: formData.get('date'),
+                    location: formData.get('location'),
+                    type: formData.get('type'),
+                    status: 'pending',
+                    notes: formData.get('notes')
+                };
+                
+                matches.push(newMatch);
+                Storage.saveData('matches', matches);
+                
+                // Dodaj aktywność
+                this.addActivity('Propozycja meczu', `Do ${newMatch.opponent} - ${new Date(newMatch.date).toLocaleDateString('pl-PL')}`, 'pending');
+                
+                this.loadMatches();
+                Toast.show('Mecz został dodany!');
+            },
+            
+            // Anuluj mecz
+            cancelMatch: function(matchId) {
+                if (confirm('Czy na pewno chcesz anulować ten mecz?')) {
+                    const matches = Storage.getData('matches') || [];
+                    const matchIndex = matches.findIndex(m => m.id === matchId);
+                    
+                    if (matchIndex !== -1) {
+                        const match = matches[matchIndex];
+                        match.status = 'cancelled';
+                        Storage.saveData('matches', matches);
+                        
+                        // Dodaj aktywność
+                        this.addActivity('Anulowanie meczu', `Mecz z ${match.opponent} został anulowany`, 'completed');
+                        
+                        this.loadMatches();
+                        Toast.show('Mecz został anulowany!', 'warning');
+                    }
+                }
+            },
+            
+            // Załaduj ćwiczenia
+            loadExercises: function() {
+                const exercises = Storage.getData('exercises') || [];
+                const exercisesGrid = document.getElementById('exercisesGrid');
+                exercisesGrid.innerHTML = '';
+                
+                exercises.forEach(exercise => {
+                    const exerciseCard = document.createElement('div');
+                    exerciseCard.className = 'exercise-card';
+                    exerciseCard.innerHTML = `
+                        <div class="exercise-img" style="background-image: url('https://images.unsplash.com/photo-1575361204480-aadea25e6e68?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80');"></div>
+                        <div class="exercise-content">
+                            <span class="exercise-category">${this.getCategoryLabel(exercise.category)}</span>
+                            <h3 class="exercise-title">${exercise.title}</h3>
+                            <p class="exercise-desc">${exercise.description}</p>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 0.9rem; color: #64748b;">Czas: ${exercise.duration} min</span>
+                                <button class="btn btn-small" onclick="DataManager.viewExercise(${exercise.id})">Szczegóły</button>
+                            </div>
+                        </div>
+                    `;
+                    exercisesGrid.appendChild(exerciseCard);
+                });
+            },
+            
+            // Dodaj nowe ćwiczenie
+            addExercise: function(formData) {
+                const exercises = Storage.getData('exercises') || [];
+                const newExercise = {
+                    id: exercises.length > 0 ? Math.max(...exercises.map(e => e.id)) + 1 : 1,
+                    title: formData.get('title'),
+                    category: formData.get('category'),
+                    duration: parseInt(formData.get('duration')),
+                    description: formData.get('description'),
+                    equipment: formData.get('equipment')
+                };
+                
+                exercises.push(newExercise);
+                Storage.saveData('exercises', exercises);
+                
+                // Dodaj aktywność
+                this.addActivity('Dodanie ćwiczenia', `Ćwiczenie: ${newExercise.title}`, 'completed');
+                
+                this.loadExercises();
+                Toast.show('Ćwiczenie zostało dodane!');
+            },
+            
+            // Załaduj turnieje
+            loadTournaments: function() {
+                const tournaments = Storage.getData('tournaments') || [];
+                const upcomingContainer = document.getElementById('upcomingTournaments');
+                const availableContainer = document.getElementById('availableTournaments');
+                
+                // Nadchodzące turnieje
+                const upcomingTournaments = tournaments.filter(t => t.status === 'registered');
+                upcomingContainer.innerHTML = '';
+                
+                if (upcomingTournaments.length > 0) {
+                    upcomingTournaments.forEach(tournament => {
+                        const startDate = new Date(tournament.startDate);
+                        const endDate = new Date(tournament.endDate);
+                        
+                        const tournamentHTML = `
+                            <p><strong>${tournament.name}</strong><br>
+                            Data: ${startDate.toLocaleDateString('pl-PL')} - ${endDate.toLocaleDateString('pl-PL')}<br>
+                            Miejsce: ${tournament.location}<br>
+                            Status: <span class="status-badge status-confirmed">Zgłoszony</span></p>
+                        `;
+                        
+                        if (upcomingContainer.innerHTML === '') {
+                            upcomingContainer.innerHTML = tournamentHTML;
+                        } else {
+                            upcomingContainer.innerHTML += '<hr style="margin: 1rem 0; border-color: #f1f5f9;">' + tournamentHTML;
+                        }
+                    });
+                } else {
+                    upcomingContainer.innerHTML = '<p>Brak nadchodzących turniejów</p>';
+                }
+                
+                // Dostępne turnieje
+                const availableTournaments = tournaments.filter(t => t.status === 'available');
+                availableContainer.innerHTML = '';
+                
+                availableTournaments.forEach(tournament => {
+                    const startDate = new Date(tournament.startDate);
+                    const endDate = new Date(tournament.endDate);
+                    
+                    const tournamentCard = document.createElement('div');
+                    tournamentCard.className = 'tournament-card';
+                    tournamentCard.innerHTML = `
+                        <div class="tournament-header">
+                            <h3>${tournament.name}</h3>
+                            <span class="tournament-date">${startDate.toLocaleDateString('pl-PL')} - ${endDate.toLocaleDateString('pl-PL')}</span>
+                        </div>
+                        <p><strong>Miejsce:</strong> ${tournament.location}<br>
+                        <strong>Drużyny:</strong> ${tournament.teams}/${tournament.maxTeams} (${tournament.maxTeams - tournament.teams} wolnych miejsc)<br>
+                        <strong>Poziom:</strong> ${this.getLevelLabel(tournament.level)}</p>
+                        <div style="margin-top: 1rem;">
+                            <button class="btn" onclick="DataManager.viewTournament(${tournament.id})">Szczegóły</button>
+                            <button class="btn btn-accent" style="margin-left: 10px;" onclick="DataManager.registerForTournament(${tournament.id})">Zgłoś drużynę</button>
+                        </div>
+                    `;
+                    availableContainer.appendChild(tournamentCard);
+                });
+            },
+            
+            // Dodaj nowy turniej
+            addTournament: function(formData) {
+                const tournaments = Storage.getData('tournaments') || [];
+                const newTournament = {
+                    id: tournaments.length > 0 ? Math.max(...tournaments.map(t => t.id)) + 1 : 1,
+                    name: formData.get('name'),
+                    startDate: formData.get('startDate'),
+                    endDate: formData.get('endDate'),
+                    location: formData.get('location'),
+                    maxTeams: parseInt(formData.get('maxTeams')),
+                    description: formData.get('description'),
+                    level: formData.get('level'),
+                    status: 'available',
+                    teams: 0
+                };
+                
+                tournaments.push(newTournament);
+                Storage.saveData('tournaments', tournaments);
+                
+                // Dodaj aktywność
+                this.addActivity('Utworzenie turnieju', `Turniej: ${newTournament.name}`, 'completed');
+                
+                this.loadTournaments();
+                Toast.show('Turniej został utworzony!');
+            },
+            
+            // Zarejestruj się na turniej
+            registerForTournament: function(tournamentId) {
+                const tournaments = Storage.getData('tournaments') || [];
+                const tournamentIndex = tournaments.findIndex(t => t.id === tournamentId);
+                
+                if (tournamentIndex !== -1) {
+                    const tournament = tournaments[tournamentIndex];
+                    
+                    if (tournament.teams < tournament.maxTeams) {
+                        tournament.teams += 1;
+                        tournament.status = 'registered';
+                        Storage.saveData('tournaments', tournaments);
+                        
+                        // Dodaj aktywność
+                        this.addActivity('Zgłoszenie na turniej', `Turniej: ${tournament.name}`, 'confirmed');
+                        
+                        this.loadTournaments();
+                        Toast.show('Twoja drużyna została zgłoszona na turniej!');
+                    } else {
+                        Toast.show('Brak wolnych miejsc w tym turnieju!', 'error');
+                    }
+                }
+            },
+            
+            // Załaduj aktywności
+            loadActivities: function() {
+                const activities = Storage.getData('activities') || [];
+                const activityTable = document.getElementById('activityTable');
+                activityTable.innerHTML = '';
+                
+                activities.forEach(activity => {
+                    let statusBadge = '';
+                    if (activity.status === 'completed' || activity.status === 'confirmed') {
+                        statusBadge = '<span class="status-badge status-confirmed">Zakończony</span>';
+                    } else if (activity.status === 'pending') {
+                        statusBadge = '<span class="status-badge status-pending">Oczekuje</span>';
+                    } else {
+                        statusBadge = '<span class="status-badge status-cancelled">Anulowany</span>';
+                    }
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${activity.date}</td>
+                        <td>${activity.type}</td>
+                        <td>${activity.details}</td>
+                        <td>${statusBadge}</td>
+                    `;
+                    activityTable.appendChild(row);
+                });
+            },
+            
+            // Dodaj nową aktywność
+            addActivity: function(type, details, status) {
+                const activities = Storage.getData('activities') || [];
+                const today = new Date().toISOString().split('T')[0];
+                
+                const newActivity = {
+                    id: activities.length > 0 ? Math.max(...activities.map(a => a.id)) + 1 : 1,
+                    date: today,
+                    type: type,
+                    details: details,
+                    status: status
+                };
+                
+                activities.unshift(newActivity);
+                // Zachowaj tylko ostatnie 10 aktywności
+                if (activities.length > 10) {
+                    activities.pop();
+                }
+                
+                Storage.saveData('activities', activities);
+                this.loadActivities();
+            },
+            
+            // Pomocnicze metody
+            getMatchTypeLabel: function(type) {
+                const types = {
+                    'sparing': 'Sparing',
+                    'tournament': 'Turniej',
+                    'friendly': 'Towarzyski',
+                    'league': 'Liga'
+                };
+                return types[type] || type;
+            },
+            
+            getCategoryLabel: function(category) {
+                const categories = {
+                    'technika': 'Technika',
+                    'kondycja': 'Kondycja',
+                    'taktyka': 'Taktyka',
+                    'strzały': 'Strzały',
+                    'obrona': 'Obrona',
+                    'atak': 'Atak'
+                };
+                return categories[category] || category;
+            },
+            
+            getLevelLabel: function(level) {
+                const levels = {
+                    'professional': 'Profesjonalny',
+                    'semipro': 'Półprofesjonalny',
+                    'amateur': 'Amatorski',
+                    'youth': 'Młodzieżowy',
+                    'mixed': 'Mieszany'
+                };
+                return levels[level] || level;
+            },
+            
+            // Metody podglądu (do zaimplementowania)
+            viewMatch: function(id) {
+                alert(`Szczegóły meczu ID: ${id}\nW rzeczywistej aplikacji otworzyłoby się okno ze szczegółami.`);
+            },
+            
+            viewExercise: function(id) {
+                alert(`Szczegóły ćwiczenia ID: ${id}\nW rzeczywistej aplikacji otworzyłoby się okno ze szczegółami.`);
+            },
+            
+            viewTournament: function(id) {
+                alert(`Szczegóły turnieju ID: ${id}\nW rzeczywistej aplikacji otworzyłoby się okno ze szczegółami.`);
+            }
+        };
+        
+        // Inicjalizacja aplikacji
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicjalizuj domyślne dane
+            Storage.initDefaultData();
+            
+            // Załaduj dane
+            DataManager.loadUserProfile();
+            DataManager.loadMatches();
+            DataManager.loadExercises();
+            DataManager.loadTournaments();
+            DataManager.loadActivities();
+            
+            // Tab switching functionality
+            const navLinks = document.querySelectorAll('.nav-links a');
+            const dashboardContents = document.querySelectorAll('.dashboard-content');
+            const pageTitle = document.getElementById('pageTitle');
+            
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Get the target tab ID
+                    const targetTab = this.getAttribute('data-tab');
+                    
+                    // Update active nav link
+                    navLinks.forEach(navLink => navLink.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Update active content
+                    dashboardContents.forEach(content => {
+                        content.classList.remove('active');
+                        if (content.id === targetTab) {
+                            content.classList.add('active');
+                            
+                            // Update page title based on active tab
+                            const tabName = this.querySelector('span').textContent;
+                            pageTitle.textContent = tabName;
+                        }
+                    });
+                    
+                    // Close mobile menu if open
+                    if (window.innerWidth <= 992) {
+                        sidebar.classList.remove('active');
+                        overlay.classList.remove('active');
+                    }
+                });
+            });
+            
+            // Mobile menu toggle
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            
+            mobileMenuBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            });
+            
+            overlay.addEventListener('click', () => {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+            
+            // Logout functionality
+            const logoutBtn = document.getElementById('logoutBtn');
+            logoutBtn.addEventListener('click', () => {
+                if (confirm('Czy na pewno chcesz się wylogować?')) {
+                    // Redirect to login page
+                    window.location.href = 'index.html';
                 }
             });
-        });
-        
-        // Mobile menu toggle
-        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('overlay');
-        
-        mobileMenuBtn.addEventListener('click', () => {
-            sidebar.classList.toggle('active');
-            overlay.classList.toggle('active');
-        });
-        
-        overlay.addEventListener('click', () => {
-            sidebar.classList.remove('active');
-            overlay.classList.remove('active');
-        });
-        
-        // Logout functionality
-        const logoutBtn = document.getElementById('logoutBtn');
-        logoutBtn.addEventListener('click', () => {
-            if (confirm('Czy na pewno chcesz się wylogować?')) {
-                // In a real app, you would clear session/token and redirect to login page
-                alert('Zostałeś wylogowany. W rzeczywistej aplikacji nastąpi przekierowanie do strony logowania.');
-                // window.location.href = 'index.html'; // Redirect to login page
-            }
-        });
-        
-        // Form submissions
-        document.querySelectorAll('.profile-form').forEach(form => {
-            form.addEventListener('submit', function(e) {
+            
+            // Form submissions
+            document.getElementById('personalInfoForm').addEventListener('submit', function(e) {
                 e.preventDefault();
-                alert('Zmiany zostały zapisane!');
+                const formData = new FormData(this);
+                DataManager.saveUserProfile(formData);
             });
-        });
-        
-        document.getElementById('searchMatchForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            alert('Wyszukiwanie drużyn... W rzeczywistej aplikacji wyniki wyszukiwania zostałyby wyświetlone poniżej.');
-        });
-        
-        // Add click events to buttons
-        document.querySelectorAll('.btn-small, .btn').forEach(button => {
-            if (!button.hasAttribute('type') || button.getAttribute('type') !== 'submit') {
-                button.addEventListener('click', function() {
-                    const buttonText = this.textContent.trim();
-                    if (buttonText === 'Szczegóły' || buttonText === 'Profil drużyny') {
-                        alert('W rzeczywistej aplikacji otworzyłoby się okno ze szczegółami.');
-                    } else if (buttonText === 'Wyślij propozycję') {
-                        alert('Propozycja meczu została wysłana do drużyny.');
-                    } else if (buttonText === 'Anuluj') {
-                        if (confirm('Czy na pewno chcesz anulować ten mecz?')) {
-                            alert('Mecz został anulowany.');
-                        }
-                    } else if (buttonText === 'Potwierdź') {
-                        alert('Mecz został potwierdzony.');
-                    } else if (buttonText === 'Odrzuć') {
-                        if (confirm('Czy na pewno chcesz odrzucić tę propozycję meczu?')) {
-                            alert('Propozycja meczu została odrzucona.');
-                        }
-                    } else if (buttonText.includes('Dodaj nowy')) {
-                        alert('Otwieranie formularza dodawania...');
-                    } else if (buttonText.includes('Utwórz nowy')) {
-                        alert('Otwieranie formularza tworzenia turnieju...');
-                    } else if (buttonText.includes('Zgłoś drużynę')) {
-                        alert('Formularz zgłoszeniowy do turnieju został otwarty.');
-                    }
-                });
-            }
-        });
-        
-        // Simulate loading user data
-        window.addEventListener('DOMContentLoaded', () => {
-            // In a real app, you would fetch user data from an API
-            console.log('Dashboard loaded successfully');
+            
+            document.getElementById('teamInfoForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                DataManager.saveTeamInfo(formData);
+            });
+            
+            // Obsługa meczów
+            document.getElementById('addMatchBtn').addEventListener('click', function() {
+                document.getElementById('addMatchForm').style.display = 'block';
+                this.style.display = 'none';
+            });
+            
+            document.getElementById('cancelAddMatch').addEventListener('click', function() {
+                document.getElementById('addMatchForm').style.display = 'none';
+                document.getElementById('addMatchBtn').style.display = 'inline-block';
+                document.getElementById('newMatchForm').reset();
+            });
+            
+            document.getElementById('newMatchForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                DataManager.addMatch(formData);
+                this.reset();
+                document.getElementById('addMatchForm').style.display = 'none';
+                document.getElementById('addMatchBtn').style.display = 'inline-block';
+            });
+            
+            // Obsługa ćwiczeń
+            document.getElementById('addExerciseBtn').addEventListener('click', function() {
+                document.getElementById('addExerciseForm').style.display = 'block';
+                this.style.display = 'none';
+            });
+            
+            document.getElementById('cancelAddExercise').addEventListener('click', function() {
+                document.getElementById('addExerciseForm').style.display = 'none';
+                document.getElementById('addExerciseBtn').style.display = 'inline-block';
+                document.getElementById('newExerciseForm').reset();
+            });
+            
+            document.getElementById('newExerciseForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                DataManager.addExercise(formData);
+                this.reset();
+                document.getElementById('addExerciseForm').style.display = 'none';
+                document.getElementById('addExerciseBtn').style.display = 'inline-block';
+            });
+            
+            // Obsługa turniejów
+            document.getElementById('createTournamentBtn').addEventListener('click', function() {
+                document.getElementById('createTournamentForm').style.display = 'block';
+                this.style.display = 'none';
+            });
+            
+            document.getElementById('cancelCreateTournament').addEventListener('click', function() {
+                document.getElementById('createTournamentForm').style.display = 'none';
+                document.getElementById('createTournamentBtn').style.display = 'inline-block';
+                document.getElementById('newTournamentForm').reset();
+            });
+            
+            document.getElementById('newTournamentForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                DataManager.addTournament(formData);
+                this.reset();
+                document.getElementById('createTournamentForm').style.display = 'none';
+                document.getElementById('createTournamentBtn').style.display = 'inline-block';
+            });
+            
+            // Wyszukiwanie meczów
+            document.getElementById('searchMatchForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                Toast.show('Wyszukiwanie drużyn... W rzeczywistej aplikacji wyniki wyszukiwania zostałyby wyświetlone poniżej.', 'warning');
+            });
+            
+            // Filtrowanie ćwiczeń
+            document.getElementById('filterExercisesBtn').addEventListener('click', function() {
+                Toast.show('Filtrowanie ćwiczeń... W rzeczywistej aplikacji pojawiłaby się lista filtrów.', 'warning');
+            });
         });
     </script>
 </body>
