@@ -660,7 +660,7 @@
         const loginFormElement = document.getElementById('loginForm');
         const registerFormElement = document.getElementById('registerForm');
         
-        // Login form submission
+        // Login form submission - ZMIENIONE: przekierowanie do dashboard.html
         loginFormElement.addEventListener('submit', function(e) {
             e.preventDefault();
             
@@ -701,8 +701,8 @@
                 
                 // Simulate redirect after successful login
                 setTimeout(() => {
-                    alert('Logowanie zakończone sukcesem! W rzeczywistej aplikacji nastąpiłoby przekierowanie do panelu trenera.');
-                    loginFormElement.reset();
+                    // Przekierowanie do dashboard.html
+                    window.location.href = 'dashboard.html';
                 }, 1500);
             } else {
                 loginError.style.display = 'block';
