@@ -3,1089 +3,266 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZgranyTrener.pl - Logowanie i rejestracja</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Radosny piesek</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-        }
-
         body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
             margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            background-color: #0a0a0a;
-            color: #fff;
-            position: relative;
-            overflow-x: hidden;
-            transition: background-color 0.5s ease;
-        }
-
-        /* Tło - zastąp tym swoim zdjęciem */
-        .background-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            background: 
-                linear-gradient(rgba(10, 10, 10, 0.85), rgba(10, 10, 10, 0.9)),
-                url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80')
-                center/cover no-repeat;
-            filter: brightness(0.9);
-            transition: opacity 0.8s ease;
-        }
-
-        .time-display {
-            position: absolute;
-            top: 20px;
-            right: 30px;
-            font-size: 28px;
-            color: #fff;
-            font-weight: 300;
-            letter-spacing: 1px;
-            z-index: 100;
-        }
-
-        /* Strona logowania/rejestracji */
-        .auth-page {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 40px 20px;
-            max-width: 500px;
-            margin: 0 auto;
-            width: 100%;
-            position: relative;
-            z-index: 10;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 50px;
-            width: 100%;
-        }
-
-        .logo {
-            font-size: 42px;
-            font-weight: 800;
-            color: #fff;
-            margin-bottom: 15px;
-            letter-spacing: -0.5px;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-        }
-
-        .logo span {
-            color: #4dabf7;
-        }
-
-        .subtitle {
-            color: #b0b0b0;
-            font-size: 18px;
-            font-weight: 300;
-            line-height: 1.5;
-            max-width: 400px;
-            margin: 0 auto;
-        }
-
-        .separator {
-            height: 1px;
-            width: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            margin: 25px 0;
-        }
-
-        .auth-tabs {
-            display: flex;
-            width: 100%;
-            margin-bottom: 30px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .tab {
-            flex: 1;
-            text-align: center;
-            padding: 18px 0;
-            font-weight: 600;
-            font-size: 18px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            color: #aaa;
-            position: relative;
-            border-bottom: 3px solid transparent;
-        }
-
-        .tab.active {
-            color: #fff;
-            border-bottom: 3px solid #4dabf7;
-        }
-
-        .tab:hover {
-            color: #fff;
-        }
-
-        .auth-form-container {
-            width: 100%;
-            background-color: rgba(20, 20, 20, 0.8);
-            backdrop-filter: blur(10px);
-            border-radius: 12px;
-            padding: 40px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .auth-form {
-            display: none;
-        }
-
-        .auth-form.active {
-            display: block;
-            animation: fadeIn 0.4s ease-out;
-        }
-
-        .form-title {
-            font-size: 32px;
-            margin-bottom: 15px;
-            color: #fff;
-            font-weight: 700;
-        }
-
-        .form-subtitle {
-            color: #aaa;
-            margin-bottom: 35px;
-            font-size: 16px;
-            line-height: 1.6;
-        }
-
-        .form-group {
-            margin-bottom: 25px;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 10px;
-            font-weight: 600;
-            color: #fff;
-            font-size: 15px;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 16px 18px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            font-size: 16px;
-            transition: all 0.3s;
-            background-color: rgba(30, 30, 30, 0.7);
-            color: #fff;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: #4dabf7;
-            box-shadow: 0 0 0 3px rgba(77, 171, 247, 0.2);
-            background-color: rgba(40, 40, 40, 0.8);
-        }
-
-        .form-input::placeholder {
-            color: #777;
-        }
-
-        .forgot-password {
-            display: block;
-            text-align: right;
-            margin-top: 8px;
-            font-size: 14px;
-            color: #4dabf7;
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.2s;
-        }
-
-        .forgot-password:hover {
-            color: #74c0fc;
-            text-decoration: underline;
-        }
-
-        .submit-btn {
-            width: 100%;
-            padding: 17px;
-            background: linear-gradient(135deg, #4dabf7 0%, #339af0 100%);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 17px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin-top: 10px;
-            letter-spacing: 0.5px;
-        }
-
-        .submit-btn:hover {
-            background: linear-gradient(135deg, #339af0 0%, #228be6 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(51, 154, 240, 0.3);
-        }
-
-        .submit-btn:active {
-            transform: translateY(0);
-        }
-
-        .divider {
-            text-align: center;
-            margin: 30px 0;
-            position: relative;
-            color: #777;
-            font-size: 14px;
-        }
-
-        .divider::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background-color: rgba(255, 255, 255, 0.1);
-            z-index: 1;
-        }
-
-        .divider span {
-            background-color: rgba(20, 20, 20, 0.8);
-            padding: 0 20px;
-            position: relative;
-            z-index: 2;
-        }
-
-        .google-btn {
-            width: 100%;
-            padding: 16px;
-            background-color: rgba(30, 30, 30, 0.7);
-            color: #fff;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .google-btn:hover {
-            background-color: rgba(40, 40, 40, 0.9);
-            border-color: rgba(255, 255, 255, 0.2);
-            transform: translateY(-2px);
-        }
-
-        .google-btn i {
-            color: #4285f4;
-            font-size: 20px;
-        }
-
-        .footer {
-            text-align: center;
-            margin-top: 40px;
-            color: #777;
-            font-size: 14px;
-            line-height: 1.6;
-            width: 100%;
-        }
-
-        .footer a {
-            color: #4dabf7;
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-
-        .footer a:hover {
-            color: #74c0fc;
-            text-decoration: underline;
-        }
-
-        .copyright {
-            margin-top: 15px;
-            font-size: 13px;
-            color: #666;
-        }
-
-        /* Strona Dashboard - ukryta domyślnie */
-        .dashboard-page {
-            display: none;
-            min-height: 100vh;
-            background-color: #0f172a;
-            position: relative;
+            background: linear-gradient(135deg, #ffcc33 0%, #ff99cc 100%);
+            font-family: 'Arial', sans-serif;
             overflow: hidden;
         }
-
-        .dashboard-bg {
+        
+        .container {
+            text-align: center;
+            position: relative;
+        }
+        
+        .dog {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            margin: 0 auto;
+            animation: jump 0.5s infinite alternate ease-in-out;
+        }
+        
+        .body {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            z-index: -1;
+            width: 100px;
+            height: 70px;
+            background: #ff9966;
+            border-radius: 50% 50% 40% 40%;
+            top: 50px;
+            left: 25px;
         }
-
-        /* Nawigacja Dashboard */
-        .dashboard-nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px 40px;
-            background-color: rgba(15, 23, 42, 0.9);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            position: sticky;
-            top: 0;
-            z-index: 100;
+        
+        .head {
+            position: absolute;
+            width: 80px;
+            height: 70px;
+            background: #ff9966;
+            border-radius: 45% 45% 40% 40%;
+            top: 30px;
+            left: 35px;
         }
-
-        .nav-logo {
-            font-size: 28px;
-            font-weight: 700;
-            color: #fff;
-        }
-
-        .nav-logo span {
-            color: #4dabf7;
-        }
-
-        .nav-user {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .user-avatar {
-            width: 40px;
+        
+        .ear {
+            position: absolute;
+            width: 25px;
             height: 40px;
+            background: #cc6633;
             border-radius: 50%;
-            background: linear-gradient(135deg, #4dabf7, #339af0);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            font-size: 18px;
+            top: 20px;
         }
-
-        .user-name {
-            font-weight: 500;
-            color: #fff;
+        
+        .ear-left {
+            left: 25px;
+            transform: rotate(-20deg);
         }
-
-        .logout-btn {
-            padding: 8px 16px;
-            background-color: rgba(239, 68, 68, 0.2);
-            color: #ef4444;
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s;
+        
+        .ear-right {
+            right: 25px;
+            transform: rotate(20deg);
         }
-
-        .logout-btn:hover {
-            background-color: rgba(239, 68, 68, 0.3);
+        
+        .eye {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            background: #333;
+            border-radius: 50%;
+            top: 50px;
         }
-
-        /* Zawartość Dashboard */
-        .dashboard-content {
-            padding: 40px;
-            max-width: 1200px;
-            margin: 0 auto;
+        
+        .eye-left {
+            left: 45px;
         }
-
-        .dashboard-header {
-            margin-bottom: 40px;
+        
+        .eye-right {
+            right: 45px;
         }
-
-        .dashboard-title {
-            font-size: 36px;
-            font-weight: 700;
-            color: #fff;
-            margin-bottom: 10px;
+        
+        .nose {
+            position: absolute;
+            width: 20px;
+            height: 15px;
+            background: #663300;
+            border-radius: 50%;
+            top: 65px;
+            left: 65px;
         }
-
-        .dashboard-subtitle {
-            color: #94a3b8;
-            font-size: 18px;
+        
+        .tail {
+            position: absolute;
+            width: 30px;
+            height: 60px;
+            background: #ff9966;
+            border-radius: 15px;
+            top: 40px;
+            right: 5px;
+            transform-origin: bottom center;
+            animation: wag 0.2s infinite alternate ease-in-out;
         }
-
-        /* Karty Dashboard */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 25px;
-            margin-bottom: 40px;
+        
+        .leg {
+            position: absolute;
+            width: 20px;
+            height: 40px;
+            background: #cc6633;
+            border-radius: 10px;
+            bottom: 0;
         }
-
-        .dashboard-card {
-            background-color: rgba(30, 41, 59, 0.7);
-            border-radius: 12px;
-            padding: 25px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            transition: all 0.3s;
+        
+        .leg-front-left {
+            left: 40px;
+            animation: legJump 0.5s infinite alternate ease-in-out;
         }
-
-        .dashboard-card:hover {
-            transform: translateY(-5px);
-            border-color: rgba(77, 171, 247, 0.3);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        
+        .leg-front-right {
+            left: 80px;
+            animation: legJump 0.5s infinite alternate-reverse ease-in-out;
         }
-
-        .card-title {
-            font-size: 20px;
-            font-weight: 600;
-            color: #fff;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        
+        .leg-back-left {
+            left: 30px;
+            animation: legJump 0.5s infinite alternate-reverse ease-in-out;
         }
-
-        .card-title i {
-            color: #4dabf7;
+        
+        .leg-back-right {
+            left: 90px;
+            animation: legJump 0.5s infinite alternate ease-in-out;
         }
-
-        .card-content {
-            color: #cbd5e1;
-            line-height: 1.6;
-            margin-bottom: 20px;
+        
+        .heart {
+            position: absolute;
+            color: #ff3366;
+            font-size: 24px;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: float 1s infinite ease-in-out;
         }
-
-        .card-stats {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 20px;
-        }
-
-        .stat-value {
-            font-size: 28px;
-            font-weight: 700;
-            color: #4dabf7;
-        }
-
-        .stat-label {
-            color: #94a3b8;
-            font-size: 14px;
-        }
-
-        /* Tabela treningów */
-        .workouts-table {
-            width: 100%;
-            background-color: rgba(30, 41, 59, 0.7);
-            border-radius: 12px;
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .table-header {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr;
-            padding: 20px 25px;
-            background-color: rgba(15, 23, 42, 0.9);
-            font-weight: 600;
-            color: #4dabf7;
-        }
-
-        .table-row {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr;
-            padding: 20px 25px;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            transition: background-color 0.2s;
-        }
-
-        .table-row:hover {
-            background-color: rgba(255, 255, 255, 0.03);
-        }
-
-        .workout-name {
-            font-weight: 500;
-            color: #fff;
-        }
-
-        .workout-date, .workout-duration, .workout-calories {
-            color: #cbd5e1;
-        }
-
-        /* Przycisk nowego treningu */
-        .new-workout-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            padding: 14px 24px;
-            background: linear-gradient(135deg, #4dabf7 0%, #339af0 100%);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
+        
+        .message {
             margin-top: 30px;
+            font-size: 24px;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            animation: pulse 1s infinite alternate;
         }
-
-        .new-workout-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(51, 154, 240, 0.3);
+        
+        @keyframes jump {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-30px); }
         }
-
-        /* Animacje */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(15px); }
-            to { opacity: 1; transform: translateY(0); }
+        
+        @keyframes wag {
+            0% { transform: rotate(-30deg); }
+            100% { transform: rotate(30deg); }
         }
-
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateX(-20px); }
-            to { opacity: 1; transform: translateX(0); }
+        
+        @keyframes legJump {
+            0% { height: 40px; }
+            100% { height: 30px; }
         }
-
-        .time-change {
-            animation: timeChange 0.5s ease;
+        
+        @keyframes float {
+            0%, 100% { transform: translateX(-50%) translateY(0); opacity: 1; }
+            50% { transform: translateX(-50%) translateY(-20px); opacity: 0.7; }
         }
-
-        @keyframes timeChange {
-            0% { opacity: 0.5; transform: translateY(-5px); }
-            100% { opacity: 1; transform: translateY(0); }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.1); }
         }
-
-        /* Responsywność */
-        @media (max-width: 768px) {
-            .dashboard-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .dashboard-nav {
-                padding: 15px 20px;
-            }
-            
-            .dashboard-content {
-                padding: 20px;
-            }
-            
-            .table-header, .table-row {
-                grid-template-columns: 1fr 1fr;
-                gap: 10px;
-            }
-            
-            .nav-user {
-                flex-direction: column;
-                align-items: flex-end;
-                gap: 8px;
-            }
+        
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #ff0;
+            top: -100px;
+            animation: fall 3s infinite linear;
         }
-
-        @media (max-width: 600px) {
-            .auth-page {
-                padding: 30px 15px;
-            }
-            
-            .auth-form-container {
-                padding: 30px 25px;
-            }
-            
-            .form-title {
-                font-size: 28px;
-            }
-            
-            .logo {
-                font-size: 36px;
-            }
-            
-            .time-display {
-                font-size: 24px;
-                right: 20px;
-                top: 15px;
+        
+        @keyframes fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Strona logowania/rejestracji -->
-    <div class="auth-page" id="authPage">
-        <!-- Tło - ZASTĄP URL SWOIM ZDJĘCIEM -->
-        <div class="background-container"></div>
-        
-        <div class="time-display" id="currentTime">13:00</div>
-        
-        <div class="header">
-            <div class="logo">Zgrany<span>Trener</span>.pl</div>
-            <div class="subtitle">Twoje narzędzie do planowania treningów</div>
-            <div class="separator"></div>
-        </div>
-
-        <div class="auth-tabs">
-            <div class="tab active" id="loginTab">Logowanie</div>
-            <div class="tab" id="registerTab">Rejestracja</div>
-        </div>
-
-        <div class="auth-form-container">
-            <!-- Formularz logowania -->
-            <form class="auth-form active" id="loginForm">
-                <h2 class="form-title">Logowanie</h2>
-                <p class="form-subtitle">Zaloguj się, aby uzyskać dostęp do swojego konta</p>
-                
-                <div class="form-group">
-                    <label class="form-label" for="loginEmail">Adres e-mail</label>
-                    <input type="email" id="loginEmail" class="form-input" placeholder="Wpisz swój adres e-mail" required>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label" for="loginPassword">Hasło</label>
-                    <input type="password" id="loginPassword" class="form-input" placeholder="Wpisz swoje hasło" required>
-                    <a href="#" class="forgot-password" id="forgotPasswordLink">Nie pamiętasz hasła?</a>
-                </div>
-                
-                <button type="submit" class="submit-btn" id="loginSubmitBtn">Zaloguj się</button>
-                
-                <div class="divider">
-                    <span>lub</span>
-                </div>
-                
-                <button type="button" class="google-btn" id="googleLoginBtn">
-                    <i class="fab fa-google"></i>
-                    Zaloguj przez Google
-                </button>
-            </form>
-
-            <!-- Formularz rejestracji -->
-            <form class="auth-form" id="registerForm">
-                <h2 class="form-title">Rejestracja</h2>
-                <p class="form-subtitle">Utwórz nowe konto, aby korzystać z platformy</p>
-                
-                <div class="form-group">
-                    <label class="form-label" for="registerName">Imię i nazwisko</label>
-                    <input type="text" id="registerName" class="form-input" placeholder="Wpisz swoje imię i nazwisko" required>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label" for="registerEmail">Adres e-mail</label>
-                    <input type="email" id="registerEmail" class="form-input" placeholder="Wpisz swój adres e-mail" required>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label" for="registerPassword">Hasło</label>
-                    <input type="password" id="registerPassword" class="form-input" placeholder="Utwórz bezpieczne hasło" required>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label" for="registerConfirmPassword">Potwierdź hasło</label>
-                    <input type="password" id="registerConfirmPassword" class="form-input" placeholder="Powtórz hasło" required>
-                </div>
-                
-                <button type="submit" class="submit-btn" id="registerSubmitBtn">Zarejestruj się</button>
-                
-                <div class="divider">
-                    <span>lub</span>
-                </div>
-                
-                <button type="button" class="google-btn" id="googleRegisterBtn">
-                    <i class="fab fa-google"></i>
-                    Zarejestruj przez Google
-                </button>
-            </form>
-        </div>
-
-        <div class="footer">
-            <p>Korzystając z serwisu, akceptujesz <a href="#" id="termsLink">Regulamin</a> oraz <a href="#" id="privacyLink">Politykę prywatności</a></p>
-            <p class="copyright">&copy; 2023 ZgranyTrener.pl. Wszelkie prawa zastrzeżone.</p>
-        </div>
-    </div>
-
-    <!-- Strona Dashboard -->
-    <div class="dashboard-page" id="dashboardPage">
-        <div class="dashboard-bg"></div>
-        
-        <nav class="dashboard-nav">
-            <div class="nav-logo">Zgrany<span>Trener</span>.pl</div>
-            
-            <div class="nav-user">
-                <div class="user-avatar" id="userAvatar">U</div>
-                <div class="user-name" id="userName">Użytkownik</div>
-                <button class="logout-btn" id="logoutBtn">
-                    <i class="fas fa-sign-out-alt"></i> Wyloguj
-                </button>
+    <div class="container">
+        <div class="dog">
+            <div class="body"></div>
+            <div class="head">
+                <div class="ear ear-left"></div>
+                <div class="ear ear-right"></div>
+                <div class="eye eye-left"></div>
+                <div class="eye eye-right"></div>
+                <div class="nose"></div>
             </div>
-        </nav>
-        
-        <div class="dashboard-content">
-            <div class="dashboard-header">
-                <h1 class="dashboard-title">Witaj na Dashboardzie!</h1>
-                <p class="dashboard-subtitle">Twoje centrum zarządzania treningami i postępami</p>
-            </div>
-            
-            <div class="dashboard-grid">
-                <div class="dashboard-card">
-                    <h3 class="card-title"><i class="fas fa-dumbbell"></i> Ostatni trening</h3>
-                    <p class="card-content">Trening siłowy - klatka piersiowa i triceps</p>
-                    <div class="card-stats">
-                        <div>
-                            <div class="stat-value">45 min</div>
-                            <div class="stat-label">Czas trwania</div>
-                        </div>
-                        <div>
-                            <div class="stat-value">420</div>
-                            <div class="stat-label">Spalone kcal</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="dashboard-card">
-                    <h3 class="card-title"><i class="fas fa-chart-line"></i> Tygodniowy progres</h3>
-                    <p class="card-content">Średnio 4 treningi tygodniowo</p>
-                    <div class="card-stats">
-                        <div>
-                            <div class="stat-value">+12%</div>
-                            <div class="stat-label">Siła</div>
-                        </div>
-                        <div>
-                            <div class="stat-value">-2kg</div>
-                            <div class="stat-label">Waga</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="dashboard-card">
-                    <h3 class="card-title"><i class="fas fa-calendar-alt"></i> Nadchodzące</h3>
-                    <p class="card-content">Trening cardio zaplanowany na jutro</p>
-                    <div class="card-stats">
-                        <div>
-                            <div class="stat-value">3</div>
-                            <div class="stat-label">Zaplanowane</div>
-                        </div>
-                        <div>
-                            <div class="stat-value">1</div>
-                            <div class="stat-label">Dziś</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <h2 style="color: #fff; margin-bottom: 20px;">Ostatnie treningi</h2>
-            
-            <div class="workouts-table">
-                <div class="table-header">
-                    <div>Nazwa treningu</div>
-                    <div>Data</div>
-                    <div>Czas</div>
-                    <div>Kalorie</div>
-                </div>
-                
-                <div class="table-row">
-                    <div class="workout-name">Trening siłowy - nogi</div>
-                    <div class="workout-date">20.10.2023</div>
-                    <div class="workout-duration">55 min</div>
-                    <div class="workout-calories">520 kcal</div>
-                </div>
-                
-                <div class="table-row">
-                    <div class="workout-name">Cardio - interwały</div>
-                    <div class="workout-date">18.10.2023</div>
-                    <div class="workout-duration">40 min</div>
-                    <div class="workout-calories">380 kcal</div>
-                </div>
-                
-                <div class="table-row">
-                    <div class="workout-name">Trening górnych partii</div>
-                    <div class="workout-date">16.10.2023</div>
-                    <div class="workout-duration">60 min</div>
-                    <div class="workout-calories">480 kcal</div>
-                </div>
-                
-                <div class="table-row">
-                    <div class="workout-name">Joga i rozciąganie</div>
-                    <div class="workout-date">14.10.2023</div>
-                    <div class="workout-duration">35 min</div>
-                    <div class="workout-calories">210 kcal</div>
-                </div>
-            </div>
-            
-            <button class="new-workout-btn" id="newWorkoutBtn">
-                <i class="fas fa-plus"></i> Dodaj nowy trening
-            </button>
+            <div class="tail"></div>
+            <div class="leg leg-front-left"></div>
+            <div class="leg leg-front-right"></div>
+            <div class="leg leg-back-left"></div>
+            <div class="leg leg-back-right"></div>
+            <div class="heart">❤️</div>
         </div>
+        <div class="message">Piesek skacze z radości!</div>
     </div>
 
     <script>
-        // Dane użytkownika
-        let currentUser = null;
-
-        // Aktualizacja czasu (13:00 -> 13:05 jak na obrazku)
-        let currentHour = 13;
-        let currentMinute = 0;
-        const timeElement = document.getElementById('currentTime');
-        
-        // Ustaw początkowy czas na 13:00
-        updateTimeDisplay();
-        
-        // Po 3 sekundach zmień na 13:05 (jak na drugim obrazku)
-        setTimeout(() => {
-            currentMinute = 5;
-            updateTimeDisplay();
+        // Dodajemy konfetti
+        function createConfetti() {
+            const colors = ['#ff3366', '#33ff66', '#3366ff', '#ffcc00', '#ff66cc'];
+            const confettiCount = 50;
             
-            // Animacja zmiany czasu
-            timeElement.classList.add('time-change');
-            setTimeout(() => {
-                timeElement.classList.remove('time-change');
-            }, 500);
-        }, 3000);
-
-        function updateTimeDisplay() {
-            const hourStr = currentHour.toString().padStart(2, '0');
-            const minuteStr = currentMinute.toString().padStart(2, '0');
-            timeElement.textContent = `${hourStr}:${minuteStr}`;
-        }
-
-        // Przełączanie między logowaniem a rejestracją
-        const loginTab = document.getElementById('loginTab');
-        const registerTab = document.getElementById('registerTab');
-        const loginForm = document.getElementById('loginForm');
-        const registerForm = document.getElementById('registerForm');
-
-        loginTab.addEventListener('click', () => {
-            loginTab.classList.add('active');
-            registerTab.classList.remove('active');
-            loginForm.classList.add('active');
-            registerForm.classList.remove('active');
-        });
-
-        registerTab.addEventListener('click', () => {
-            registerTab.classList.add('active');
-            loginTab.classList.remove('active');
-            registerForm.classList.add('active');
-            loginForm.classList.remove('active');
-        });
-
-        // Funkcja przejścia do Dashboard
-        function goToDashboard(userData) {
-            currentUser = userData;
-            
-            // Animacja wyjścia ze strony logowania
-            document.getElementById('authPage').style.opacity = '0';
-            document.getElementById('authPage').style.transform = 'translateY(-20px)';
-            
-            setTimeout(() => {
-                // Ukryj stronę logowania, pokaż Dashboard
-                document.getElementById('authPage').style.display = 'none';
-                document.getElementById('dashboardPage').style.display = 'block';
+            for (let i = 0; i < confettiCount; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.width = Math.random() * 10 + 5 + 'px';
+                confetti.style.height = Math.random() * 10 + 5 + 'px';
+                confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                confetti.style.animationDelay = Math.random() * 3 + 's';
+                confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
                 
-                // Ustaw dane użytkownika w Dashboard
-                document.getElementById('userName').textContent = userData.name;
-                document.getElementById('userAvatar').textContent = userData.name.charAt(0).toUpperCase();
+                document.body.appendChild(confetti);
                 
-                // Animacja wejścia na Dashboard
-                document.getElementById('dashboardPage').style.opacity = '0';
-                document.getElementById('dashboardPage').style.transform = 'translateY(20px)';
-                
+                // Usuwaj konfetti po animacji
                 setTimeout(() => {
-                    document.getElementById('dashboardPage').style.opacity = '1';
-                    document.getElementById('dashboardPage').style.transform = 'translateY(0)';
-                    document.getElementById('dashboardPage').style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-                }, 10);
-                
-                // Zmień tło body na ciemniejsze
-                document.body.style.backgroundColor = '#0f172a';
-                
-                // Ukryj tło ze zdjęciem
-                document.querySelector('.background-container').style.opacity = '0';
-                
-            }, 500);
+                    confetti.remove();
+                }, 5000);
+            }
         }
-
-        // Funkcja wylogowania
-        function logout() {
-            // Animacja wyjścia z Dashboard
-            document.getElementById('dashboardPage').style.opacity = '0';
-            document.getElementById('dashboardPage').style.transform = 'translateY(20px)';
+        
+        // Regularnie twórz nowe konfetti
+        setInterval(createConfetti, 500);
+        createConfetti();
+        
+        // Dodaj dźwięk szczekania (opcjonalnie)
+        function playBark() {
+            // Symulacja szczekania przez zmianę tekstu
+            const message = document.querySelector('.message');
+            const originalText = message.textContent;
             
             setTimeout(() => {
-                // Ukryj Dashboard, pokaż stronę logowania
-                document.getElementById('dashboardPage').style.display = 'none';
-                document.getElementById('authPage').style.display = 'flex';
-                
-                // Zresetuj formularze
-                document.getElementById('loginForm').reset();
-                document.getElementById('registerForm').reset();
-                
-                // Ustaw aktywny formularz logowania
-                loginTab.click();
-                
-                // Animacja wejścia na stronę logowania
-                document.getElementById('authPage').style.opacity = '0';
-                document.getElementById('authPage').style.transform = 'translateY(20px)';
-                
-                setTimeout(() => {
-                    document.getElementById('authPage').style.opacity = '1';
-                    document.getElementById('authPage').style.transform = 'translateY(0)';
-                    document.getElementById('authPage').style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-                }, 10);
-                
-                // Przywróć tło body
-                document.body.style.backgroundColor = '#0a0a0a';
-                
-                // Przywróć tło ze zdjęciem
-                document.querySelector('.background-container').style.opacity = '1';
-                
-                // Wyczyść dane użytkownika
-                currentUser = null;
-                
-            }, 500);
+                message.textContent = "Hau! Hau! 🐾";
+            }, 200);
+            
+            setTimeout(() => {
+                message.textContent = originalText;
+            }, 800);
         }
-
-        // Obsługa formularza logowania
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            
-            if (!email || !password) {
-                alert('Proszę wypełnić wszystkie pola!');
-                return;
-            }
-            
-            // Symulacja logowania
-            const loginBtn = document.getElementById('loginSubmitBtn');
-            loginBtn.textContent = 'Logowanie...';
-            loginBtn.disabled = true;
-            
-            setTimeout(() => {
-                // Przejdź do Dashboard
-                goToDashboard({
-                    name: email.split('@')[0], // Użyj części przed @ jako nazwy
-                    email: email
-                });
-                
-                loginBtn.textContent = 'Zaloguj się';
-                loginBtn.disabled = false;
-                this.reset();
-            }, 1500);
-        });
-
-        // Obsługa formularza rejestracji
-        document.getElementById('registerForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const name = document.getElementById('registerName').value;
-            const email = document.getElementById('registerEmail').value;
-            const password = document.getElementById('registerPassword').value;
-            const confirmPassword = document.getElementById('registerConfirmPassword').value;
-            
-            if (!name || !email || !password || !confirmPassword) {
-                alert('Proszę wypełnić wszystkie pola!');
-                return;
-            }
-            
-            // Sprawdzenie czy hasła są zgodne
-            if (password !== confirmPassword) {
-                alert('Hasła nie są identyczne!');
-                return;
-            }
-            
-            if (password.length < 6) {
-                alert('Hasło musi mieć co najmniej 6 znaków!');
-                return;
-            }
-            
-            // Symulacja rejestracji
-            const registerBtn = document.getElementById('registerSubmitBtn');
-            registerBtn.textContent = 'Rejestracja...';
-            registerBtn.disabled = true;
-            
-            setTimeout(() => {
-                // Przejdź do Dashboard
-                goToDashboard({
-                    name: name,
-                    email: email
-                });
-                
-                registerBtn.textContent = 'Zarejestruj się';
-                registerBtn.disabled = false;
-                this.reset();
-            }, 1500);
-        });
-
-        // Obsługa przycisku Google
-        document.getElementById('googleLoginBtn').addEventListener('click', function() {
-            this.innerHTML = '<i class="fab fa-google"></i> Przekierowywanie do Google...';
-            this.disabled = true;
-            
-            setTimeout(() => {
-                // Symulacja logowania przez Google
-                goToDashboard({
-                    name: "Użytkownik Google",
-                    email: "google.user@example.com"
-                });
-                
-                this.innerHTML = '<i class="fab fa-google"></i> Zaloguj przez Google';
-                this.disabled = false;
-            }, 1500);
-        });
-
-        document.getElementById('googleRegisterBtn').addEventListener('click', function() {
-            this.innerHTML = '<i class="fab fa-google"></i> Przekierowywanie do Google...';
-            this.disabled = true;
-            
-            setTimeout(() => {
-                // Symulacja rejestracji przez Google
-                goToDashboard({
-                    name: "Nowy Użytkownik Google",
-                    email: "new.google.user@example.com"
-                });
-                
-                this.innerHTML = '<i class="fab fa-google"></i> Zarejestruj przez Google';
-                this.disabled = false;
-            }, 1500);
-        });
-
-        // Obsługa linku "Nie pamiętasz hasła?"
-        document.getElementById('forgotPasswordLink').addEventListener('click', function(e) {
-            e.preventDefault();
-            const email = document.getElementById('loginEmail').value || prompt("Podaj swój adres e-mail, aby zresetować hasło:");
-            
-            if (email) {
-                alert(`Link do resetowania hasła został wysłany na adres: ${email}\nSprawdź swoją skrzynkę odbiorczą.`);
-            }
-        });
-
-        // Obsługa linków w stopce
-        document.getElementById('termsLink').addEventListener('click', function(e) {
-            e.preventDefault();
-            alert('Otwieranie regulaminu...');
-        });
-
-        document.getElementById('privacyLink').addEventListener('click', function(e) {
-            e.preventDefault();
-            alert('Otwieranie polityki prywatności...');
-        });
-
-        // Obsługa wylogowania
-        document.getElementById('logoutBtn').addEventListener('click', logout);
-
-        // Obsługa dodawania nowego treningu
-        document.getElementById('newWorkoutBtn').addEventListener('click', function() {
-            alert('Otwieranie formularza dodawania nowego treningu...');
-        });
-
-        // Efekt najechania na przyciski
-        document.querySelectorAll('button, .tab, a').forEach(element => {
-            element.style.cursor = 'pointer';
-        });
+        
+        setInterval(playBark, 2000);
     </script>
 </body>
 </html>
