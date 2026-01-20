@@ -3,266 +3,530 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Radosny piesek</title>
+    <title>Gra w Zgadywanie Liczby</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
         body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #f1f1f1;
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            background: linear-gradient(135deg, #ffcc33 0%, #ff99cc 100%);
-            font-family: 'Arial', sans-serif;
-            overflow: hidden;
+            padding: 20px;
         }
         
         .container {
+            max-width: 800px;
+            width: 100%;
+            background-color: rgba(30, 30, 46, 0.9);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        header {
             text-align: center;
-            position: relative;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #00b4d8;
         }
         
-        .dog {
-            position: relative;
-            width: 150px;
-            height: 150px;
-            margin: 0 auto;
-            animation: jump 0.5s infinite alternate ease-in-out;
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #00b4d8, #90e0ef);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
         }
         
-        .body {
-            position: absolute;
-            width: 100px;
-            height: 70px;
-            background: #ff9966;
-            border-radius: 50% 50% 40% 40%;
-            top: 50px;
-            left: 25px;
+        .game-description {
+            font-size: 1.1rem;
+            color: #b0b0d0;
+            line-height: 1.5;
+            margin-top: 10px;
         }
         
-        .head {
-            position: absolute;
-            width: 80px;
-            height: 70px;
-            background: #ff9966;
-            border-radius: 45% 45% 40% 40%;
-            top: 30px;
-            left: 35px;
+        .game-area {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
         }
         
-        .ear {
-            position: absolute;
-            width: 25px;
-            height: 40px;
-            background: #cc6633;
-            border-radius: 50%;
-            top: 20px;
-        }
-        
-        .ear-left {
-            left: 25px;
-            transform: rotate(-20deg);
-        }
-        
-        .ear-right {
-            right: 25px;
-            transform: rotate(20deg);
-        }
-        
-        .eye {
-            position: absolute;
-            width: 15px;
-            height: 15px;
-            background: #333;
-            border-radius: 50%;
-            top: 50px;
-        }
-        
-        .eye-left {
-            left: 45px;
-        }
-        
-        .eye-right {
-            right: 45px;
-        }
-        
-        .nose {
-            position: absolute;
-            width: 20px;
-            height: 15px;
-            background: #663300;
-            border-radius: 50%;
-            top: 65px;
-            left: 65px;
-        }
-        
-        .tail {
-            position: absolute;
-            width: 30px;
-            height: 60px;
-            background: #ff9966;
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+            background-color: rgba(20, 20, 40, 0.7);
+            padding: 20px;
             border-radius: 15px;
-            top: 40px;
-            right: 5px;
-            transform-origin: bottom center;
-            animation: wag 0.2s infinite alternate ease-in-out;
         }
         
-        .leg {
-            position: absolute;
-            width: 20px;
-            height: 40px;
-            background: #cc6633;
+        .info-box {
+            flex: 1;
+            min-width: 200px;
+            text-align: center;
+            padding: 15px;
+            background-color: rgba(0, 180, 216, 0.1);
             border-radius: 10px;
-            bottom: 0;
+            border: 1px solid rgba(0, 180, 216, 0.3);
         }
         
-        .leg-front-left {
-            left: 40px;
-            animation: legJump 0.5s infinite alternate ease-in-out;
+        .info-label {
+            font-size: 1rem;
+            color: #90e0ef;
+            margin-bottom: 8px;
         }
         
-        .leg-front-right {
-            left: 80px;
-            animation: legJump 0.5s infinite alternate-reverse ease-in-out;
+        .info-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #ffffff;
         }
         
-        .leg-back-left {
-            left: 30px;
-            animation: legJump 0.5s infinite alternate-reverse ease-in-out;
+        .game-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            background-color: rgba(20, 20, 40, 0.7);
+            padding: 25px;
+            border-radius: 15px;
         }
         
-        .leg-back-right {
-            left: 90px;
-            animation: legJump 0.5s infinite alternate ease-in-out;
+        .input-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            justify-content: center;
         }
         
-        .heart {
-            position: absolute;
-            color: #ff3366;
-            font-size: 24px;
-            top: -30px;
-            left: 50%;
-            transform: translateX(-50%);
-            animation: float 1s infinite ease-in-out;
+        .number-input {
+            flex: 1;
+            min-width: 200px;
+            padding: 15px 20px;
+            font-size: 1.5rem;
+            text-align: center;
+            border: none;
+            border-radius: 10px;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border: 2px solid rgba(0, 180, 216, 0.5);
+            outline: none;
+            transition: all 0.3s;
+        }
+        
+        .number-input:focus {
+            border-color: #00b4d8;
+            box-shadow: 0 0 15px rgba(0, 180, 216, 0.4);
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .btn-guess {
+            background: linear-gradient(135deg, #00b4d8, #0077b6);
+            color: white;
+        }
+        
+        .btn-reset {
+            background: linear-gradient(135deg, #f48c06, #dc2f02);
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(1px);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .message-area {
+            background-color: rgba(20, 20, 40, 0.7);
+            padding: 25px;
+            border-radius: 15px;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
         
         .message {
-            margin-top: 30px;
-            font-size: 24px;
-            color: #fff;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-            animation: pulse 1s infinite alternate;
+            font-size: 1.4rem;
+            text-align: center;
+            padding: 10px;
+            border-radius: 10px;
+            transition: all 0.3s;
         }
         
-        @keyframes jump {
-            0% { transform: translateY(0); }
-            100% { transform: translateY(-30px); }
+        .history {
+            background-color: rgba(20, 20, 40, 0.7);
+            padding: 25px;
+            border-radius: 15px;
         }
         
-        @keyframes wag {
-            0% { transform: rotate(-30deg); }
-            100% { transform: rotate(30deg); }
+        .history-title {
+            font-size: 1.3rem;
+            color: #90e0ef;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         
-        @keyframes legJump {
-            0% { height: 40px; }
-            100% { height: 30px; }
+        .history-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            max-height: 120px;
+            overflow-y: auto;
+            padding: 5px;
         }
         
-        @keyframes float {
-            0%, 100% { transform: translateX(-50%) translateY(0); opacity: 1; }
-            50% { transform: translateX(-50%) translateY(-20px); opacity: 0.7; }
+        .history-item {
+            background-color: rgba(0, 180, 216, 0.15);
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-weight: bold;
         }
         
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            100% { transform: scale(1.1); }
+        .history-item.correct {
+            background-color: rgba(76, 175, 80, 0.3);
+            color: #a7e6ab;
         }
         
-        .confetti {
-            position: absolute;
-            width: 10px;
-            height: 10px;
-            background: #ff0;
-            top: -100px;
-            animation: fall 3s infinite linear;
+        .history-item.high {
+            background-color: rgba(255, 152, 0, 0.3);
+            color: #ffcc80;
         }
         
-        @keyframes fall {
-            to {
-                transform: translateY(100vh) rotate(360deg);
-                opacity: 0;
+        .history-item.low {
+            background-color: rgba(33, 150, 243, 0.3);
+            color: #90caf9;
+        }
+        
+        .instructions {
+            margin-top: 25px;
+            background-color: rgba(20, 20, 40, 0.7);
+            padding: 20px;
+            border-radius: 15px;
+            font-size: 1rem;
+            color: #b0b0d0;
+            line-height: 1.5;
+        }
+        
+        .instructions h3 {
+            color: #90e0ef;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .instructions ul {
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2.2rem;
+            }
+            
+            .info-box {
+                min-width: 100%;
+            }
+            
+            .number-input {
+                min-width: 100%;
+            }
+            
+            .btn {
+                padding: 12px 20px;
+                font-size: 1.1rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .info-value {
+                font-size: 1.5rem;
+            }
+            
+            .message {
+                font-size: 1.2rem;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="dog">
-            <div class="body"></div>
-            <div class="head">
-                <div class="ear ear-left"></div>
-                <div class="ear ear-right"></div>
-                <div class="eye eye-left"></div>
-                <div class="eye eye-right"></div>
-                <div class="nose"></div>
+        <header>
+            <h1><i class="fas fa-gamepad"></i> Gra w Zgadywanie Liczby</h1>
+            <p class="game-description">Komputer wylosował liczbę od 1 do 100. Spróbuj ją odgadnąć w jak najmniejszej liczbie prób!</p>
+        </header>
+        
+        <div class="game-area">
+            <div class="game-info">
+                <div class="info-box">
+                    <div class="info-label">Pozostałe próby</div>
+                    <div class="info-value" id="attempts-left">10</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">Liczba prób</div>
+                    <div class="info-value" id="attempts-count">0</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">Zakres liczb</div>
+                    <div class="info-value">1 - 100</div>
+                </div>
             </div>
-            <div class="tail"></div>
-            <div class="leg leg-front-left"></div>
-            <div class="leg leg-front-right"></div>
-            <div class="leg leg-back-left"></div>
-            <div class="leg leg-back-right"></div>
-            <div class="heart">❤️</div>
+            
+            <div class="game-controls">
+                <div class="input-group">
+                    <input type="number" id="guess-input" class="number-input" min="1" max="100" placeholder="Wpisz liczbę od 1 do 100" autofocus>
+                </div>
+                <div class="buttons">
+                    <button id="guess-btn" class="btn btn-guess">
+                        <i class="fas fa-bullseye"></i> Zgadnij
+                    </button>
+                    <button id="reset-btn" class="btn btn-reset">
+                        <i class="fas fa-redo"></i> Nowa gra
+                    </button>
+                </div>
+            </div>
+            
+            <div class="message-area">
+                <div id="message" class="message">Wpisz swoją pierwszą liczbę i kliknij "Zgadnij"</div>
+            </div>
+            
+            <div class="history">
+                <div class="history-title">
+                    <i class="fas fa-history"></i> Historia zgadywań
+                </div>
+                <div id="history-list" class="history-list">
+                    <!-- Tutaj pojawią się poprzednie zgadywane liczby -->
+                </div>
+            </div>
+            
+            <div class="instructions">
+                <h3><i class="fas fa-info-circle"></i> Jak grać?</h3>
+                <ul>
+                    <li>Komputer losuje liczbę z zakresu od 1 do 100</li>
+                    <li>Twoim zadaniem jest odgadnięcie tej liczby</li>
+                    <li>Po każdej próbie otrzymasz podpowiedź, czy Twoja liczba jest za duża czy za mała</li>
+                    <li>Masz maksymalnie 10 prób na odgadnięcie liczby</li>
+                    <li>Możesz rozpocząć nową grę w dowolnym momencie</li>
+                </ul>
+            </div>
         </div>
-        <div class="message">Piesek skacze z radości!</div>
     </div>
 
     <script>
-        // Dodajemy konfetti
-        function createConfetti() {
-            const colors = ['#ff3366', '#33ff66', '#3366ff', '#ffcc00', '#ff66cc'];
-            const confettiCount = 50;
+        // Elementy DOM
+        const guessInput = document.getElementById('guess-input');
+        const guessBtn = document.getElementById('guess-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const messageEl = document.getElementById('message');
+        const attemptsLeftEl = document.getElementById('attempts-left');
+        const attemptsCountEl = document.getElementById('attempts-count');
+        const historyListEl = document.getElementById('history-list');
+        
+        // Zmienne gry
+        let targetNumber;
+        let attemptsLeft;
+        let attemptsCount;
+        let gameActive;
+        let guessHistory;
+        
+        // Inicjalizacja gry
+        function initGame() {
+            targetNumber = Math.floor(Math.random() * 100) + 1;
+            attemptsLeft = 10;
+            attemptsCount = 0;
+            gameActive = true;
+            guessHistory = [];
             
-            for (let i = 0; i < confettiCount; i++) {
-                const confetti = document.createElement('div');
-                confetti.className = 'confetti';
-                confetti.style.left = Math.random() * 100 + 'vw';
-                confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
-                confetti.style.width = Math.random() * 10 + 5 + 'px';
-                confetti.style.height = Math.random() * 10 + 5 + 'px';
-                confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
-                confetti.style.animationDelay = Math.random() * 3 + 's';
-                confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
-                
-                document.body.appendChild(confetti);
-                
-                // Usuwaj konfetti po animacji
-                setTimeout(() => {
-                    confetti.remove();
-                }, 5000);
+            // Zaktualizuj UI
+            attemptsLeftEl.textContent = attemptsLeft;
+            attemptsCountEl.textContent = attemptsCount;
+            messageEl.textContent = "Wpisz swoją pierwszą liczbę i kliknij 'Zgadnij'";
+            messageEl.style.color = "#f1f1f1";
+            guessInput.value = "";
+            guessInput.disabled = false;
+            guessBtn.disabled = false;
+            
+            // Wyczyść historię
+            historyListEl.innerHTML = "";
+            
+            console.log(`Nowa gra! Wylosowana liczba: ${targetNumber}`); // Dla celów testowych
+        }
+        
+        // Sprawdź zgadywaną liczbę
+        function checkGuess() {
+            if (!gameActive) return;
+            
+            const guess = parseInt(guessInput.value);
+            
+            // Walidacja
+            if (isNaN(guess) || guess < 1 || guess > 100) {
+                messageEl.textContent = "Proszę wpisać liczbę od 1 do 100!";
+                messageEl.style.color = "#ff6b6b";
+                guessInput.focus();
+                return;
             }
+            
+            // Zwiększ licznik prób
+            attemptsCount++;
+            attemptsLeft--;
+            
+            // Zaktualizuj UI
+            attemptsLeftEl.textContent = attemptsLeft;
+            attemptsCountEl.textContent = attemptsCount;
+            
+            // Dodaj do historii
+            addToHistory(guess);
+            
+            // Sprawdź wynik
+            if (guess === targetNumber) {
+                // Gracz wygrał
+                gameActive = false;
+                messageEl.textContent = `Gratulacje! Odgadłeś liczbę ${targetNumber} w ${attemptsCount} próbach!`;
+                messageEl.style.color = "#4caf50";
+                guessInput.disabled = true;
+                guessBtn.disabled = true;
+                
+                // Dodaj efekt wizualny dla zwycięstwa
+                messageEl.style.animation = "none";
+                setTimeout(() => {
+                    messageEl.style.animation = "pulse 1.5s infinite";
+                }, 10);
+                
+            } else if (attemptsLeft === 0) {
+                // Gracz przegrał
+                gameActive = false;
+                messageEl.textContent = `Koniec gry! Szukana liczba to: ${targetNumber}. Spróbuj jeszcze raz!`;
+                messageEl.style.color = "#ff6b6b";
+                guessInput.disabled = true;
+                guessBtn.disabled = true;
+            } else {
+                // Podaj podpowiedź
+                if (guess < targetNumber) {
+                    messageEl.textContent = `Liczba ${guess} jest za mała. Spróbuj większej.`;
+                    messageEl.style.color = "#90caf9";
+                } else {
+                    messageEl.textContent = `Liczba ${guess} jest za duża. Spróbuj mniejszej.`;
+                    messageEl.style.color = "#ffcc80";
+                }
+            }
+            
+            // Wyczyść pole wejściowe i ustaw focus
+            guessInput.value = "";
+            guessInput.focus();
         }
         
-        // Regularnie twórz nowe konfetti
-        setInterval(createConfetti, 500);
-        createConfetti();
-        
-        // Dodaj dźwięk szczekania (opcjonalnie)
-        function playBark() {
-            // Symulacja szczekania przez zmianę tekstu
-            const message = document.querySelector('.message');
-            const originalText = message.textContent;
+        // Dodaj zgadywaną liczbę do historii
+        function addToHistory(guess) {
+            const historyItem = document.createElement('div');
+            historyItem.classList.add('history-item');
             
-            setTimeout(() => {
-                message.textContent = "Hau! Hau! 🐾";
-            }, 200);
+            // Określ klasę CSS na podstawie porównania z docelową liczbą
+            if (guess === targetNumber) {
+                historyItem.classList.add('correct');
+                historyItem.textContent = `${guess} ✓`;
+            } else if (guess < targetNumber) {
+                historyItem.classList.add('low');
+                historyItem.textContent = `${guess} ↑`;
+            } else {
+                historyItem.classList.add('high');
+                historyItem.textContent = `${guess} ↓`;
+            }
             
-            setTimeout(() => {
-                message.textContent = originalText;
-            }, 800);
+            // Dodaj do historii
+            historyListEl.appendChild(historyItem);
+            
+            // Przewiń do najnowszego elementu
+            historyListEl.scrollTop = historyListEl.scrollHeight;
+            
+            // Zapisz w tablicy historii
+            guessHistory.push(guess);
         }
         
-        setInterval(playBark, 2000);
+        // Obsługa zdarzeń
+        guessBtn.addEventListener('click', checkGuess);
+        
+        resetBtn.addEventListener('click', () => {
+            initGame();
+            // Usuń animację
+            messageEl.style.animation = "none";
+        });
+        
+        guessInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                checkGuess();
+            }
+        });
+        
+        // Dodaj styl dla animacji pulsowania
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes pulse {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.03); }
+                100% { transform: scale(1); }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Rozpocznij grę przy załadowaniu strony
+        window.addEventListener('DOMContentLoaded', initGame);
     </script>
 </body>
 </html>
