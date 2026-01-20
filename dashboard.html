@@ -904,6 +904,9 @@
                 <button class="btn btn-accent" id="addMatchBtn">
                     <i class="fas fa-plus"></i> Dodaj nowy mecz
                 </button>
+                <button class="btn" onclick="resetMatchData()" style="margin-left: 10px;">
+                    <i class="fas fa-redo"></i> Resetuj mecze
+                </button>
             </div>
             
             <!-- Formularz dodawania meczu (ukryty) -->
@@ -1014,6 +1017,9 @@
                 <button class="btn btn-accent" id="addExerciseBtn">
                     <i class="fas fa-plus"></i> Dodaj nowe ćwiczenie
                 </button>
+                <button class="btn" onclick="resetExerciseData()" style="margin-left: 10px;">
+                    <i class="fas fa-redo"></i> Resetuj ćwiczenia
+                </button>
                 <button class="btn" id="filterExercisesBtn" style="margin-left: 10px;">
                     <i class="fas fa-filter"></i> Filtruj ćwiczenia
                 </button>
@@ -1042,6 +1048,7 @@
                                 <option value="strzały">Strzały</option>
                                 <option value="obrona">Obrona</option>
                                 <option value="atak">Atak</option>
+                                <option value="inne">Inne</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -1100,6 +1107,9 @@
                     <div style="margin-top: 1.5rem;">
                         <button class="btn btn-accent" id="createTournamentBtn">
                             <i class="fas fa-plus"></i> Utwórz nowy turniej
+                        </button>
+                        <button class="btn" onclick="resetTournamentData()" style="margin-left: 10px;">
+                            <i class="fas fa-redo"></i> Resetuj turnieje
                         </button>
                     </div>
                 </div>
@@ -1237,7 +1247,7 @@
                     this.saveData('matches', defaultMatches);
                 }
                 
-                // Domyślne ćwiczenia
+                // Domyślne ćwiczenia - POPRAWIONE
                 if (!this.getData('exercises')) {
                     const defaultExercises = [
                         {
@@ -1360,7 +1370,7 @@
                     toast.classList.add('warning');
                     toast.innerHTML = `<i class="fas fa-exclamation-triangle"></i><span id="toastMessage">${message}</span>`;
                 } else {
-                    toast.innerHTML = `<i class="fas fa-check-circle"></i><span id="toastMessage">${message}</span>`;
+                    toast.innerHTML = `<i class="fas fa-check-circle"></i><span id="toastMessage">${message}</span>';
                 }
                 
                 toast.classList.add('show');
@@ -1441,45 +1451,65 @@
                 const matchesTable = document.getElementById('matchesTable');
                 matchesTable.innerHTML = '';
                 
-                matches.forEach(match => {
-                    const date = new Date(match.date);
-                    const formattedDate = date.toLocaleDateString('pl-PL', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
-                    
-                    let statusBadge = '';
-                    if (match.status === 'confirmed') {
-                        statusBadge = '<span class="status-badge status-confirmed">Potwierdzony</span>';
-                    } else if (match.status === 'pending') {
-                        statusBadge = '<span class="status-badge status-pending">Oczekuje</span>';
-                    } else {
-                        statusBadge = '<span class="status-badge status-cancelled">Anulowany</span>';
-                    }
-                    
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${formattedDate}</td>
-                        <td><strong>${match.opponent}</strong></td>
-                        <td>${match.location}</td>
-                        <td>${this.getMatchTypeLabel(match.type)}</td>
-                        <td>${statusBadge}</td>
-                        <td>
-                            <button class="btn btn-small" onclick="DataManager.viewMatch(${match.id})">Szczegóły</button>
-                            <button class="btn btn-small btn-accent" onclick="DataManager.cancelMatch(${match.id})">Anuluj</button>
-                        </td>
+                // Filtruj tylko prawidłowe mecze
+                const validMatches = matches.filter(match => 
+                    match && 
+                    match.opponent && 
+                    match.date
+                );
+                
+                if (validMatches.length === 0) {
+                    matchesTable.innerHTML = `
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 2rem;">
+                                <i class="fas fa-futbol" style="font-size: 2rem; color: #cbd5e1; margin-bottom: 1rem;"></i>
+                                <p>Brak zaplanowanych meczów</p>
+                            </td>
+                        </tr>
                     `;
-                    matchesTable.appendChild(row);
-                });
+                } else {
+                    validMatches.forEach(match => {
+                        const date = new Date(match.date);
+                        const formattedDate = date.toLocaleDateString('pl-PL', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                        
+                        let statusBadge = '';
+                        if (match.status === 'confirmed') {
+                            statusBadge = '<span class="status-badge status-confirmed">Potwierdzony</span>';
+                        } else if (match.status === 'pending') {
+                            statusBadge = '<span class="status-badge status-pending">Oczekuje</span>';
+                        } else {
+                            statusBadge = '<span class="status-badge status-cancelled">Anulowany</span>';
+                        }
+                        
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${formattedDate}</td>
+                            <td><strong>${match.opponent || 'Brak danych'}</strong></td>
+                            <td>${match.location || 'Brak danych'}</td>
+                            <td>${this.getMatchTypeLabel(match.type)}</td>
+                            <td>${statusBadge}</td>
+                            <td>
+                                <button class="btn btn-small" onclick="DataManager.viewMatch(${match.id})">Szczegóły</button>
+                                <button class="btn btn-small btn-accent" onclick="DataManager.cancelMatch(${match.id})">Anuluj</button>
+                            </td>
+                        `;
+                        matchesTable.appendChild(row);
+                    });
+                }
                 
                 // Zaktualizuj statystyki na dashboard
-                document.getElementById('matchesCount').textContent = matches.filter(m => m.status === 'confirmed').length;
+                const confirmedMatches = matches.filter(m => m && m.status === 'confirmed');
+                document.getElementById('matchesCount').textContent = confirmedMatches.length;
                 
                 // Znajdź następny mecz
                 const upcomingMatches = matches.filter(m => {
+                    if (!m || !m.date) return false;
                     const matchDate = new Date(m.date);
                     const today = new Date();
                     return matchDate > today && m.status === 'confirmed';
@@ -1488,9 +1518,10 @@
                 if (upcomingMatches.length > 0) {
                     const nextMatch = upcomingMatches[0];
                     const nextDate = new Date(nextMatch.date);
+                    const profile = Storage.getData('userProfile');
                     document.getElementById('nextMatchInfo').innerHTML = `
                         Masz 1 mecz w tym tygodniu:<br>
-                        <strong>${Storage.getData('userProfile').teamName} vs. ${nextMatch.opponent}</strong><br>
+                        <strong>${profile?.teamName || 'Twoja drużyna'} vs. ${nextMatch.opponent || 'Przeciwnik'}</strong><br>
                         Data: ${nextDate.toLocaleDateString('pl-PL')}, godz. ${nextDate.toLocaleTimeString('pl-PL', {hour: '2-digit', minute:'2-digit'})}
                     `;
                 }
@@ -1499,14 +1530,26 @@
             // Dodaj nowy mecz
             addMatch: function(formData) {
                 const matches = Storage.getData('matches') || [];
+                
+                // Walidacja danych
+                const opponent = formData.get('opponent')?.trim();
+                const date = formData.get('date');
+                const location = formData.get('location')?.trim();
+                const type = formData.get('type');
+                
+                if (!opponent || !date || !location || !type) {
+                    Toast.show('Proszę wypełnić wszystkie wymagane pola!', 'error');
+                    return;
+                }
+                
                 const newMatch = {
-                    id: matches.length > 0 ? Math.max(...matches.map(m => m.id)) + 1 : 1,
-                    opponent: formData.get('opponent'),
-                    date: formData.get('date'),
-                    location: formData.get('location'),
-                    type: formData.get('type'),
+                    id: matches.length > 0 ? Math.max(...matches.map(m => m?.id || 0)) + 1 : 1,
+                    opponent: opponent,
+                    date: date,
+                    location: location,
+                    type: type,
                     status: 'pending',
-                    notes: formData.get('notes')
+                    notes: formData.get('notes') || ''
                 };
                 
                 matches.push(newMatch);
@@ -1523,7 +1566,7 @@
             cancelMatch: function(matchId) {
                 if (confirm('Czy na pewno chcesz anulować ten mecz?')) {
                     const matches = Storage.getData('matches') || [];
-                    const matchIndex = matches.findIndex(m => m.id === matchId);
+                    const matchIndex = matches.findIndex(m => m && m.id === matchId);
                     
                     if (matchIndex !== -1) {
                         const match = matches[matchIndex];
@@ -1539,23 +1582,42 @@
                 }
             },
             
-            // Załaduj ćwiczenia
+            // Załaduj ćwiczenia - POPRAWIONE
             loadExercises: function() {
                 const exercises = Storage.getData('exercises') || [];
                 const exercisesGrid = document.getElementById('exercisesGrid');
                 exercisesGrid.innerHTML = '';
                 
-                exercises.forEach(exercise => {
+                // Sprawdź czy ćwiczenia są prawidłowe
+                const validExercises = exercises.filter(exercise => 
+                    exercise && 
+                    exercise.title && 
+                    exercise.category && 
+                    exercise.duration
+                );
+                
+                if (validExercises.length === 0) {
+                    exercisesGrid.innerHTML = `
+                        <div style="grid-column: 1 / -1; text-align: center; padding: 2rem;">
+                            <i class="fas fa-dumbbell" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 1rem;"></i>
+                            <h3 style="color: #64748b;">Brak ćwiczeń</h3>
+                            <p>Dodaj swoje pierwsze ćwiczenie!</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                validExercises.forEach(exercise => {
                     const exerciseCard = document.createElement('div');
                     exerciseCard.className = 'exercise-card';
                     exerciseCard.innerHTML = `
                         <div class="exercise-img" style="background-image: url('https://images.unsplash.com/photo-1575361204480-aadea25e6e68?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80');"></div>
                         <div class="exercise-content">
-                            <span class="exercise-category">${this.getCategoryLabel(exercise.category)}</span>
-                            <h3 class="exercise-title">${exercise.title}</h3>
-                            <p class="exercise-desc">${exercise.description}</p>
+                            <span class="exercise-category">${this.getCategoryLabel(exercise.category) || 'Inne'}</span>
+                            <h3 class="exercise-title">${exercise.title || 'Bez nazwy'}</h3>
+                            <p class="exercise-desc">${exercise.description || 'Brak opisu'}</p>
                             <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <span style="font-size: 0.9rem; color: #64748b;">Czas: ${exercise.duration} min</span>
+                                <span style="font-size: 0.9rem; color: #64748b;">Czas: ${exercise.duration || 0} min</span>
                                 <button class="btn btn-small" onclick="DataManager.viewExercise(${exercise.id})">Szczegóły</button>
                             </div>
                         </div>
@@ -1564,16 +1626,29 @@
                 });
             },
             
-            // Dodaj nowe ćwiczenie
+            // Dodaj nowe ćwiczenie - POPRAWIONE
             addExercise: function(formData) {
                 const exercises = Storage.getData('exercises') || [];
+                
+                // Walidacja danych
+                const title = formData.get('title')?.trim();
+                const category = formData.get('category')?.trim();
+                const duration = parseInt(formData.get('duration'));
+                const description = formData.get('description')?.trim();
+                const equipment = formData.get('equipment')?.trim();
+                
+                if (!title || !category || isNaN(duration) || duration <= 0) {
+                    Toast.show('Proszę wypełnić wszystkie wymagane pola poprawnie!', 'error');
+                    return;
+                }
+                
                 const newExercise = {
-                    id: exercises.length > 0 ? Math.max(...exercises.map(e => e.id)) + 1 : 1,
-                    title: formData.get('title'),
-                    category: formData.get('category'),
-                    duration: parseInt(formData.get('duration')),
-                    description: formData.get('description'),
-                    equipment: formData.get('equipment')
+                    id: exercises.length > 0 ? Math.max(...exercises.map(e => e?.id || 0)) + 1 : 1,
+                    title: title,
+                    category: category,
+                    duration: duration,
+                    description: description || 'Brak opisu',
+                    equipment: equipment || 'Brak sprzętu'
                 };
                 
                 exercises.push(newExercise);
@@ -1592,8 +1667,15 @@
                 const upcomingContainer = document.getElementById('upcomingTournaments');
                 const availableContainer = document.getElementById('availableTournaments');
                 
+                // Filtruj tylko prawidłowe turnieje
+                const validTournaments = tournaments.filter(tournament => 
+                    tournament && 
+                    tournament.name && 
+                    tournament.startDate
+                );
+                
                 // Nadchodzące turnieje
-                const upcomingTournaments = tournaments.filter(t => t.status === 'registered');
+                const upcomingTournaments = validTournaments.filter(t => t.status === 'registered');
                 upcomingContainer.innerHTML = '';
                 
                 if (upcomingTournaments.length > 0) {
@@ -1602,9 +1684,9 @@
                         const endDate = new Date(tournament.endDate);
                         
                         const tournamentHTML = `
-                            <p><strong>${tournament.name}</strong><br>
+                            <p><strong>${tournament.name || 'Brak nazwy'}</strong><br>
                             Data: ${startDate.toLocaleDateString('pl-PL')} - ${endDate.toLocaleDateString('pl-PL')}<br>
-                            Miejsce: ${tournament.location}<br>
+                            Miejsce: ${tournament.location || 'Brak danych'}<br>
                             Status: <span class="status-badge status-confirmed">Zgłoszony</span></p>
                         `;
                         
@@ -1619,8 +1701,19 @@
                 }
                 
                 // Dostępne turnieje
-                const availableTournaments = tournaments.filter(t => t.status === 'available');
+                const availableTournaments = validTournaments.filter(t => t.status === 'available');
                 availableContainer.innerHTML = '';
+                
+                if (availableTournaments.length === 0) {
+                    availableContainer.innerHTML = `
+                        <div style="text-align: center; padding: 2rem;">
+                            <i class="fas fa-trophy" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 1rem;"></i>
+                            <h3 style="color: #64748b;">Brak dostępnych turniejów</h3>
+                            <p>Utwórz swój własny turniej!</p>
+                        </div>
+                    `;
+                    return;
+                }
                 
                 availableTournaments.forEach(tournament => {
                     const startDate = new Date(tournament.startDate);
@@ -1630,11 +1723,11 @@
                     tournamentCard.className = 'tournament-card';
                     tournamentCard.innerHTML = `
                         <div class="tournament-header">
-                            <h3>${tournament.name}</h3>
+                            <h3>${tournament.name || 'Brak nazwy'}</h3>
                             <span class="tournament-date">${startDate.toLocaleDateString('pl-PL')} - ${endDate.toLocaleDateString('pl-PL')}</span>
                         </div>
-                        <p><strong>Miejsce:</strong> ${tournament.location}<br>
-                        <strong>Drużyny:</strong> ${tournament.teams}/${tournament.maxTeams} (${tournament.maxTeams - tournament.teams} wolnych miejsc)<br>
+                        <p><strong>Miejsce:</strong> ${tournament.location || 'Brak danych'}<br>
+                        <strong>Drużyny:</strong> ${tournament.teams || 0}/${tournament.maxTeams || 0} (${(tournament.maxTeams || 0) - (tournament.teams || 0)} wolnych miejsc)<br>
                         <strong>Poziom:</strong> ${this.getLevelLabel(tournament.level)}</p>
                         <div style="margin-top: 1rem;">
                             <button class="btn" onclick="DataManager.viewTournament(${tournament.id})">Szczegóły</button>
@@ -1648,15 +1741,30 @@
             // Dodaj nowy turniej
             addTournament: function(formData) {
                 const tournaments = Storage.getData('tournaments') || [];
+                
+                // Walidacja danych
+                const name = formData.get('name')?.trim();
+                const startDate = formData.get('startDate');
+                const endDate = formData.get('endDate');
+                const location = formData.get('location')?.trim();
+                const maxTeams = parseInt(formData.get('maxTeams'));
+                const description = formData.get('description')?.trim();
+                const level = formData.get('level');
+                
+                if (!name || !startDate || !endDate || !location || !maxTeams || !description || !level) {
+                    Toast.show('Proszę wypełnić wszystkie wymagane pola!', 'error');
+                    return;
+                }
+                
                 const newTournament = {
-                    id: tournaments.length > 0 ? Math.max(...tournaments.map(t => t.id)) + 1 : 1,
-                    name: formData.get('name'),
-                    startDate: formData.get('startDate'),
-                    endDate: formData.get('endDate'),
-                    location: formData.get('location'),
-                    maxTeams: parseInt(formData.get('maxTeams')),
-                    description: formData.get('description'),
-                    level: formData.get('level'),
+                    id: tournaments.length > 0 ? Math.max(...tournaments.map(t => t?.id || 0)) + 1 : 1,
+                    name: name,
+                    startDate: startDate,
+                    endDate: endDate,
+                    location: location,
+                    maxTeams: maxTeams,
+                    description: description,
+                    level: level,
                     status: 'available',
                     teams: 0
                 };
@@ -1674,7 +1782,7 @@
             // Zarejestruj się na turniej
             registerForTournament: function(tournamentId) {
                 const tournaments = Storage.getData('tournaments') || [];
-                const tournamentIndex = tournaments.findIndex(t => t.id === tournamentId);
+                const tournamentIndex = tournaments.findIndex(t => t && t.id === tournamentId);
                 
                 if (tournamentIndex !== -1) {
                     const tournament = tournaments[tournamentIndex];
@@ -1701,7 +1809,26 @@
                 const activityTable = document.getElementById('activityTable');
                 activityTable.innerHTML = '';
                 
-                activities.forEach(activity => {
+                // Filtruj tylko prawidłowe aktywności
+                const validActivities = activities.filter(activity => 
+                    activity && 
+                    activity.date && 
+                    activity.type
+                );
+                
+                if (validActivities.length === 0) {
+                    activityTable.innerHTML = `
+                        <tr>
+                            <td colspan="4" style="text-align: center; padding: 2rem;">
+                                <i class="fas fa-history" style="font-size: 2rem; color: #cbd5e1; margin-bottom: 1rem;"></i>
+                                <p>Brak historii aktywności</p>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                validActivities.forEach(activity => {
                     let statusBadge = '';
                     if (activity.status === 'completed' || activity.status === 'confirmed') {
                         statusBadge = '<span class="status-badge status-confirmed">Zakończony</span>';
@@ -1713,9 +1840,9 @@
                     
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                        <td>${activity.date}</td>
-                        <td>${activity.type}</td>
-                        <td>${activity.details}</td>
+                        <td>${activity.date || 'Brak daty'}</td>
+                        <td>${activity.type || 'Brak typu'}</td>
+                        <td>${activity.details || 'Brak szczegółów'}</td>
                         <td>${statusBadge}</td>
                     `;
                     activityTable.appendChild(row);
@@ -1728,7 +1855,7 @@
                 const today = new Date().toISOString().split('T')[0];
                 
                 const newActivity = {
-                    id: activities.length > 0 ? Math.max(...activities.map(a => a.id)) + 1 : 1,
+                    id: activities.length > 0 ? Math.max(...activities.map(a => a?.id || 0)) + 1 : 1,
                     date: today,
                     type: type,
                     details: details,
@@ -1753,7 +1880,7 @@
                     'friendly': 'Towarzyski',
                     'league': 'Liga'
                 };
-                return types[type] || type;
+                return types[type] || type || 'Brak typu';
             },
             
             getCategoryLabel: function(category) {
@@ -1763,9 +1890,10 @@
                     'taktyka': 'Taktyka',
                     'strzały': 'Strzały',
                     'obrona': 'Obrona',
-                    'atak': 'Atak'
+                    'atak': 'Atak',
+                    'inne': 'Inne'
                 };
-                return categories[category] || category;
+                return categories[category] || category || 'Inne';
             },
             
             getLevelLabel: function(level) {
@@ -1776,22 +1904,98 @@
                     'youth': 'Młodzieżowy',
                     'mixed': 'Mieszany'
                 };
-                return levels[level] || level;
+                return levels[level] || level || 'Brak poziomu';
             },
             
             // Metody podglądu (do zaimplementowania)
             viewMatch: function(id) {
-                alert(`Szczegóły meczu ID: ${id}\nW rzeczywistej aplikacji otworzyłoby się okno ze szczegółami.`);
+                Toast.show(`Szczegóły meczu ID: ${id}`, 'warning');
             },
             
             viewExercise: function(id) {
-                alert(`Szczegóły ćwiczenia ID: ${id}\nW rzeczywistej aplikacji otworzyłoby się okno ze szczegółami.`);
+                const exercises = Storage.getData('exercises') || [];
+                const exercise = exercises.find(e => e && e.id === id);
+                
+                if (exercise) {
+                    const message = `
+                        <strong>${exercise.title || 'Brak nazwy'}</strong><br>
+                        Kategoria: ${this.getCategoryLabel(exercise.category)}<br>
+                        Czas: ${exercise.duration || 0} min<br>
+                        Sprzęt: ${exercise.equipment || 'Brak sprzętu'}<br>
+                        Opis: ${exercise.description || 'Brak opisu'}
+                    `;
+                    
+                    // Używamy alertu jako prostego rozwiązania
+                    alert(message.replace(/<br>/g, '\n'));
+                } else {
+                    Toast.show('Nie znaleziono ćwiczenia!', 'error');
+                }
             },
             
             viewTournament: function(id) {
-                alert(`Szczegóły turnieju ID: ${id}\nW rzeczywistej aplikacji otworzyłoby się okno ze szczegółami.`);
+                const tournaments = Storage.getData('tournaments') || [];
+                const tournament = tournaments.find(t => t && t.id === id);
+                
+                if (tournament) {
+                    const startDate = new Date(tournament.startDate);
+                    const endDate = new Date(tournament.endDate);
+                    const message = `
+                        <strong>${tournament.name || 'Brak nazwy'}</strong><br>
+                        Data: ${startDate.toLocaleDateString('pl-PL')} - ${endDate.toLocaleDateString('pl-PL')}<br>
+                        Miejsce: ${tournament.location || 'Brak danych'}<br>
+                        Poziom: ${this.getLevelLabel(tournament.level)}<br>
+                        Miejsca: ${tournament.teams || 0}/${tournament.maxTeams || 0}<br>
+                        Opis: ${tournament.description || 'Brak opisu'}
+                    `;
+                    
+                    // Używamy alertu jako prostego rozwiązania
+                    alert(message.replace(/<br>/g, '\n'));
+                } else {
+                    Toast.show('Nie znaleziono turnieju!', 'error');
+                }
             }
         };
+        
+        // Funkcje resetowania danych
+        function resetExerciseData() {
+            if (confirm('Czy na pewno chcesz zresetować wszystkie ćwiczenia? Stracisz wszystkie dane ćwiczeń.')) {
+                localStorage.removeItem('exercises');
+                Storage.initDefaultData();
+                DataManager.loadExercises();
+                Toast.show('Dane ćwiczeń zostały zresetowane!', 'warning');
+            }
+        }
+        
+        function resetMatchData() {
+            if (confirm('Czy na pewno chcesz zresetować wszystkie mecze? Stracisz wszystkie dane meczów.')) {
+                localStorage.removeItem('matches');
+                Storage.initDefaultData();
+                DataManager.loadMatches();
+                Toast.show('Dane meczów zostały zresetowane!', 'warning');
+            }
+        }
+        
+        function resetTournamentData() {
+            if (confirm('Czy na pewno chcesz zresetować wszystkie turnieje? Stracisz wszystkie dane turniejów.')) {
+                localStorage.removeItem('tournaments');
+                Storage.initDefaultData();
+                DataManager.loadTournaments();
+                Toast.show('Dane turniejów zostały zresetowane!', 'warning');
+            }
+        }
+        
+        function resetAllData() {
+            if (confirm('Czy na pewno chcesz zresetować WSZYSTKIE dane? Stracisz wszystkie zapisane informacje.')) {
+                localStorage.clear();
+                Storage.initDefaultData();
+                DataManager.loadUserProfile();
+                DataManager.loadMatches();
+                DataManager.loadExercises();
+                DataManager.loadTournaments();
+                DataManager.loadActivities();
+                Toast.show('Wszystkie dane zostały zresetowane!', 'warning');
+            }
+        }
         
         // Inicjalizacja aplikacji
         document.addEventListener('DOMContentLoaded', function() {
@@ -1951,6 +2155,9 @@
             document.getElementById('filterExercisesBtn').addEventListener('click', function() {
                 Toast.show('Filtrowanie ćwiczeń... W rzeczywistej aplikacji pojawiłaby się lista filtrów.', 'warning');
             });
+            
+            // Dodaj ukryty przycisk resetu wszystkich danych (możesz go pokazać w potrzebie)
+            // document.getElementById('resetAllBtn').addEventListener('click', resetAllData);
         });
     </script>
 </body>
