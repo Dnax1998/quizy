@@ -10,71 +10,84 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Arial, sans-serif;
+            font-family: 'Segoe UI', 'Arial', sans-serif;
         }
 
         body {
-            background-color: #f8f9fa;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             color: #333;
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
             padding: 20px;
         }
 
         .container {
             width: 100%;
-            max-width: 420px;
+            max-width: 440px;
+        }
+
+        .time-display {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 14px;
+            color: #555;
+            font-weight: 500;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
         }
 
         .logo {
-            font-size: 32px;
+            font-size: 36px;
             font-weight: 700;
             color: #1a73e8;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
         }
 
         .subtitle {
-            color: #666;
-            font-size: 14px;
+            color: #5f6368;
+            font-size: 16px;
             font-weight: 400;
+            line-height: 1.4;
         }
 
         .auth-tabs {
             display: flex;
             background-color: #fff;
-            border-radius: 8px 8px 0 0;
+            border-radius: 10px 10px 0 0;
             overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
 
         .tab {
             flex: 1;
             text-align: center;
-            padding: 16px;
+            padding: 18px;
             font-weight: 600;
-            font-size: 16px;
+            font-size: 17px;
             cursor: pointer;
             transition: all 0.3s ease;
-            color: #666;
+            color: #5f6368;
+            border-bottom: 3px solid transparent;
         }
 
         .tab.active {
             color: #1a73e8;
             border-bottom: 3px solid #1a73e8;
+            background-color: #f8f9fa;
         }
 
         .auth-form-container {
             background-color: #fff;
-            border-radius: 0 0 8px 8px;
-            padding: 30px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border-radius: 0 0 10px 10px;
+            padding: 40px 35px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
         }
 
         .auth-form {
@@ -86,50 +99,59 @@
         }
 
         .form-title {
-            font-size: 24px;
-            margin-bottom: 10px;
-            color: #333;
+            font-size: 28px;
+            margin-bottom: 12px;
+            color: #202124;
+            font-weight: 600;
         }
 
         .form-subtitle {
-            color: #666;
-            margin-bottom: 25px;
-            font-size: 14px;
+            color: #5f6368;
+            margin-bottom: 32px;
+            font-size: 15px;
+            line-height: 1.5;
         }
 
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 24px;
         }
 
         .form-label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             font-weight: 600;
-            color: #333;
-            font-size: 14px;
+            color: #3c4043;
+            font-size: 15px;
         }
 
         .form-input {
             width: 100%;
-            padding: 12px 15px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
+            padding: 14px 16px;
+            border: 1px solid #dadce0;
+            border-radius: 8px;
             font-size: 16px;
-            transition: border-color 0.3s;
+            transition: all 0.3s;
+            background-color: #fff;
         }
 
         .form-input:focus {
             outline: none;
             border-color: #1a73e8;
+            box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
+        }
+
+        .form-input::placeholder {
+            color: #9aa0a6;
         }
 
         .forgot-password {
             display: block;
             text-align: right;
-            margin-top: 5px;
+            margin-top: 8px;
             font-size: 14px;
             color: #1a73e8;
             text-decoration: none;
+            font-weight: 500;
         }
 
         .forgot-password:hover {
@@ -138,27 +160,29 @@
 
         .submit-btn {
             width: 100%;
-            padding: 14px;
+            padding: 15px;
             background-color: #1a73e8;
             color: white;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
             transition: background-color 0.3s;
-            margin-top: 10px;
+            margin-top: 8px;
+            letter-spacing: 0.5px;
         }
 
         .submit-btn:hover {
             background-color: #0d62d9;
+            box-shadow: 0 2px 6px rgba(26, 115, 232, 0.3);
         }
 
         .divider {
             text-align: center;
-            margin: 25px 0;
+            margin: 28px 0;
             position: relative;
-            color: #999;
+            color: #5f6368;
             font-size: 14px;
         }
 
@@ -169,48 +193,53 @@
             left: 0;
             right: 0;
             height: 1px;
-            background-color: #eee;
+            background-color: #e0e0e0;
             z-index: 1;
         }
 
         .divider span {
             background-color: #fff;
-            padding: 0 15px;
+            padding: 0 16px;
             position: relative;
             z-index: 2;
         }
 
         .google-btn {
             width: 100%;
-            padding: 12px;
+            padding: 14px;
             background-color: #fff;
-            color: #333;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 16px;
+            color: #3c4043;
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+            font-size: 15px;
             font-weight: 600;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: all 0.3s;
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+            letter-spacing: 0.3px;
         }
 
         .google-btn:hover {
             background-color: #f8f9fa;
+            border-color: #c3cfe2;
         }
 
         .google-btn i {
             color: #4285f4;
-            font-size: 18px;
+            font-size: 20px;
         }
 
         .footer {
             text-align: center;
-            margin-top: 30px;
-            color: #666;
-            font-size: 14px;
+            margin-top: 35px;
+            color: #5f6368;
+            font-size: 13px;
+            line-height: 1.6;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
         }
 
         .footer a {
@@ -222,18 +251,44 @@
             text-decoration: underline;
         }
 
+        .copyright {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #9aa0a6;
+        }
+
         @media (max-width: 480px) {
             .container {
                 max-width: 100%;
             }
             
             .auth-form-container {
-                padding: 20px;
+                padding: 30px 20px;
             }
+            
+            .form-title {
+                font-size: 24px;
+            }
+            
+            .logo {
+                font-size: 32px;
+            }
+        }
+
+        /* Animacja przełączania formularzy */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .auth-form.active {
+            animation: fadeIn 0.3s ease-out;
         }
     </style>
 </head>
 <body>
+    <div class="time-display" id="current-time">13:00</div>
+    
     <div class="container">
         <div class="header">
             <div class="logo">ZgranyTrener.pl</div>
@@ -314,11 +369,29 @@
 
         <div class="footer">
             <p>Korzystając z serwisu, akceptujesz <a href="#">Regulamin</a> oraz <a href="#">Politykę prywatności</a></p>
-            <p>&copy; 2023 ZgranyTrener.pl. Wszelkie prawa zastrzeżone.</p>
+            <p class="copyright">&copy; 2023 ZgranyTrener.pl. Wszelkie prawa zastrzeżone.</p>
         </div>
     </div>
 
     <script>
+        // Aktualny czas (jak na obrazku 13:00)
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('pl-PL', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: false 
+            });
+            document.getElementById('current-time').textContent = timeString;
+        }
+        
+        // Ustaw początkowy czas na 13:00 jak na obrazku
+        document.getElementById('current-time').textContent = "13:00";
+        
+        // W rzeczywistej aplikacji odkomentuj poniższą linię, aby pokazywać aktualny czas
+        // setInterval(updateTime, 1000);
+        // updateTime();
+
         // Przełączanie między logowaniem a rejestracją
         const loginTab = document.getElementById('login-tab');
         const registerTab = document.getElementById('register-tab');
@@ -389,7 +462,10 @@
         // Obsługa linku "Nie pamiętasz hasła?"
         document.querySelector('.forgot-password').addEventListener('click', function(e) {
             e.preventDefault();
-            alert('Funkcja resetowania hasła - w rzeczywistej aplikacji użytkownik zostałby przekierowany do formularza resetowania hasła.');
+            const email = document.getElementById('login-email').value || prompt("Podaj swój adres e-mail, aby zresetować hasło:");
+            if (email) {
+                alert(`Link do resetowania hasła został wysłany na adres: ${email}`);
+            }
         });
     </script>
 </body>
