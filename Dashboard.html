@@ -1,1 +1,1278 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - FootballMatch Trener</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
 
+        :root {
+            --primary-color: #1e3a8a;
+            --secondary-color: #3b82f6;
+            --accent-color: #fbbf24;
+            --light-color: #f8fafc;
+            --dark-color: #0f172a;
+            --success-color: #10b981;
+            --error-color: #ef4444;
+            --sidebar-width: 260px;
+            --header-height: 70px;
+        }
+
+        body {
+            background-color: #f1f5f9;
+            color: var(--dark-color);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--primary-color);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+
+        .logo {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .logo i {
+            color: var(--accent-color);
+        }
+
+        .logo span {
+            color: var(--accent-color);
+        }
+
+        .nav-links {
+            padding: 1.5rem 0;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+        .nav-links ul {
+            list-style: none;
+        }
+
+        .nav-links li {
+            margin-bottom: 5px;
+        }
+
+        .nav-links a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 1rem 1.5rem;
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s;
+            border-left: 4px solid transparent;
+        }
+
+        .nav-links a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .nav-links a.active {
+            background-color: rgba(255, 255, 255, 0.15);
+            color: white;
+            border-left-color: var(--accent-color);
+        }
+
+        .nav-links i {
+            width: 20px;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        .user-profile {
+            padding: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: var(--secondary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .user-info h4 {
+            font-size: 1rem;
+            margin-bottom: 5px;
+        }
+
+        .user-info p {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .logout-btn {
+            background-color: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .logout-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Main Content Styles */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            padding: 2rem;
+            min-height: 100vh;
+            transition: margin-left 0.3s ease;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .header h1 {
+            color: var(--primary-color);
+            font-size: 1.8rem;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .notification-btn {
+            position: relative;
+            background: none;
+            border: none;
+            font-size: 1.3rem;
+            color: var(--dark-color);
+            cursor: pointer;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: var(--error-color);
+            color: white;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            cursor: pointer;
+        }
+
+        /* Dashboard Content */
+        .dashboard-content {
+            display: none;
+        }
+
+        .dashboard-content.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Welcome Banner */
+        .welcome-banner {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.2);
+        }
+
+        .welcome-text h2 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .welcome-text p {
+            opacity: 0.9;
+        }
+
+        .stats-card {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            min-width: 120px;
+        }
+
+        .stats-number {
+            font-size: 2rem;
+            font-weight: bold;
+            display: block;
+        }
+
+        .stats-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        /* Cards Grid */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.8rem;
+            border-bottom: 2px solid #f1f5f9;
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .card-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 10px;
+            background-color: var(--accent-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--dark-color);
+            font-size: 1.2rem;
+        }
+
+        /* Tables */
+        .table-container {
+            background-color: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        tbody tr:hover {
+            background-color: #f8fafc;
+        }
+
+        td {
+            padding: 1rem;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-confirmed {
+            background-color: #d1fae5;
+            color: var(--success-color);
+        }
+
+        .status-pending {
+            background-color: #fef3c7;
+            color: #f59e0b;
+        }
+
+        .status-cancelled {
+            background-color: #fee2e2;
+            color: var(--error-color);
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.5rem 1.2rem;
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-color);
+        }
+
+        .btn-small {
+            padding: 0.3rem 0.8rem;
+            font-size: 0.8rem;
+        }
+
+        .btn-accent {
+            background-color: var(--accent-color);
+            color: var(--dark-color);
+        }
+
+        .btn-accent:hover {
+            background-color: #f59e0b;
+        }
+
+        /* Exercises Grid */
+        .exercises-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .exercise-card {
+            background-color: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s;
+        }
+
+        .exercise-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .exercise-img {
+            height: 160px;
+            background-color: #e2e8f0;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .exercise-content {
+            padding: 1.2rem;
+        }
+
+        .exercise-category {
+            display: inline-block;
+            background-color: #e0f2fe;
+            color: var(--secondary-color);
+            padding: 0.3rem 0.7rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .exercise-title {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            color: var(--primary-color);
+        }
+
+        .exercise-desc {
+            font-size: 0.9rem;
+            color: #64748b;
+            margin-bottom: 1rem;
+        }
+
+        /* Tournament Cards */
+        .tournament-card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            border-left: 5px solid var(--accent-color);
+        }
+
+        .tournament-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .tournament-date {
+            background-color: #f1f5f9;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+
+        /* Profile Form */
+        .profile-form .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .profile-form label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+
+        .profile-form input, .profile-form textarea, .profile-form select {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .profile-form textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        /* Search Form */
+        .search-form {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .search-form h3 {
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .mobile-menu-btn {
+                display: block;
+            }
+            
+            .welcome-banner {
+                flex-direction: column;
+                gap: 1.5rem;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 1rem;
+            }
+            
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+            
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .header-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+
+        /* Overlay for mobile menu */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 90;
+        }
+
+        .overlay.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="logo">
+            <i class="fas fa-futbol"></i>
+            <h1>Football<span>Match</span></h1>
+        </div>
+        
+        <nav class="nav-links">
+            <ul>
+                <li><a href="#dashboard" class="active" data-tab="dashboard">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </a></li>
+                <li><a href="#profil" data-tab="profil">
+                    <i class="fas fa-user"></i>
+                    <span>Profil</span>
+                </a></li>
+                <li><a href="#umowione-mecze" data-tab="umowione-mecze">
+                    <i class="fas fa-calendar-check"></i>
+                    <span>Umówione mecze</span>
+                </a></li>
+                <li><a href="#znajdz-mecz" data-tab="znajdz-mecz">
+                    <i class="fas fa-search"></i>
+                    <span>Znajdź mecz</span>
+                </a></li>
+                <li><a href="#cwiczenia" data-tab="cwiczenia">
+                    <i class="fas fa-dumbbell"></i>
+                    <span>Ćwiczenia</span>
+                </a></li>
+                <li><a href="#turnieje" data-tab="turnieje">
+                    <i class="fas fa-trophy"></i>
+                    <span>Turnieje</span>
+                </a></li>
+            </ul>
+        </nav>
+        
+        <div class="user-profile">
+            <div class="user-avatar">
+                JT
+            </div>
+            <div class="user-info">
+                <h4>Jan Kowalski</h4>
+                <p>Trener seniorów</p>
+                <button class="logout-btn" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt"></i> Wyloguj się
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Overlay for mobile menu -->
+    <div class="overlay" id="overlay"></div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <div class="header">
+            <h1 id="pageTitle">Dashboard</h1>
+            <div class="header-actions">
+                <button class="notification-btn">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge">3</span>
+                </button>
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Dashboard Content -->
+        <div class="dashboard-content active" id="dashboard">
+            <!-- Welcome Banner -->
+            <div class="welcome-banner">
+                <div class="welcome-text">
+                    <h2>Witaj, Jan!</h2>
+                    <p>Masz dzisiaj 1 zaplanowany mecz i 2 propozycje spotkań. Sprawdź najnowsze aktualności!</p>
+                </div>
+                <div class="stats-card">
+                    <span class="stats-number">7</span>
+                    <span class="stats-label">Umówionych meczów</span>
+                </div>
+            </div>
+            
+            <!-- Quick Stats -->
+            <div class="cards-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Nadchodzące mecze</h3>
+                        <div class="card-icon">
+                            <i class="fas fa-futbol"></i>
+                        </div>
+                    </div>
+                    <p>Masz 1 mecz w tym tygodniu:<br>
+                    <strong>Legia Warszawa vs. Wisła Kraków</strong><br>
+                    Data: 15.10.2023, godz. 18:00</p>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Twoja drużyna</h3>
+                        <div class="card-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                    <p><strong>Legia Warszawa</strong><br>
+                    22 zawodników<br>
+                    Ostatni wynik: Wygrana 3:1</p>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Aktywność</h3>
+                        <div class="card-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                    </div>
+                    <p>Ostatnie logowanie: Dzisiaj 08:45<br>
+                    Liczba sesji treningowych: 12<br>
+                    Zaangażowanie zawodników: 92%</p>
+                </div>
+            </div>
+            
+            <!-- Recent Activity -->
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Typ aktywności</th>
+                            <th>Szczegóły</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>12.10.2023</td>
+                            <td>Mecz sparingowy</td>
+                            <td>Legia vs. Lech Poznań</td>
+                            <td><span class="status-badge status-confirmed">Rozegrany</span></td>
+                        </tr>
+                        <tr>
+                            <td>10.10.2023</td>
+                            <td>Trening</td>
+                            <td>Trening techniczny - 18 zawodników</td>
+                            <td><span class="status-badge status-confirmed">Zakończony</span></td>
+                        </tr>
+                        <tr>
+                            <td>08.10.2023</td>
+                            <td>Propozycja meczu</td>
+                            <td>Od trenera Górnika Zabrze</td>
+                            <td><span class="status-badge status-pending">Oczekuje</span></td>
+                        </tr>
+                        <tr>
+                            <td>05.10.2023</td>
+                            <td>Turniej</td>
+                            <td>Turniej Mistrzów - zgłoszenie</td>
+                            <td><span class="status-badge status-confirmed">Potwierdzone</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Profil Content -->
+        <div class="dashboard-content" id="profil">
+            <h2 style="margin-bottom: 1.5rem; color: var(--primary-color);">Mój profil</h2>
+            
+            <div class="cards-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Informacje osobiste</h3>
+                    </div>
+                    <form class="profile-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="firstName">Imię</label>
+                                <input type="text" id="firstName" value="Jan">
+                            </div>
+                            <div class="form-group">
+                                <label for="lastName">Nazwisko</label>
+                                <input type="text" id="lastName" value="Kowalski">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" value="jan.kowalski@example.com">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="phone">Telefon</label>
+                            <input type="tel" id="phone" value="+48 123 456 789">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="experience">Doświadczenie (lata)</label>
+                            <input type="number" id="experience" value="12">
+                        </div>
+                        
+                        <button type="submit" class="btn">Zapisz zmiany</button>
+                    </form>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Informacje o drużynie</h3>
+                    </div>
+                    <form class="profile-form">
+                        <div class="form-group">
+                            <label for="teamName">Nazwa drużyny</label>
+                            <input type="text" id="teamName" value="Legia Warszawa">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="teamLevel">Poziom drużyny</label>
+                            <select id="teamLevel">
+                                <option value="professional">Profesjonalny</option>
+                                <option value="semipro" selected>Półprofesjonalny</option>
+                                <option value="amateur">Amatorski</option>
+                                <option value="youth">Młodzieżowy</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="playersCount">Liczba zawodników</label>
+                            <input type="number" id="playersCount" value="22">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="teamDescription">Opis drużyny</label>
+                            <textarea id="teamDescription">Drużyna seniorska Legii Warszawa, grająca w ekstraklasie. Skupiamy się na rozwoju młodych talentów i grze ofensywnej.</textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn">Zapisz zmiany</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Umówione mecze Content -->
+        <div class="dashboard-content" id="umowione-mecze">
+            <h2 style="margin-bottom: 1.5rem; color: var(--primary-color);">Umówione mecze</h2>
+            
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Przeciwnik</th>
+                            <th>Miejsce</th>
+                            <th>Typ</th>
+                            <th>Status</th>
+                            <th>Akcje</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>15.10.2023, 18:00</td>
+                            <td><strong>Wisła Kraków</strong></td>
+                            <td>Stadion Miejski, Warszawa</td>
+                            <td>Sparing</td>
+                            <td><span class="status-badge status-confirmed">Potwierdzony</span></td>
+                            <td>
+                                <button class="btn btn-small">Szczegóły</button>
+                                <button class="btn btn-small btn-accent">Anuluj</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>22.10.2023, 16:30</td>
+                            <td><strong>Lech Poznań</strong></td>
+                            <td>Stadion Miejski, Poznań</td>
+                            <td>Turniej</td>
+                            <td><span class="status-badge status-pending">Oczekuje</span></td>
+                            <td>
+                                <button class="btn btn-small">Szczegóły</button>
+                                <button class="btn btn-small btn-accent">Potwierdź</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>28.10.2023, 14:00</td>
+                            <td><strong>Górnik Zabrze</strong></td>
+                            <td>Stadion Górnika, Zabrze</td>
+                            <td>Sparing</td>
+                            <td><span class="status-badge status-confirmed">Potwierdzony</span></td>
+                            <td>
+                                <button class="btn btn-small">Szczegóły</button>
+                                <button class="btn btn-small btn-accent">Anuluj</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>05.11.2023, 12:00</td>
+                            <td><strong>Śląsk Wrocław</strong></td>
+                            <td>Stadion Miejski, Warszawa</td>
+                            <td>Turniej</td>
+                            <td><span class="status-badge status-pending">Oczekuje</span></td>
+                            <td>
+                                <button class="btn btn-small">Szczegóły</button>
+                                <button class="btn btn-small">Odrzuć</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div style="text-align: center; margin-top: 2rem;">
+                <button class="btn btn-accent">
+                    <i class="fas fa-plus"></i> Dodaj nowy mecz
+                </button>
+            </div>
+        </div>
+        
+        <!-- Znajdź mecz Content -->
+        <div class="dashboard-content" id="znajdz-mecz">
+            <h2 style="margin-bottom: 1.5rem; color: var(--primary-color);">Znajdź mecz</h2>
+            
+            <div class="search-form">
+                <h3>Wyszukaj drużynę do rozegrania meczu</h3>
+                <form id="searchMatchForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="searchLocation">Lokalizacja</label>
+                            <input type="text" id="searchLocation" placeholder="Miasto lub województwo">
+                        </div>
+                        <div class="form-group">
+                            <label for="searchDate">Data</label>
+                            <input type="date" id="searchDate">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="teamLevelSearch">Poziom drużyny</label>
+                            <select id="teamLevelSearch">
+                                <option value="">Dowolny</option>
+                                <option value="professional">Profesjonalny</option>
+                                <option value="semipro">Półprofesjonalny</option>
+                                <option value="amateur">Amatorski</option>
+                                <option value="youth">Młodzieżowy</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="matchType">Typ meczu</label>
+                            <select id="matchType">
+                                <option value="">Dowolny</option>
+                                <option value="sparing">Sparing</option>
+                                <option value="tournament">Turniej</option>
+                                <option value="friendly">Towarzyski</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn">
+                        <i class="fas fa-search"></i> Szukaj drużyn
+                    </button>
+                </form>
+            </div>
+            
+            <h3 style="margin-bottom: 1rem; color: var(--primary-color);">Dostępne drużyny</h3>
+            <div class="cards-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Lechia Gdańsk</h3>
+                        <div class="card-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                    <p><strong>Poziom:</strong> Półprofesjonalny<br>
+                    <strong>Lokalizacja:</strong> Gdańsk<br>
+                    <strong>Dostępność:</strong> Weekendy<br>
+                    <strong>Typ meczu:</strong> Sparing/Turniej</p>
+                    <div style="margin-top: 1rem;">
+                        <button class="btn btn-small">Wyślij propozycję</button>
+                        <button class="btn btn-small btn-accent">Profil drużyny</button>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Zagłębie Lubin</h3>
+                        <div class="card-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                    <p><strong>Poziom:</strong> Profesjonalny<br>
+                    <strong>Lokalizacja:</strong> Lubin<br>
+                    <strong>Dostępność:</strong> Środy, Piątki<br>
+                    <strong>Typ meczu:</strong> Sparing</p>
+                    <div style="margin-top: 1rem;">
+                        <button class="btn btn-small">Wyślij propozycję</button>
+                        <button class="btn btn-small btn-accent">Profil drużyny</button>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Raków Częstochowa</h3>
+                        <div class="card-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                    <p><strong>Poziom:</strong> Profesjonalny<br>
+                    <strong>Lokalizacja:</strong> Częstochowa<br>
+                    <strong>Dostępność:</strong> Weekendy<br>
+                    <strong>Typ meczu:</strong> Turniej</p>
+                    <div style="margin-top: 1rem;">
+                        <button class="btn btn-small">Wyślij propozycję</button>
+                        <button class="btn btn-small btn-accent">Profil drużyny</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Ćwiczenia Content -->
+        <div class="dashboard-content" id="cwiczenia">
+            <h2 style="margin-bottom: 1.5rem; color: var(--primary-color);">Baza ćwiczeń treningowych</h2>
+            
+            <div style="margin-bottom: 2rem;">
+                <button class="btn btn-accent">
+                    <i class="fas fa-plus"></i> Dodaj nowe ćwiczenie
+                </button>
+                <button class="btn" style="margin-left: 10px;">
+                    <i class="fas fa-filter"></i> Filtruj ćwiczenia
+                </button>
+            </div>
+            
+            <div class="exercises-grid">
+                <div class="exercise-card">
+                    <div class="exercise-img" style="background-image: url('https://images.unsplash.com/photo-1575361204480-aadea25e6e68?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80');"></div>
+                    <div class="exercise-content">
+                        <span class="exercise-category">Technika</span>
+                        <h3 class="exercise-title">Podania i przyjęcia piłki</h3>
+                        <p class="exercise-desc">Ćwiczenia doskonalące precyzję podań oraz kontrolę piłki przy przyjęciach.</p>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 0.9rem; color: #64748b;">Czas: 45 min</span>
+                            <button class="btn btn-small">Szczegóły</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="exercise-card">
+                    <div class="exercise-img" style="background-image: url('https://images.unsplash.com/photo-1529900748604-07564a03e7a6?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80');"></div>
+                    <div class="exercise-content">
+                        <span class="exercise-category">Kondycja</span>
+                        <h3 class="exercise-title">Trening interwałowy</h3>
+                        <p class="exercise-desc">Ćwiczenia wytrzymałościowe z interwałami, poprawiające wydolność zawodników.</p>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 0.9rem; color: #64748b;">Czas: 60 min</span>
+                            <button class="btn btn-small">Szczegóły</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="exercise-card">
+                    <div class="exercise-img" style="background-image: url('https://images.unsplash.com/photo-1599058917212-d750089bc07e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80');"></div>
+                    <div class="exercise-content">
+                        <span class="exercise-category">Taktyka</span>
+                        <h3 class="exercise-title">Ustawienie defensywne</h3>
+                        <p class="exercise-desc">Ćwiczenia kształtujące współpracę w obronie i przesuwanie się linii obronnej.</p>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 0.9rem; color: #64748b;">Czas: 50 min</span>
+                            <button class="btn btn-small">Szczegóły</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="exercise-card">
+                    <div class="exercise-img" style="background-image: url('https://images.unsplash.com/photo-1517466787929-bc90951d0974?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80');"></div>
+                    <div class="exercise-content">
+                        <span class="exercise-category">Strzały</span>
+                        <h3 class="exercise-title">Strzały z dystansu</h3>
+                        <p class="exercise-desc">Ćwiczenia doskonalące celność i siłę strzałów z różnych odległości.</p>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 0.9rem; color: #64748b;">Czas: 40 min</span>
+                            <button class="btn btn-small">Szczegóły</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Turnieje Content -->
+        <div class="dashboard-content" id="turnieje">
+            <h2 style="margin-bottom: 1.5rem; color: var(--primary-color);">Turnieje</h2>
+            
+            <div class="cards-grid" style="margin-bottom: 2rem;">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Nadchodzące turnieje</h3>
+                        <div class="card-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                    </div>
+                    <p><strong>Turniej Mistrzów 2023</strong><br>
+                    Data: 12-14.11.2023<br>
+                    Miejsce: Warszawa<br>
+                    Status: <span class="status-badge status-confirmed">Zgłoszony</span></p>
+                    
+                    <p style="margin-top: 1rem;"><strong>Puchar Polski Juniorów</strong><br>
+                    Data: 25-26.11.2023<br>
+                    Miejsce: Kraków<br>
+                    Status: <span class="status-badge status-pending">Oczekuje</span></p>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Stwórz turniej</h3>
+                        <div class="card-icon">
+                            <i class="fas fa-plus-circle"></i>
+                        </div>
+                    </div>
+                    <p>Zorganizuj własny turniej i zaproś inne drużyny do udziału.</p>
+                    <div style="margin-top: 1.5rem;">
+                        <button class="btn btn-accent">
+                            <i class="fas fa-plus"></i> Utwórz nowy turniej
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <h3 style="margin-bottom: 1rem; color: var(--primary-color);">Dostępne turnieje</h3>
+            
+            <div class="tournament-card">
+                <div class="tournament-header">
+                    <h3>Turniej Jesienny 2023</h3>
+                    <span class="tournament-date">18-19.11.2023</span>
+                </div>
+                <p><strong>Miejsce:</strong> Stadion Narodowy, Warszawa<br>
+                <strong>Drużyny:</strong> 8 (6 wolnych miejsc)<br>
+                <strong>Nagroda:</strong> 20 000 PLN + puchar<br>
+                <strong>Poziom:</strong> Półprofesjonalny</p>
+                <div style="margin-top: 1rem;">
+                    <button class="btn">Szczegóły</button>
+                    <button class="btn btn-accent" style="margin-left: 10px;">Zgłoś drużynę</button>
+                </div>
+            </div>
+            
+            <div class="tournament-card">
+                <div class="tournament-header">
+                    <h3>Winter Cup 2023</h3>
+                    <span class="tournament-date">09-10.12.2023</span>
+                </div>
+                <p><strong>Miejsce:</strong> Hala Sportowa, Gdańsk<br>
+                <strong>Drużyny:</strong> 12 (3 wolne miejsca)<br>
+                <strong>Nagroda:</strong> 15 000 PLN<br>
+                <strong>Poziom:</strong> Amatorski</p>
+                <div style="margin-top: 1rem;">
+                    <button class="btn">Szczegóły</button>
+                    <button class="btn btn-accent" style="margin-left: 10px;">Zgłoś drużynę</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching functionality
+        const navLinks = document.querySelectorAll('.nav-links a');
+        const dashboardContents = document.querySelectorAll('.dashboard-content');
+        const pageTitle = document.getElementById('pageTitle');
+        
+        navLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Get the target tab ID
+                const targetTab = this.getAttribute('data-tab');
+                
+                // Update active nav link
+                navLinks.forEach(navLink => navLink.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Update active content
+                dashboardContents.forEach(content => {
+                    content.classList.remove('active');
+                    if (content.id === targetTab) {
+                        content.classList.add('active');
+                        
+                        // Update page title based on active tab
+                        const tabName = this.querySelector('span').textContent;
+                        pageTitle.textContent = tabName;
+                    }
+                });
+                
+                // Close mobile menu if open
+                if (window.innerWidth <= 992) {
+                    sidebar.classList.remove('active');
+                    overlay.classList.remove('active');
+                }
+            });
+        });
+        
+        // Mobile menu toggle
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+        
+        mobileMenuBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        });
+        
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+        });
+        
+        // Logout functionality
+        const logoutBtn = document.getElementById('logoutBtn');
+        logoutBtn.addEventListener('click', () => {
+            if (confirm('Czy na pewno chcesz się wylogować?')) {
+                // In a real app, you would clear session/token and redirect to login page
+                alert('Zostałeś wylogowany. W rzeczywistej aplikacji nastąpi przekierowanie do strony logowania.');
+                // window.location.href = 'index.html'; // Redirect to login page
+            }
+        });
+        
+        // Form submissions
+        document.querySelectorAll('.profile-form').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                alert('Zmiany zostały zapisane!');
+            });
+        });
+        
+        document.getElementById('searchMatchForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            alert('Wyszukiwanie drużyn... W rzeczywistej aplikacji wyniki wyszukiwania zostałyby wyświetlone poniżej.');
+        });
+        
+        // Add click events to buttons
+        document.querySelectorAll('.btn-small, .btn').forEach(button => {
+            if (!button.hasAttribute('type') || button.getAttribute('type') !== 'submit') {
+                button.addEventListener('click', function() {
+                    const buttonText = this.textContent.trim();
+                    if (buttonText === 'Szczegóły' || buttonText === 'Profil drużyny') {
+                        alert('W rzeczywistej aplikacji otworzyłoby się okno ze szczegółami.');
+                    } else if (buttonText === 'Wyślij propozycję') {
+                        alert('Propozycja meczu została wysłana do drużyny.');
+                    } else if (buttonText === 'Anuluj') {
+                        if (confirm('Czy na pewno chcesz anulować ten mecz?')) {
+                            alert('Mecz został anulowany.');
+                        }
+                    } else if (buttonText === 'Potwierdź') {
+                        alert('Mecz został potwierdzony.');
+                    } else if (buttonText === 'Odrzuć') {
+                        if (confirm('Czy na pewno chcesz odrzucić tę propozycję meczu?')) {
+                            alert('Propozycja meczu została odrzucona.');
+                        }
+                    } else if (buttonText.includes('Dodaj nowy')) {
+                        alert('Otwieranie formularza dodawania...');
+                    } else if (buttonText.includes('Utwórz nowy')) {
+                        alert('Otwieranie formularza tworzenia turnieju...');
+                    } else if (buttonText.includes('Zgłoś drużynę')) {
+                        alert('Formularz zgłoszeniowy do turnieju został otwarty.');
+                    }
+                });
+            }
+        });
+        
+        // Simulate loading user data
+        window.addEventListener('DOMContentLoaded', () => {
+            // In a real app, you would fetch user data from an API
+            console.log('Dashboard loaded successfully');
+        });
+    </script>
+</body>
+</html>
