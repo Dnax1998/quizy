@@ -3,2162 +3,373 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - FootballMatch Trener</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Autobusowa przygoda 🚌</title>
     <style>
         * {
-            margin: 0;
-            padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
         }
-
-        :root {
-            --primary-color: #1e3a8a;
-            --secondary-color: #3b82f6;
-            --accent-color: #fbbf24;
-            --light-color: #f8fafc;
-            --dark-color: #0f172a;
-            --success-color: #10b981;
-            --error-color: #ef4444;
-            --sidebar-width: 260px;
-            --header-height: 70px;
-        }
-
         body {
-            background-color: #f1f5f9;
-            color: var(--dark-color);
-            line-height: 1.6;
+            margin: 0;
             min-height: 100vh;
+            background: linear-gradient(145deg, #1b4c2b, #0f3a1f);
+            font-family: 'Segoe UI', system-ui, sans-serif;
             display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
         }
-
-        /* Sidebar Styles */
-        .sidebar {
-            width: var(--sidebar-width);
-            background-color: var(--primary-color);
-            color: white;
-            height: 100vh;
-            position: fixed;
-            left: 0;
-            top: 0;
+        .game-container {
+            max-width: 1000px;
+            width: 100%;
+            background: #2e5e3a;
+            border-radius: 48px 48px 24px 24px;
+            box-shadow: 0 20px 30px rgba(0,0,0,0.6);
+            padding: 30px 25px;
+            border-bottom: 8px solid #5f8b4b;
+        }
+        .bus-panel {
+            background: #f5e1a0;
+            border-radius: 60px 60px 30px 30px;
+            padding: 25px 30px;
+            box-shadow: inset 0 -8px 0 #b68b40, inset 0 2px 10px #ffeeaa;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            border: 4px solid #846f3a;
+        }
+        .bus-icon {
+            font-size: 68px;
+            filter: drop-shadow(8px 12px 0 #5e3a1e);
+        }
+        .stats {
+            background: #2e261a;
+            padding: 12px 25px;
+            border-radius: 50px;
+            color: #feda7a;
+            font-weight: bold;
+            font-size: 26px;
+            letter-spacing: 2px;
+            box-shadow: inset 0 -3px 0 #5e4c2b, inset 0 2px 8px #ffd966;
+        }
+        .garage {
+            background: #5b4b3a;
+            border-radius: 30px;
+            padding: 20px;
+            margin-bottom: 25px;
+            border: 6px solid #94805c;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            color: #ffe5a3;
+        }
+        .upgrade-btn {
+            background: #fecc6f;
+            border: none;
+            border-radius: 40px;
+            padding: 14px 28px;
+            font-size: 22px;
+            font-weight: bold;
+            color: #2d3810;
+            border-bottom: 8px solid #a0813f;
+            transition: 0.06s;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .upgrade-btn:active {
+            border-bottom-width: 3px;
+            transform: translateY(5px);
+        }
+        .upgrade-btn:disabled {
+            opacity: 0.5;
+            border-bottom-width: 8px;
+            transform: none;
+            pointer-events: none;
+        }
+        .route-layer {
+            background: #3e6b4b;
+            border-radius: 40px 40px 20px 20px;
+            padding: 25px 20px;
+            border: 6px solid #bed37e;
+        }
+        .stop-list {
             display: flex;
             flex-direction: column;
-            box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
-            z-index: 100;
-            transition: transform 0.3s ease;
+            gap: 18px;
         }
-
-        .logo {
-            padding: 1.5rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        .stop-card {
+            background: #b3d9b0;
+            border-radius: 30px;
+            padding: 18px 28px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 10px solid #5e914f;
+            box-shadow: 0 6px 0 #365e2b;
+            color: #1e3a1e;
+            font-size: 22px;
+            font-weight: 600;
+        }
+        .stop-card.locked {
+            background: #7f8c7a;
+            border-bottom-color: #4e5a49;
+            box-shadow: 0 6px 0 #2e3a2b;
+            color: #d4cfb0;
+            filter: grayscale(0.6);
+        }
+        .passenger-badge {
+            background: #162012;
+            padding: 12px 18px;
+            border-radius: 50px;
+            color: #fff3c9;
+            font-size: 26px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .collect-btn {
+            background: #ffbe5e;
+            border: none;
+            font-size: 26px;
+            padding: 12px 28px;
+            border-radius: 60px;
+            border-bottom: 8px solid #b4722a;
+            font-weight: bold;
             display: flex;
             align-items: center;
             gap: 10px;
-            font-size: 1.5rem;
-            font-weight: 700;
-        }
-
-        .logo i {
-            color: var(--accent-color);
-        }
-
-        .logo span {
-            color: var(--accent-color);
-        }
-
-        .nav-links {
-            padding: 1.5rem 0;
-            flex-grow: 1;
-            overflow-y: auto;
-        }
-
-        .nav-links ul {
-            list-style: none;
-        }
-
-        .nav-links li {
-            margin-bottom: 5px;
-        }
-
-        .nav-links a {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 1rem 1.5rem;
-            color: rgba(255, 255, 255, 0.9);
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s;
-            border-left: 4px solid transparent;
-        }
-
-        .nav-links a:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-            color: white;
-        }
-
-        .nav-links a.active {
-            background-color: rgba(255, 255, 255, 0.15);
-            color: white;
-            border-left-color: var(--accent-color);
-        }
-
-        .nav-links i {
-            width: 20px;
-            text-align: center;
-            font-size: 1.1rem;
-        }
-
-        .user-profile {
-            padding: 1.5rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .user-avatar {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background-color: var(--secondary-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            font-weight: bold;
-        }
-
-        .user-info h4 {
-            font-size: 1rem;
-            margin-bottom: 5px;
-        }
-
-        .user-info p {
-            font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        .logout-btn {
-            background-color: transparent;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
             cursor: pointer;
-            transition: background-color 0.3s;
-            font-size: 0.9rem;
-            margin-top: 10px;
-            width: 100%;
-        }
-
-        .logout-btn:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-
-        /* Main Content Styles */
-        .main-content {
-            flex: 1;
-            margin-left: var(--sidebar-width);
-            padding: 2rem;
-            min-height: 100vh;
-            transition: margin-left 0.3s ease;
-        }
-
-        /* Header */
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .header h1 {
-            color: var(--primary-color);
-            font-size: 1.8rem;
-        }
-
-        .header-actions {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .notification-btn {
-            position: relative;
-            background: none;
-            border: none;
-            font-size: 1.3rem;
-            color: var(--dark-color);
-            cursor: pointer;
-        }
-
-        .notification-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background-color: var(--error-color);
-            color: white;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            font-size: 0.7rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .mobile-menu-btn {
-            display: none;
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            color: var(--primary-color);
-            cursor: pointer;
-        }
-
-        /* Dashboard Content */
-        .dashboard-content {
-            display: none;
-        }
-
-        .dashboard-content.active {
-            display: block;
-            animation: fadeIn 0.5s;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        /* Welcome Banner */
-        .welcome-banner {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            color: white;
-            padding: 2rem;
-            border-radius: 10px;
-            margin-bottom: 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.2);
-        }
-
-        .welcome-text h2 {
-            font-size: 1.8rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .welcome-text p {
-            opacity: 0.9;
-        }
-
-        .stats-card {
-            background-color: rgba(255, 255, 255, 0.1);
-            padding: 1rem;
-            border-radius: 8px;
-            text-align: center;
-            min-width: 120px;
-        }
-
-        .stats-number {
-            font-size: 2rem;
-            font-weight: bold;
-            display: block;
-        }
-
-        .stats-label {
-            font-size: 0.9rem;
-            opacity: 0.8;
-        }
-
-        /* Cards Grid */
-        .cards-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .card {
-            background-color: white;
-            border-radius: 10px;
-            padding: 1.5rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            transition: transform 0.3s, box-shadow 0.3s;
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-            padding-bottom: 0.8rem;
-            border-bottom: 2px solid #f1f5f9;
-        }
-
-        .card-title {
-            font-size: 1.2rem;
-            color: var(--primary-color);
-            font-weight: 600;
-        }
-
-        .card-icon {
-            width: 45px;
-            height: 45px;
-            border-radius: 10px;
-            background-color: var(--accent-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--dark-color);
-            font-size: 1.2rem;
-        }
-
-        /* Tables */
-        .table-container {
-            background-color: white;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            margin-bottom: 2rem;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        thead {
-            background-color: var(--primary-color);
-            color: white;
-        }
-
-        th {
-            padding: 1rem;
-            text-align: left;
-            font-weight: 600;
-        }
-
-        tbody tr {
-            border-bottom: 1px solid #f1f5f9;
-        }
-
-        tbody tr:hover {
-            background-color: #f8fafc;
-        }
-
-        td {
-            padding: 1rem;
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 0.3rem 0.8rem;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-
-        .status-confirmed {
-            background-color: #d1fae5;
-            color: var(--success-color);
-        }
-
-        .status-pending {
-            background-color: #fef3c7;
-            color: #f59e0b;
-        }
-
-        .status-cancelled {
-            background-color: #fee2e2;
-            color: var(--error-color);
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 0.5rem 1.2rem;
-            background-color: var(--secondary-color);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            text-decoration: none;
-            font-size: 0.9rem;
-        }
-
-        .btn:hover {
-            background-color: var(--primary-color);
-        }
-
-        .btn-small {
-            padding: 0.3rem 0.8rem;
-            font-size: 0.8rem;
-        }
-
-        .btn-accent {
-            background-color: var(--accent-color);
-            color: var(--dark-color);
-        }
-
-        .btn-accent:hover {
-            background-color: #f59e0b;
-        }
-
-        /* Exercises Grid */
-        .exercises-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .exercise-card {
-            background-color: white;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            transition: transform 0.3s;
-        }
-
-        .exercise-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .exercise-img {
-            height: 160px;
-            background-color: #e2e8f0;
-            background-size: cover;
-            background-position: center;
-        }
-
-        .exercise-content {
-            padding: 1.2rem;
-        }
-
-        .exercise-category {
-            display: inline-block;
-            background-color: #e0f2fe;
-            color: var(--secondary-color);
-            padding: 0.3rem 0.7rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            margin-bottom: 0.8rem;
-        }
-
-        .exercise-title {
-            font-size: 1.1rem;
-            margin-bottom: 0.5rem;
-            color: var(--primary-color);
-        }
-
-        .exercise-desc {
-            font-size: 0.9rem;
-            color: #64748b;
-            margin-bottom: 1rem;
-        }
-
-        /* Tournament Cards */
-        .tournament-card {
-            background-color: white;
-            border-radius: 10px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            border-left: 5px solid var(--accent-color);
-        }
-
-        .tournament-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
-
-        .tournament-date {
-            background-color: #f1f5f9;
-            padding: 0.3rem 0.8rem;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            color: #64748b;
-        }
-
-        /* Profile Form */
-        .profile-form .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .profile-form label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-            color: var(--dark-color);
-        }
-
-        .profile-form input, .profile-form textarea, .profile-form select {
-            width: 100%;
-            padding: 0.8rem;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            font-size: 1rem;
-        }
-
-        .profile-form textarea {
-            min-height: 120px;
-            resize: vertical;
-        }
-
-        .form-row {
-            display: flex;
-            gap: 1rem;
-        }
-
-        .form-row .form-group {
-            flex: 1;
-        }
-
-        /* Search Form */
-        .search-form {
-            background-color: white;
-            padding: 1.5rem;
-            border-radius: 10px;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        }
-
-        .search-form h3 {
-            margin-bottom: 1rem;
-            color: var(--primary-color);
-        }
-
-        /* Toast notifications */
-        .toast {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 1rem 1.5rem;
-            background-color: var(--success-color);
-            color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            transform: translateX(150%);
-            transition: transform 0.3s ease;
-        }
-
-        .toast.show {
-            transform: translateX(0);
-        }
-
-        .toast.error {
-            background-color: var(--error-color);
-        }
-
-        .toast.warning {
-            background-color: var(--accent-color);
-            color: var(--dark-color);
-        }
-
-        /* Responsive Styles */
-        @media (max-width: 992px) {
-            .sidebar {
-                transform: translateX(-100%);
-            }
-            
-            .sidebar.active {
-                transform: translateX(0);
-            }
-            
-            .main-content {
-                margin-left: 0;
-            }
-            
-            .mobile-menu-btn {
-                display: block;
-            }
-            
-            .welcome-banner {
-                flex-direction: column;
-                gap: 1.5rem;
-                text-align: center;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .main-content {
-                padding: 1rem;
-            }
-            
-            .cards-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .form-row {
-                flex-direction: column;
-                gap: 0;
-            }
-            
-            .header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 1rem;
-            }
-            
-            .header-actions {
-                width: 100%;
-                justify-content: space-between;
-            }
-        }
-
-        /* Overlay for mobile menu */
-        .overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 90;
-        }
-
-        .overlay.active {
-            display: block;
+            transition: 0.04s;
+        }
+        .collect-btn:active {
+            border-bottom-width: 3px;
+            transform: translateY(5px);
+        }
+        .collect-btn:disabled {
+            opacity: 0.4;
+            border-bottom-width: 8px;
+            transform: none;
+        }
+        .money-effect {
+            color: #ffd966;
+            text-shadow: 2px 2px 0 #3a4a1e;
+        }
+        h2 {
+            color: #fbffb4;
+            font-size: 32px;
+            margin: 0 0 12px 0;
+            text-shadow: 4px 4px 0 #3f602b;
         }
     </style>
 </head>
 <body>
-    <!-- Sidebar -->
-    <div class="sidebar" id="sidebar">
-        <div class="logo">
-            <i class="fas fa-futbol"></i>
-            <h1>Football<span>Match</span></h1>
+<div class="game-container">
+    <!-- AUTOBUS I KASA -->
+    <div class="bus-panel">
+        <span class="bus-icon">🚌</span>
+        <div class="stats">
+            💰 <span id="cashDisplay">300</span>
         </div>
-        
-        <nav class="nav-links">
-            <ul>
-                <li><a href="#dashboard" class="active" data-tab="dashboard">
-                    <i class="fas fa-home"></i>
-                    <span>Dashboard</span>
-                </a></li>
-                <li><a href="#profil" data-tab="profil">
-                    <i class="fas fa-user"></i>
-                    <span>Profil</span>
-                </a></li>
-                <li><a href="#umowione-mecze" data-tab="umowione-mecze">
-                    <i class="fas fa-calendar-check"></i>
-                    <span>Umówione mecze</span>
-                </a></li>
-                <li><a href="#znajdz-mecz" data-tab="znajdz-mecz">
-                    <i class="fas fa-search"></i>
-                    <span>Znajdź mecz</span>
-                </a></li>
-                <li><a href="#cwiczenia" data-tab="cwiczenia">
-                    <i class="fas fa-dumbbell"></i>
-                    <span>Ćwiczenia</span>
-                </a></li>
-                <li><a href="#turnieje" data-tab="turnieje">
-                    <i class="fas fa-trophy"></i>
-                    <span>Turnieje</span>
-                </a></li>
-            </ul>
-        </nav>
-        
-        <div class="user-profile">
-            <div class="user-avatar">
-                JT
-            </div>
-            <div class="user-info">
-                <h4 id="userName">Jan Kowalski</h4>
-                <p id="userRole">Trener seniorów</p>
-                <button class="logout-btn" id="logoutBtn">
-                    <i class="fas fa-sign-out-alt"></i> Wyloguj się
-                </button>
-            </div>
-        </div>
+        <span style="font-size:30px; background:#af7a41; padding:12px; border-radius:30px;">👥 <span id="passengersCollected">0</span></span>
     </div>
-    
-    <!-- Overlay for mobile menu -->
-    <div class="overlay" id="overlay"></div>
-    
-    <!-- Toast notification -->
-    <div class="toast" id="toast">
-        <i class="fas fa-check-circle"></i>
-        <span id="toastMessage">Zmiany zostały zapisane!</span>
-    </div>
-    
-    <!-- Main Content -->
-    <div class="main-content">
-        <!-- Header -->
-        <div class="header">
-            <h1 id="pageTitle">Dashboard</h1>
-            <div class="header-actions">
-                <button class="notification-btn">
-                    <i class="fas fa-bell"></i>
-                    <span class="notification-badge">3</span>
-                </button>
-                <button class="mobile-menu-btn" id="mobileMenuBtn">
-                    <i class="fas fa-bars"></i>
-                </button>
-            </div>
-        </div>
-        
-        <!-- Dashboard Content -->
-        <div class="dashboard-content active" id="dashboard">
-            <!-- Welcome Banner -->
-            <div class="welcome-banner">
-                <div class="welcome-text">
-                    <h2 id="welcomeMessage">Witaj, Jan!</h2>
-                    <p>Masz dzisiaj 1 zaplanowany mecz i 2 propozycje spotkań. Sprawdź najnowsze aktualności!</p>
-                </div>
-                <div class="stats-card">
-                    <span class="stats-number" id="matchesCount">7</span>
-                    <span class="stats-label">Umówionych meczów</span>
-                </div>
-            </div>
-            
-            <!-- Quick Stats -->
-            <div class="cards-grid">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Nadchodzące mecze</h3>
-                        <div class="card-icon">
-                            <i class="fas fa-futbol"></i>
-                        </div>
-                    </div>
-                    <p id="nextMatchInfo">Masz 1 mecz w tym tygodniu:<br>
-                    <strong>Legia Warszawa vs. Wisła Kraków</strong><br>
-                    Data: 15.10.2023, godz. 18:00</p>
-                </div>
-                
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Twoja drużyna</h3>
-                        <div class="card-icon">
-                            <i class="fas fa-users"></i>
-                        </div>
-                    </div>
-                    <p id="teamInfo"><strong>Legia Warszawa</strong><br>
-                    22 zawodników<br>
-                    Ostatni wynik: Wygrana 3:1</p>
-                </div>
-                
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Aktywność</h3>
-                        <div class="card-icon">
-                            <i class="fas fa-chart-line"></i>
-                        </div>
-                    </div>
-                    <p>Ostatnie logowanie: Dzisiaj 08:45<br>
-                    Liczba sesji treningowych: 12<br>
-                    Zaangażowanie zawodników: 92%</p>
-                </div>
-            </div>
-            
-            <!-- Recent Activity -->
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Data</th>
-                            <th>Typ aktywności</th>
-                            <th>Szczegóły</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="activityTable">
-                        <!-- Aktywności będą ładowane dynamicznie -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        
-        <!-- Profil Content -->
-        <div class="dashboard-content" id="profil">
-            <h2 style="margin-bottom: 1.5rem; color: var(--primary-color);">Mój profil</h2>
-            
-            <div class="cards-grid">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Informacje osobiste</h3>
-                    </div>
-                    <form class="profile-form" id="personalInfoForm">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="firstName">Imię</label>
-                                <input type="text" id="firstName" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="lastName">Nazwisko</label>
-                                <input type="text" id="lastName" required>
-                            </div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="email">Email</label>
-                            <input type="email" id="email" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="phone">Telefon</label>
-                            <input type="tel" id="phone">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="experience">Doświadczenie (lata)</label>
-                            <input type="number" id="experience" min="0" max="50">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="role">Rola</label>
-                            <select id="role">
-                                <option value="Trener seniorów">Trener seniorów</option>
-                                <option value="Trener juniorów">Trener juniorów</option>
-                                <option value="Trener bramkarzy">Trener bramkarzy</option>
-                                <option value="Asystent trenera">Asystent trenera</option>
-                                <option value="Trener kondycyjny">Trener kondycyjny</option>
-                            </select>
-                        </div>
-                        
-                        <button type="submit" class="btn">
-                            <i class="fas fa-save"></i> Zapisz zmiany
-                        </button>
-                    </form>
-                </div>
-                
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Informacje o drużynie</h3>
-                    </div>
-                    <form class="profile-form" id="teamInfoForm">
-                        <div class="form-group">
-                            <label for="teamName">Nazwa drużyny</label>
-                            <input type="text" id="teamName">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="teamLevel">Poziom drużyny</label>
-                            <select id="teamLevel">
-                                <option value="professional">Profesjonalny</option>
-                                <option value="semipro">Półprofesjonalny</option>
-                                <option value="amateur">Amatorski</option>
-                                <option value="youth">Młodzieżowy</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="playersCount">Liczba zawodników</label>
-                            <input type="number" id="playersCount" min="1" max="50">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="teamDescription">Opis drużyny</label>
-                            <textarea id="teamDescription"></textarea>
-                        </div>
-                        
-                        <button type="submit" class="btn">
-                            <i class="fas fa-save"></i> Zapisz zmiany
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Umówione mecze Content -->
-        <div class="dashboard-content" id="umowione-mecze">
-            <h2 style="margin-bottom: 1.5rem; color: var(--primary-color);">Umówione mecze</h2>
-            
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Data</th>
-                            <th>Przeciwnik</th>
-                            <th>Miejsce</th>
-                            <th>Typ</th>
-                            <th>Status</th>
-                            <th>Akcje</th>
-                        </tr>
-                    </thead>
-                    <tbody id="matchesTable">
-                        <!-- Mecze będą ładowane dynamicznie -->
-                    </tbody>
-                </table>
-            </div>
-            
-            <div style="text-align: center; margin-top: 2rem;">
-                <button class="btn btn-accent" id="addMatchBtn">
-                    <i class="fas fa-plus"></i> Dodaj nowy mecz
-                </button>
-                <button class="btn" onclick="resetMatchData()" style="margin-left: 10px;">
-                    <i class="fas fa-redo"></i> Resetuj mecze
-                </button>
-            </div>
-            
-            <!-- Formularz dodawania meczu (ukryty) -->
-            <div id="addMatchForm" style="display: none; margin-top: 2rem;" class="card">
-                <h3 style="margin-bottom: 1rem; color: var(--primary-color);">Dodaj nowy mecz</h3>
-                <form id="newMatchForm">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="matchOpponent">Przeciwnik</label>
-                            <input type="text" id="matchOpponent" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="matchDate">Data</label>
-                            <input type="datetime-local" id="matchDate" required>
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="matchLocation">Miejsce</label>
-                            <input type="text" id="matchLocation" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="matchType">Typ meczu</label>
-                            <select id="matchType" required>
-                                <option value="sparing">Sparing</option>
-                                <option value="tournament">Turniej</option>
-                                <option value="friendly">Towarzyski</option>
-                                <option value="league">Liga</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="matchNotes">Notatki (opcjonalnie)</label>
-                        <textarea id="matchNotes" rows="3"></textarea>
-                    </div>
-                    
-                    <div style="display: flex; gap: 1rem;">
-                        <button type="submit" class="btn">
-                            <i class="fas fa-check"></i> Zapisz mecz
-                        </button>
-                        <button type="button" class="btn btn-accent" id="cancelAddMatch">
-                            <i class="fas fa-times"></i> Anuluj
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-        
-        <!-- Znajdź mecz Content -->
-        <div class="dashboard-content" id="znajdz-mecz">
-            <h2 style="margin-bottom: 1.5rem; color: var(--primary-color);">Znajdź mecz</h2>
-            
-            <div class="search-form">
-                <h3>Wyszukaj drużynę do rozegrania meczu</h3>
-                <form id="searchMatchForm">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="searchLocation">Lokalizacja</label>
-                            <input type="text" id="searchLocation" placeholder="Miasto lub województwo">
-                        </div>
-                        <div class="form-group">
-                            <label for="searchDate">Data</label>
-                            <input type="date" id="searchDate">
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="teamLevelSearch">Poziom drużyny</label>
-                            <select id="teamLevelSearch">
-                                <option value="">Dowolny</option>
-                                <option value="professional">Profesjonalny</option>
-                                <option value="semipro">Półprofesjonalny</option>
-                                <option value="amateur">Amatorski</option>
-                                <option value="youth">Młodzieżowy</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="matchTypeSearch">Typ meczu</label>
-                            <select id="matchTypeSearch">
-                                <option value="">Dowolny</option>
-                                <option value="sparing">Sparing</option>
-                                <option value="tournament">Turniej</option>
-                                <option value="friendly">Towarzyski</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <button type="submit" class="btn">
-                        <i class="fas fa-search"></i> Szukaj drużyn
-                    </button>
-                </form>
-            </div>
-            
-            <h3 style="margin-bottom: 1rem; color: var(--primary-color);">Dostępne drużyny</h3>
-            <div class="cards-grid" id="availableTeams">
-                <!-- Drużyny będą ładowane dynamicznie -->
-            </div>
-        </div>
-        
-        <!-- Ćwiczenia Content -->
-        <div class="dashboard-content" id="cwiczenia">
-            <h2 style="margin-bottom: 1.5rem; color: var(--primary-color);">Baza ćwiczeń treningowych</h2>
-            
-            <div style="margin-bottom: 2rem;">
-                <button class="btn btn-accent" id="addExerciseBtn">
-                    <i class="fas fa-plus"></i> Dodaj nowe ćwiczenie
-                </button>
-                <button class="btn" onclick="resetExerciseData()" style="margin-left: 10px;">
-                    <i class="fas fa-redo"></i> Resetuj ćwiczenia
-                </button>
-                <button class="btn" id="filterExercisesBtn" style="margin-left: 10px;">
-                    <i class="fas fa-filter"></i> Filtruj ćwiczenia
-                </button>
-            </div>
-            
-            <div class="exercises-grid" id="exercisesGrid">
-                <!-- Ćwiczenia będą ładowane dynamicznie -->
-            </div>
-            
-            <!-- Formularz dodawania ćwiczenia (ukryty) -->
-            <div id="addExerciseForm" style="display: none; margin-top: 2rem;" class="card">
-                <h3 style="margin-bottom: 1rem; color: var(--primary-color);">Dodaj nowe ćwiczenie</h3>
-                <form id="newExerciseForm">
-                    <div class="form-group">
-                        <label for="exerciseTitle">Nazwa ćwiczenia</label>
-                        <input type="text" id="exerciseTitle" required>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="exerciseCategory">Kategoria</label>
-                            <select id="exerciseCategory" required>
-                                <option value="technika">Technika</option>
-                                <option value="kondycja">Kondycja</option>
-                                <option value="taktyka">Taktyka</option>
-                                <option value="strzały">Strzały</option>
-                                <option value="obrona">Obrona</option>
-                                <option value="atak">Atak</option>
-                                <option value="inne">Inne</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="exerciseDuration">Czas trwania (min)</label>
-                            <input type="number" id="exerciseDuration" min="5" max="180" required>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="exerciseDescription">Opis ćwiczenia</label>
-                        <textarea id="exerciseDescription" rows="4" required></textarea>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="exerciseEquipment">Potrzebny sprzęt (opcjonalnie)</label>
-                        <input type="text" id="exerciseEquipment" placeholder="np. pachołki, piłki, drabinka koordynacyjna">
-                    </div>
-                    
-                    <div style="display: flex; gap: 1rem;">
-                        <button type="submit" class="btn">
-                            <i class="fas fa-check"></i> Zapisz ćwiczenie
-                        </button>
-                        <button type="button" class="btn btn-accent" id="cancelAddExercise">
-                            <i class="fas fa-times"></i> Anuluj
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-        
-        <!-- Turnieje Content -->
-        <div class="dashboard-content" id="turnieje">
-            <h2 style="margin-bottom: 1.5rem; color: var(--primary-color);">Turnieje</h2>
-            
-            <div class="cards-grid" style="margin-bottom: 2rem;">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Nadchodzące turnieje</h3>
-                        <div class="card-icon">
-                            <i class="fas fa-calendar-alt"></i>
-                        </div>
-                    </div>
-                    <div id="upcomingTournaments">
-                        <!-- Turnieje będą ładowane dynamicznie -->
-                    </div>
-                </div>
-                
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Stwórz turniej</h3>
-                        <div class="card-icon">
-                            <i class="fas fa-plus-circle"></i>
-                        </div>
-                    </div>
-                    <p>Zorganizuj własny turniej i zaproś inne drużyny do udziału.</p>
-                    <div style="margin-top: 1.5rem;">
-                        <button class="btn btn-accent" id="createTournamentBtn">
-                            <i class="fas fa-plus"></i> Utwórz nowy turniej
-                        </button>
-                        <button class="btn" onclick="resetTournamentData()" style="margin-left: 10px;">
-                            <i class="fas fa-redo"></i> Resetuj turnieje
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <h3 style="margin-bottom: 1rem; color: var(--primary-color);">Dostępne turnieje</h3>
-            <div id="availableTournaments">
-                <!-- Turnieje będą ładowane dynamicznie -->
-            </div>
-            
-            <!-- Formularz tworzenia turnieju (ukryty) -->
-            <div id="createTournamentForm" style="display: none; margin-top: 2rem;" class="card">
-                <h3 style="margin-bottom: 1rem; color: var(--primary-color);">Utwórz nowy turniej</h3>
-                <form id="newTournamentForm">
-                    <div class="form-group">
-                        <label for="tournamentName">Nazwa turnieju</label>
-                        <input type="text" id="tournamentName" required>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="tournamentStartDate">Data rozpoczęcia</label>
-                            <input type="datetime-local" id="tournamentStartDate" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="tournamentEndDate">Data zakończenia</label>
-                            <input type="datetime-local" id="tournamentEndDate" required>
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="tournamentLocation">Miejsce</label>
-                            <input type="text" id="tournamentLocation" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="tournamentTeams">Maksymalna liczba drużyn</label>
-                            <input type="number" id="tournamentTeams" min="2" max="32" required>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="tournamentDescription">Opis turnieju</label>
-                        <textarea id="tournamentDescription" rows="3" required></textarea>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="tournamentLevel">Poziom turnieju</label>
-                        <select id="tournamentLevel" required>
-                            <option value="professional">Profesjonalny</option>
-                            <option value="semipro">Półprofesjonalny</option>
-                            <option value="amateur">Amatorski</option>
-                            <option value="youth">Młodzieżowy</option>
-                            <option value="mixed">Mieszany</option>
-                        </select>
-                    </div>
-                    
-                    <div style="display: flex; gap: 1rem;">
-                        <button type="submit" class="btn">
-                            <i class="fas fa-check"></i> Utwórz turniej
-                        </button>
-                        <button type="button" class="btn btn-accent" id="cancelCreateTournament">
-                            <i class="fas fa-times"></i> Anuluj
-                        </button>
-                    </div>
-                </form>
-            </div>
+
+    <!-- GARAŻ / ROZWÓJ AUTOBUSU -->
+    <div class="garage">
+        <span style="font-size:30px;">🔧 <span id="busLevelName">Autobus Miejski</span></span>
+        <div style="display:flex; gap:15px;">
+            <button id="upgradeCapacityBtn" class="upgrade-btn">➕ Miejsca (200💰)</button>
+            <button id="upgradeLookBtn" class="upgrade-btn">✨ Ładniejszy (300💰)</button>
         </div>
     </div>
 
-    <script>
-        // System przechowywania danych
-        const Storage = {
-            // Pobierz dane z localStorage
-            getData: function(key) {
-                const data = localStorage.getItem(key);
-                return data ? JSON.parse(data) : null;
-            },
-            
-            // Zapisz dane do localStorage
-            saveData: function(key, data) {
-                localStorage.setItem(key, JSON.stringify(data));
-            },
-            
-            // Inicjalizuj domyślne dane jeśli nie istnieją
-            initDefaultData: function() {
-                // Domyślne dane użytkownika
-                if (!this.getData('userProfile')) {
-                    const defaultProfile = {
-                        firstName: 'Jan',
-                        lastName: 'Kowalski',
-                        email: 'jan.kowalski@example.com',
-                        phone: '+48 123 456 789',
-                        experience: 12,
-                        role: 'Trener seniorów',
-                        teamName: 'Legia Warszawa',
-                        teamLevel: 'semipro',
-                        playersCount: 22,
-                        teamDescription: 'Drużyna seniorska Legii Warszawa, grająca w ekstraklasie. Skupiamy się na rozwoju młodych talentów i grze ofensywnej.'
-                    };
-                    this.saveData('userProfile', defaultProfile);
+    <!-- LISTA PRZYSTANKÓW -->
+    <div class="route-layer">
+        <h2>🚏 TRASA</h2>
+        <div id="stopContainer" class="stop-list"></div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ----- STAN GRY -----
+        let cash = 300;               // startowa kasa
+        let totalPassengers = 0;      // ile ludzi łącznie zebranych
+        let busCapacity = 8;          // początkowa pojemność (miejsca)
+        let busLookLevel = 1;         // 1 = zwykły, 2 = ładny, 3+ = luksus
+
+        // Definicje przystanków
+        let stops = [
+            { id: 0, name: "Pętla Główna", passengers: 4, locked: false, basePayout: 15, route: "Linia 1" },
+            { id: 1, name: "Rynek", passengers: 7, locked: false, basePayout: 25, route: "Linia 1" },
+            { id: 2, name: "Dworzec", passengers: 9, locked: true, basePayout: 45, route: "Linia 2" },
+            { id: 3, name: "Osiedle Kwiatowe", passengers: 12, locked: true, basePayout: 70, route: "Linia 2" },
+            { id: 4, name: "Plac Wolności", passengers: 15, locked: true, basePayout: 100, route: "Linia 3" },
+            { id: 5, name: "Stadion", passengers: 20, locked: true, basePayout: 150, route: "Linia 3" },
+            { id: 6, name: "Lotnisko", passengers: 28, locked: true, basePayout: 230, route: "Linia 4" }
+        ];
+
+        // koszty odblokowania przystanku (indeks)
+        const UNLOCK_COSTS = [0, 0, 200, 280, 400, 550, 750];
+        // ceny ulepszeń
+        const CAPACITY_UPGRADE_COST = 200;
+        const LOOK_UPGRADE_COST = 300;
+
+        // ----- Elementy DOM -----
+        const cashDisplay = document.getElementById('cashDisplay');
+        const passengersCollectedSpan = document.getElementById('passengersCollected');
+        const busLevelName = document.getElementById('busLevelName');
+        const stopContainer = document.getElementById('stopContainer');
+        const upgradeCapacityBtn = document.getElementById('upgradeCapacityBtn');
+        const upgradeLookBtn = document.getElementById('upgradeLookBtn');
+
+        // ----- FUNKCJE POMOCNICZE -----
+        function updateUI() {
+            // odświeżenie kasy i pasażerów
+            cashDisplay.textContent = cash;
+            passengersCollectedSpan.textContent = totalPassengers;
+
+            // nazwy autobusu od wyglądu
+            if (busLookLevel === 1) busLevelName.textContent = 'Autobus Miejski';
+            else if (busLookLevel === 2) busLevelName.textContent = 'Srebrny Autokar';
+            else if (busLookLevel === 3) busLevelName.textContent = 'Złoty Autobus';
+            else busLevelName.textContent = '✨ Super Lumina ✨';
+
+            // blokowanie przycisków ulepszeń jeśli brak kasy
+            upgradeCapacityBtn.disabled = (cash < CAPACITY_UPGRADE_COST);
+            upgradeLookBtn.disabled = (cash < LOOK_UPGRADE_COST);
+        }
+
+        // generowanie listy przystanków
+        function renderStops() {
+            let html = '';
+            stops.forEach((stop, index) => {
+                // ile pasażerów do zabrania (zwiększa się z pojemością i wyglądem?)
+                let passCount = stop.passengers;
+                // dodatkowi pasażerowie gdy autobus ładniejszy – frajda!
+                if (!stop.locked) {
+                    if (busLookLevel >= 2) passCount = Math.floor(passCount * 1.2);  // +20%
+                    if (busLookLevel >= 3) passCount = Math.floor(passCount * 1.3);  // więcej
+                    if (busLookLevel >= 4) passCount = Math.floor(passCount * 1.5);
                 }
-                
-                // Domyślne mecze
-                if (!this.getData('matches')) {
-                    const defaultMatches = [
-                        {
-                            id: 1,
-                            opponent: 'Wisła Kraków',
-                            date: '2023-10-15T18:00:00',
-                            location: 'Stadion Miejski, Warszawa',
-                            type: 'sparing',
-                            status: 'confirmed',
-                            notes: ''
-                        },
-                        {
-                            id: 2,
-                            opponent: 'Lech Poznań',
-                            date: '2023-10-22T16:30:00',
-                            location: 'Stadion Miejski, Poznań',
-                            type: 'tournament',
-                            status: 'pending',
-                            notes: 'Półfinał turnieju'
-                        },
-                        {
-                            id: 3,
-                            opponent: 'Górnik Zabrze',
-                            date: '2023-10-28T14:00:00',
-                            location: 'Stadion Górnika, Zabrze',
-                            type: 'sparing',
-                            status: 'confirmed',
-                            notes: 'Trening kontrolny'
+                // zablokowany przystanek wygląda inaczej
+                const lockedClass = stop.locked ? 'locked' : '';
+                const disabledAttr = stop.locked ? 'disabled' : '';
+
+                // ile kasy da za zebranie
+                let payout = Math.floor(stop.basePayout * (1 + (busLookLevel * 0.1)));
+                if (stop.locked) payout = 0;
+
+                // przycisk odblokowania (tylko jeśli zablokowany i stać)
+                let unlockButton = '';
+                if (stop.locked) {
+                    const cost = UNLOCK_COSTS[index] || 999;
+                    const canAfford = cash >= cost;
+                    unlockButton = `<button class="upgrade-btn" style="font-size:20px; padding:10px 24px;" 
+                        onclick="window.gameInterop.unlockStop(${index})" ${!canAfford ? 'disabled' : ''}>
+                        🔓 Odblokuj (${cost}💰)
+                    </button>`;
+                }
+
+                // główna karta przystanku
+                html += `<div class="stop-card ${lockedClass}">
+                    <div style="display:flex; flex-direction:column; gap:4px;">
+                        <span style="font-size:28px;">🚏 ${stop.name}</span>
+                        <span style="font-size:18px; opacity:0.9;">${stop.route}</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:20px; flex-wrap:wrap;">
+                        ${!stop.locked ? 
+                            `<span class="passenger-badge">👥 ${passCount} · 💰 ${payout}</span>
+                             <button class="collect-btn" onclick="window.gameInterop.collectPassengers(${index}, ${passCount}, ${payout})"
+                                ${busCapacity < passCount ? 'disabled' : ''}>
+                                🚌 Zabierz
+                             </button>` 
+                            : 
+                            `<span style="font-size:26px;">🔒 Zablokowany</span>
+                             ${unlockButton}`
                         }
-                    ];
-                    this.saveData('matches', defaultMatches);
-                }
-                
-                // Domyślne ćwiczenia - POPRAWIONE
-                if (!this.getData('exercises')) {
-                    const defaultExercises = [
-                        {
-                            id: 1,
-                            title: 'Podania i przyjęcia piłki',
-                            category: 'technika',
-                            duration: 45,
-                            description: 'Ćwiczenia doskonalące precyzję podań oraz kontrolę piłki przy przyjęciach.',
-                            equipment: 'piłki, pachołki'
-                        },
-                        {
-                            id: 2,
-                            title: 'Trening interwałowy',
-                            category: 'kondycja',
-                            duration: 60,
-                            description: 'Ćwiczenia wytrzymałościowe z interwałami, poprawiające wydolność zawodników.',
-                            equipment: 'stożki, stopery'
-                        },
-                        {
-                            id: 3,
-                            title: 'Ustawienie defensywne',
-                            category: 'taktyka',
-                            duration: 50,
-                            description: 'Ćwiczenia kształtujące współpracę w obronie i przesuwanie się linii obronnej.',
-                            equipment: 'piłki, znaczniki'
-                        },
-                        {
-                            id: 4,
-                            title: 'Strzały z dystansu',
-                            category: 'strzały',
-                            duration: 40,
-                            description: 'Ćwiczenia doskonalące celność i siłę strzałów z różnych odległości.',
-                            equipment: 'piłki, bramki'
-                        }
-                    ];
-                    this.saveData('exercises', defaultExercises);
-                }
-                
-                // Domyślne turnieje
-                if (!this.getData('tournaments')) {
-                    const defaultTournaments = [
-                        {
-                            id: 1,
-                            name: 'Turniej Mistrzów 2023',
-                            startDate: '2023-11-12T10:00:00',
-                            endDate: '2023-11-14T18:00:00',
-                            location: 'Warszawa',
-                            maxTeams: 8,
-                            description: 'Turniej dla najlepszych drużyn półprofesjonalnych',
-                            level: 'semipro',
-                            status: 'registered',
-                            teams: 6
-                        },
-                        {
-                            id: 2,
-                            name: 'Winter Cup 2023',
-                            startDate: '2023-12-09T09:00:00',
-                            endDate: '2023-12-10T17:00:00',
-                            location: 'Gdańsk',
-                            maxTeams: 12,
-                            description: 'Turniej zimowy dla drużyn amatorskich',
-                            level: 'amateur',
-                            status: 'available',
-                            teams: 9
-                        }
-                    ];
-                    this.saveData('tournaments', defaultTournaments);
-                }
-                
-                // Domyślne aktywności
-                if (!this.getData('activities')) {
-                    const defaultActivities = [
-                        {
-                            id: 1,
-                            date: '2023-10-12',
-                            type: 'Mecz sparingowy',
-                            details: 'Legia vs. Lech Poznań',
-                            status: 'completed'
-                        },
-                        {
-                            id: 2,
-                            date: '2023-10-10',
-                            type: 'Trening',
-                            details: 'Trening techniczny - 18 zawodników',
-                            status: 'completed'
-                        },
-                        {
-                            id: 3,
-                            date: '2023-10-08',
-                            type: 'Propozycja meczu',
-                            details: 'Od trenera Górnika Zabrze',
-                            status: 'pending'
-                        },
-                        {
-                            id: 4,
-                            date: '2023-10-05',
-                            type: 'Turniej',
-                            details: 'Turniej Mistrzów - zgłoszenie',
-                            status: 'confirmed'
-                        }
-                    ];
-                    this.saveData('activities', defaultActivities);
-                }
+                    </div>
+                </div>`;
+            });
+            stopContainer.innerHTML = html;
+        }
+
+        // ----- GŁÓWNE AKCJE -----
+        function collectPassengers(stopIndex, passCount, payout) {
+            const stop = stops[stopIndex];
+            if (stop.locked) {
+                alert('Przystanek zablokowany!');
+                return;
             }
+            if (busCapacity < passCount) {
+                alert(`Za mało miejsc w autobusie! (masz ${busCapacity}, potrzebujesz ${passCount})`);
+                return;
+            }
+            // zabieramy pasażerów
+            totalPassengers += passCount;
+            cash += payout;
+
+            // aktualizujemy stan gry
+            updateUI();
+            renderStops();  // odśwież listę, bo odblokowania, ilość pasażerów zależy od look level
+        }
+
+        function unlockStop(stopIndex) {
+            const stop = stops[stopIndex];
+            if (!stop.locked) return;
+            const cost = UNLOCK_COSTS[stopIndex] || 0;
+            if (cash >= cost) {
+                cash -= cost;
+                stop.locked = false;
+                updateUI();
+                renderStops();
+            } else {
+                alert('Za mało pieniędzy!');
+            }
+        }
+
+        // rozwijanie autobusu
+        function upgradeCapacity() {
+            if (cash >= CAPACITY_UPGRADE_COST) {
+                cash -= CAPACITY_UPGRADE_COST;
+                busCapacity += 6;   // +6 miejsc
+                updateUI();
+                renderStops();   // przystanki mogą wymagać więcej miejsc
+            }
+        }
+
+        function upgradeLook() {
+            if (cash >= LOOK_UPGRADE_COST) {
+                cash -= LOOK_UPGRADE_COST;
+                busLookLevel = Math.min(busLookLevel + 1, 5);  // max poziom 5
+                updateUI();
+                renderStops();   // odświeżenie – zmienia się liczba pasażerów i payout
+            }
+        }
+
+        // interop z przyciskami (żeby działały z onclick w generowanym HTML)
+        window.gameInterop = {
+            collectPassengers: (stopIndex, passCount, payout) => collectPassengers(stopIndex, passCount, payout),
+            unlockStop: (stopIndex) => unlockStop(stopIndex)
         };
-        
-        // System powiadomień
-        const Toast = {
-            show: function(message, type = 'success') {
-                const toast = document.getElementById('toast');
-                const toastMessage = document.getElementById('toastMessage');
-                
-                toastMessage.textContent = message;
-                toast.className = 'toast';
-                
-                if (type === 'error') {
-                    toast.classList.add('error');
-                    toast.innerHTML = `<i class="fas fa-exclamation-circle"></i><span id="toastMessage">${message}</span>`;
-                } else if (type === 'warning') {
-                    toast.classList.add('warning');
-                    toast.innerHTML = `<i class="fas fa-exclamation-triangle"></i><span id="toastMessage">${message}</span>`;
-                } else {
-                    toast.innerHTML = `<i class="fas fa-check-circle"></i><span id="toastMessage">${message}</span>';
-                }
-                
-                toast.classList.add('show');
-                
-                setTimeout(() => {
-                    toast.classList.remove('show');
-                }, 3000);
-            }
-        };
-        
-        // System zarządzania danymi
-        const DataManager = {
-            // Załaduj dane użytkownika
-            loadUserProfile: function() {
-                const profile = Storage.getData('userProfile');
-                if (profile) {
-                    // Wypełnij formularz profilu
-                    document.getElementById('firstName').value = profile.firstName || '';
-                    document.getElementById('lastName').value = profile.lastName || '';
-                    document.getElementById('email').value = profile.email || '';
-                    document.getElementById('phone').value = profile.phone || '';
-                    document.getElementById('experience').value = profile.experience || '';
-                    document.getElementById('role').value = profile.role || 'Trener seniorów';
-                    document.getElementById('teamName').value = profile.teamName || '';
-                    document.getElementById('teamLevel').value = profile.teamLevel || 'semipro';
-                    document.getElementById('playersCount').value = profile.playersCount || '';
-                    document.getElementById('teamDescription').value = profile.teamDescription || '';
-                    
-                    // Zaktualizuj UI
-                    document.getElementById('userName').textContent = `${profile.firstName} ${profile.lastName}`;
-                    document.getElementById('userRole').textContent = profile.role;
-                    document.getElementById('welcomeMessage').textContent = `Witaj, ${profile.firstName}!`;
-                    
-                    // Zaktualizuj informacje o drużynie na dashboard
-                    if (profile.teamName) {
-                        document.getElementById('teamInfo').innerHTML = `
-                            <strong>${profile.teamName}</strong><br>
-                            ${profile.playersCount || '0'} zawodników<br>
-                            Ostatni wynik: Wygrana 3:1
-                        `;
-                    }
-                }
-            },
-            
-            // Zapisz profil użytkownika
-            saveUserProfile: function(formData) {
-                const profile = {
-                    firstName: formData.get('firstName'),
-                    lastName: formData.get('lastName'),
-                    email: formData.get('email'),
-                    phone: formData.get('phone'),
-                    experience: parseInt(formData.get('experience')) || 0,
-                    role: formData.get('role')
-                };
-                
-                Storage.saveData('userProfile', {...Storage.getData('userProfile'), ...profile});
-                this.loadUserProfile();
-                Toast.show('Dane osobiste zostały zapisane!');
-            },
-            
-            // Zapisz informacje o drużynie
-            saveTeamInfo: function(formData) {
-                const teamInfo = {
-                    teamName: formData.get('teamName'),
-                    teamLevel: formData.get('teamLevel'),
-                    playersCount: parseInt(formData.get('playersCount')) || 0,
-                    teamDescription: formData.get('teamDescription')
-                };
-                
-                Storage.saveData('userProfile', {...Storage.getData('userProfile'), ...teamInfo});
-                this.loadUserProfile();
-                Toast.show('Informacje o drużynie zostały zapisane!');
-            },
-            
-            // Załaduj mecze
-            loadMatches: function() {
-                const matches = Storage.getData('matches') || [];
-                const matchesTable = document.getElementById('matchesTable');
-                matchesTable.innerHTML = '';
-                
-                // Filtruj tylko prawidłowe mecze
-                const validMatches = matches.filter(match => 
-                    match && 
-                    match.opponent && 
-                    match.date
-                );
-                
-                if (validMatches.length === 0) {
-                    matchesTable.innerHTML = `
-                        <tr>
-                            <td colspan="6" style="text-align: center; padding: 2rem;">
-                                <i class="fas fa-futbol" style="font-size: 2rem; color: #cbd5e1; margin-bottom: 1rem;"></i>
-                                <p>Brak zaplanowanych meczów</p>
-                            </td>
-                        </tr>
-                    `;
-                } else {
-                    validMatches.forEach(match => {
-                        const date = new Date(match.date);
-                        const formattedDate = date.toLocaleDateString('pl-PL', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        });
-                        
-                        let statusBadge = '';
-                        if (match.status === 'confirmed') {
-                            statusBadge = '<span class="status-badge status-confirmed">Potwierdzony</span>';
-                        } else if (match.status === 'pending') {
-                            statusBadge = '<span class="status-badge status-pending">Oczekuje</span>';
-                        } else {
-                            statusBadge = '<span class="status-badge status-cancelled">Anulowany</span>';
-                        }
-                        
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td>${formattedDate}</td>
-                            <td><strong>${match.opponent || 'Brak danych'}</strong></td>
-                            <td>${match.location || 'Brak danych'}</td>
-                            <td>${this.getMatchTypeLabel(match.type)}</td>
-                            <td>${statusBadge}</td>
-                            <td>
-                                <button class="btn btn-small" onclick="DataManager.viewMatch(${match.id})">Szczegóły</button>
-                                <button class="btn btn-small btn-accent" onclick="DataManager.cancelMatch(${match.id})">Anuluj</button>
-                            </td>
-                        `;
-                        matchesTable.appendChild(row);
-                    });
-                }
-                
-                // Zaktualizuj statystyki na dashboard
-                const confirmedMatches = matches.filter(m => m && m.status === 'confirmed');
-                document.getElementById('matchesCount').textContent = confirmedMatches.length;
-                
-                // Znajdź następny mecz
-                const upcomingMatches = matches.filter(m => {
-                    if (!m || !m.date) return false;
-                    const matchDate = new Date(m.date);
-                    const today = new Date();
-                    return matchDate > today && m.status === 'confirmed';
-                }).sort((a, b) => new Date(a.date) - new Date(b.date));
-                
-                if (upcomingMatches.length > 0) {
-                    const nextMatch = upcomingMatches[0];
-                    const nextDate = new Date(nextMatch.date);
-                    const profile = Storage.getData('userProfile');
-                    document.getElementById('nextMatchInfo').innerHTML = `
-                        Masz 1 mecz w tym tygodniu:<br>
-                        <strong>${profile?.teamName || 'Twoja drużyna'} vs. ${nextMatch.opponent || 'Przeciwnik'}</strong><br>
-                        Data: ${nextDate.toLocaleDateString('pl-PL')}, godz. ${nextDate.toLocaleTimeString('pl-PL', {hour: '2-digit', minute:'2-digit'})}
-                    `;
-                }
-            },
-            
-            // Dodaj nowy mecz
-            addMatch: function(formData) {
-                const matches = Storage.getData('matches') || [];
-                
-                // Walidacja danych
-                const opponent = formData.get('opponent')?.trim();
-                const date = formData.get('date');
-                const location = formData.get('location')?.trim();
-                const type = formData.get('type');
-                
-                if (!opponent || !date || !location || !type) {
-                    Toast.show('Proszę wypełnić wszystkie wymagane pola!', 'error');
-                    return;
-                }
-                
-                const newMatch = {
-                    id: matches.length > 0 ? Math.max(...matches.map(m => m?.id || 0)) + 1 : 1,
-                    opponent: opponent,
-                    date: date,
-                    location: location,
-                    type: type,
-                    status: 'pending',
-                    notes: formData.get('notes') || ''
-                };
-                
-                matches.push(newMatch);
-                Storage.saveData('matches', matches);
-                
-                // Dodaj aktywność
-                this.addActivity('Propozycja meczu', `Do ${newMatch.opponent} - ${new Date(newMatch.date).toLocaleDateString('pl-PL')}`, 'pending');
-                
-                this.loadMatches();
-                Toast.show('Mecz został dodany!');
-            },
-            
-            // Anuluj mecz
-            cancelMatch: function(matchId) {
-                if (confirm('Czy na pewno chcesz anulować ten mecz?')) {
-                    const matches = Storage.getData('matches') || [];
-                    const matchIndex = matches.findIndex(m => m && m.id === matchId);
-                    
-                    if (matchIndex !== -1) {
-                        const match = matches[matchIndex];
-                        match.status = 'cancelled';
-                        Storage.saveData('matches', matches);
-                        
-                        // Dodaj aktywność
-                        this.addActivity('Anulowanie meczu', `Mecz z ${match.opponent} został anulowany`, 'completed');
-                        
-                        this.loadMatches();
-                        Toast.show('Mecz został anulowany!', 'warning');
-                    }
-                }
-            },
-            
-            // Załaduj ćwiczenia - POPRAWIONE
-            loadExercises: function() {
-                const exercises = Storage.getData('exercises') || [];
-                const exercisesGrid = document.getElementById('exercisesGrid');
-                exercisesGrid.innerHTML = '';
-                
-                // Sprawdź czy ćwiczenia są prawidłowe
-                const validExercises = exercises.filter(exercise => 
-                    exercise && 
-                    exercise.title && 
-                    exercise.category && 
-                    exercise.duration
-                );
-                
-                if (validExercises.length === 0) {
-                    exercisesGrid.innerHTML = `
-                        <div style="grid-column: 1 / -1; text-align: center; padding: 2rem;">
-                            <i class="fas fa-dumbbell" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 1rem;"></i>
-                            <h3 style="color: #64748b;">Brak ćwiczeń</h3>
-                            <p>Dodaj swoje pierwsze ćwiczenie!</p>
-                        </div>
-                    `;
-                    return;
-                }
-                
-                validExercises.forEach(exercise => {
-                    const exerciseCard = document.createElement('div');
-                    exerciseCard.className = 'exercise-card';
-                    exerciseCard.innerHTML = `
-                        <div class="exercise-img" style="background-image: url('https://images.unsplash.com/photo-1575361204480-aadea25e6e68?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80');"></div>
-                        <div class="exercise-content">
-                            <span class="exercise-category">${this.getCategoryLabel(exercise.category) || 'Inne'}</span>
-                            <h3 class="exercise-title">${exercise.title || 'Bez nazwy'}</h3>
-                            <p class="exercise-desc">${exercise.description || 'Brak opisu'}</p>
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <span style="font-size: 0.9rem; color: #64748b;">Czas: ${exercise.duration || 0} min</span>
-                                <button class="btn btn-small" onclick="DataManager.viewExercise(${exercise.id})">Szczegóły</button>
-                            </div>
-                        </div>
-                    `;
-                    exercisesGrid.appendChild(exerciseCard);
-                });
-            },
-            
-            // Dodaj nowe ćwiczenie - POPRAWIONE
-            addExercise: function(formData) {
-                const exercises = Storage.getData('exercises') || [];
-                
-                // Walidacja danych
-                const title = formData.get('title')?.trim();
-                const category = formData.get('category')?.trim();
-                const duration = parseInt(formData.get('duration'));
-                const description = formData.get('description')?.trim();
-                const equipment = formData.get('equipment')?.trim();
-                
-                if (!title || !category || isNaN(duration) || duration <= 0) {
-                    Toast.show('Proszę wypełnić wszystkie wymagane pola poprawnie!', 'error');
-                    return;
-                }
-                
-                const newExercise = {
-                    id: exercises.length > 0 ? Math.max(...exercises.map(e => e?.id || 0)) + 1 : 1,
-                    title: title,
-                    category: category,
-                    duration: duration,
-                    description: description || 'Brak opisu',
-                    equipment: equipment || 'Brak sprzętu'
-                };
-                
-                exercises.push(newExercise);
-                Storage.saveData('exercises', exercises);
-                
-                // Dodaj aktywność
-                this.addActivity('Dodanie ćwiczenia', `Ćwiczenie: ${newExercise.title}`, 'completed');
-                
-                this.loadExercises();
-                Toast.show('Ćwiczenie zostało dodane!');
-            },
-            
-            // Załaduj turnieje
-            loadTournaments: function() {
-                const tournaments = Storage.getData('tournaments') || [];
-                const upcomingContainer = document.getElementById('upcomingTournaments');
-                const availableContainer = document.getElementById('availableTournaments');
-                
-                // Filtruj tylko prawidłowe turnieje
-                const validTournaments = tournaments.filter(tournament => 
-                    tournament && 
-                    tournament.name && 
-                    tournament.startDate
-                );
-                
-                // Nadchodzące turnieje
-                const upcomingTournaments = validTournaments.filter(t => t.status === 'registered');
-                upcomingContainer.innerHTML = '';
-                
-                if (upcomingTournaments.length > 0) {
-                    upcomingTournaments.forEach(tournament => {
-                        const startDate = new Date(tournament.startDate);
-                        const endDate = new Date(tournament.endDate);
-                        
-                        const tournamentHTML = `
-                            <p><strong>${tournament.name || 'Brak nazwy'}</strong><br>
-                            Data: ${startDate.toLocaleDateString('pl-PL')} - ${endDate.toLocaleDateString('pl-PL')}<br>
-                            Miejsce: ${tournament.location || 'Brak danych'}<br>
-                            Status: <span class="status-badge status-confirmed">Zgłoszony</span></p>
-                        `;
-                        
-                        if (upcomingContainer.innerHTML === '') {
-                            upcomingContainer.innerHTML = tournamentHTML;
-                        } else {
-                            upcomingContainer.innerHTML += '<hr style="margin: 1rem 0; border-color: #f1f5f9;">' + tournamentHTML;
-                        }
-                    });
-                } else {
-                    upcomingContainer.innerHTML = '<p>Brak nadchodzących turniejów</p>';
-                }
-                
-                // Dostępne turnieje
-                const availableTournaments = validTournaments.filter(t => t.status === 'available');
-                availableContainer.innerHTML = '';
-                
-                if (availableTournaments.length === 0) {
-                    availableContainer.innerHTML = `
-                        <div style="text-align: center; padding: 2rem;">
-                            <i class="fas fa-trophy" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 1rem;"></i>
-                            <h3 style="color: #64748b;">Brak dostępnych turniejów</h3>
-                            <p>Utwórz swój własny turniej!</p>
-                        </div>
-                    `;
-                    return;
-                }
-                
-                availableTournaments.forEach(tournament => {
-                    const startDate = new Date(tournament.startDate);
-                    const endDate = new Date(tournament.endDate);
-                    
-                    const tournamentCard = document.createElement('div');
-                    tournamentCard.className = 'tournament-card';
-                    tournamentCard.innerHTML = `
-                        <div class="tournament-header">
-                            <h3>${tournament.name || 'Brak nazwy'}</h3>
-                            <span class="tournament-date">${startDate.toLocaleDateString('pl-PL')} - ${endDate.toLocaleDateString('pl-PL')}</span>
-                        </div>
-                        <p><strong>Miejsce:</strong> ${tournament.location || 'Brak danych'}<br>
-                        <strong>Drużyny:</strong> ${tournament.teams || 0}/${tournament.maxTeams || 0} (${(tournament.maxTeams || 0) - (tournament.teams || 0)} wolnych miejsc)<br>
-                        <strong>Poziom:</strong> ${this.getLevelLabel(tournament.level)}</p>
-                        <div style="margin-top: 1rem;">
-                            <button class="btn" onclick="DataManager.viewTournament(${tournament.id})">Szczegóły</button>
-                            <button class="btn btn-accent" style="margin-left: 10px;" onclick="DataManager.registerForTournament(${tournament.id})">Zgłoś drużynę</button>
-                        </div>
-                    `;
-                    availableContainer.appendChild(tournamentCard);
-                });
-            },
-            
-            // Dodaj nowy turniej
-            addTournament: function(formData) {
-                const tournaments = Storage.getData('tournaments') || [];
-                
-                // Walidacja danych
-                const name = formData.get('name')?.trim();
-                const startDate = formData.get('startDate');
-                const endDate = formData.get('endDate');
-                const location = formData.get('location')?.trim();
-                const maxTeams = parseInt(formData.get('maxTeams'));
-                const description = formData.get('description')?.trim();
-                const level = formData.get('level');
-                
-                if (!name || !startDate || !endDate || !location || !maxTeams || !description || !level) {
-                    Toast.show('Proszę wypełnić wszystkie wymagane pola!', 'error');
-                    return;
-                }
-                
-                const newTournament = {
-                    id: tournaments.length > 0 ? Math.max(...tournaments.map(t => t?.id || 0)) + 1 : 1,
-                    name: name,
-                    startDate: startDate,
-                    endDate: endDate,
-                    location: location,
-                    maxTeams: maxTeams,
-                    description: description,
-                    level: level,
-                    status: 'available',
-                    teams: 0
-                };
-                
-                tournaments.push(newTournament);
-                Storage.saveData('tournaments', tournaments);
-                
-                // Dodaj aktywność
-                this.addActivity('Utworzenie turnieju', `Turniej: ${newTournament.name}`, 'completed');
-                
-                this.loadTournaments();
-                Toast.show('Turniej został utworzony!');
-            },
-            
-            // Zarejestruj się na turniej
-            registerForTournament: function(tournamentId) {
-                const tournaments = Storage.getData('tournaments') || [];
-                const tournamentIndex = tournaments.findIndex(t => t && t.id === tournamentId);
-                
-                if (tournamentIndex !== -1) {
-                    const tournament = tournaments[tournamentIndex];
-                    
-                    if (tournament.teams < tournament.maxTeams) {
-                        tournament.teams += 1;
-                        tournament.status = 'registered';
-                        Storage.saveData('tournaments', tournaments);
-                        
-                        // Dodaj aktywność
-                        this.addActivity('Zgłoszenie na turniej', `Turniej: ${tournament.name}`, 'confirmed');
-                        
-                        this.loadTournaments();
-                        Toast.show('Twoja drużyna została zgłoszona na turniej!');
-                    } else {
-                        Toast.show('Brak wolnych miejsc w tym turnieju!', 'error');
-                    }
-                }
-            },
-            
-            // Załaduj aktywności
-            loadActivities: function() {
-                const activities = Storage.getData('activities') || [];
-                const activityTable = document.getElementById('activityTable');
-                activityTable.innerHTML = '';
-                
-                // Filtruj tylko prawidłowe aktywności
-                const validActivities = activities.filter(activity => 
-                    activity && 
-                    activity.date && 
-                    activity.type
-                );
-                
-                if (validActivities.length === 0) {
-                    activityTable.innerHTML = `
-                        <tr>
-                            <td colspan="4" style="text-align: center; padding: 2rem;">
-                                <i class="fas fa-history" style="font-size: 2rem; color: #cbd5e1; margin-bottom: 1rem;"></i>
-                                <p>Brak historii aktywności</p>
-                            </td>
-                        </tr>
-                    `;
-                    return;
-                }
-                
-                validActivities.forEach(activity => {
-                    let statusBadge = '';
-                    if (activity.status === 'completed' || activity.status === 'confirmed') {
-                        statusBadge = '<span class="status-badge status-confirmed">Zakończony</span>';
-                    } else if (activity.status === 'pending') {
-                        statusBadge = '<span class="status-badge status-pending">Oczekuje</span>';
-                    } else {
-                        statusBadge = '<span class="status-badge status-cancelled">Anulowany</span>';
-                    }
-                    
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${activity.date || 'Brak daty'}</td>
-                        <td>${activity.type || 'Brak typu'}</td>
-                        <td>${activity.details || 'Brak szczegółów'}</td>
-                        <td>${statusBadge}</td>
-                    `;
-                    activityTable.appendChild(row);
-                });
-            },
-            
-            // Dodaj nową aktywność
-            addActivity: function(type, details, status) {
-                const activities = Storage.getData('activities') || [];
-                const today = new Date().toISOString().split('T')[0];
-                
-                const newActivity = {
-                    id: activities.length > 0 ? Math.max(...activities.map(a => a?.id || 0)) + 1 : 1,
-                    date: today,
-                    type: type,
-                    details: details,
-                    status: status
-                };
-                
-                activities.unshift(newActivity);
-                // Zachowaj tylko ostatnie 10 aktywności
-                if (activities.length > 10) {
-                    activities.pop();
-                }
-                
-                Storage.saveData('activities', activities);
-                this.loadActivities();
-            },
-            
-            // Pomocnicze metody
-            getMatchTypeLabel: function(type) {
-                const types = {
-                    'sparing': 'Sparing',
-                    'tournament': 'Turniej',
-                    'friendly': 'Towarzyski',
-                    'league': 'Liga'
-                };
-                return types[type] || type || 'Brak typu';
-            },
-            
-            getCategoryLabel: function(category) {
-                const categories = {
-                    'technika': 'Technika',
-                    'kondycja': 'Kondycja',
-                    'taktyka': 'Taktyka',
-                    'strzały': 'Strzały',
-                    'obrona': 'Obrona',
-                    'atak': 'Atak',
-                    'inne': 'Inne'
-                };
-                return categories[category] || category || 'Inne';
-            },
-            
-            getLevelLabel: function(level) {
-                const levels = {
-                    'professional': 'Profesjonalny',
-                    'semipro': 'Półprofesjonalny',
-                    'amateur': 'Amatorski',
-                    'youth': 'Młodzieżowy',
-                    'mixed': 'Mieszany'
-                };
-                return levels[level] || level || 'Brak poziomu';
-            },
-            
-            // Metody podglądu (do zaimplementowania)
-            viewMatch: function(id) {
-                Toast.show(`Szczegóły meczu ID: ${id}`, 'warning');
-            },
-            
-            viewExercise: function(id) {
-                const exercises = Storage.getData('exercises') || [];
-                const exercise = exercises.find(e => e && e.id === id);
-                
-                if (exercise) {
-                    const message = `
-                        <strong>${exercise.title || 'Brak nazwy'}</strong><br>
-                        Kategoria: ${this.getCategoryLabel(exercise.category)}<br>
-                        Czas: ${exercise.duration || 0} min<br>
-                        Sprzęt: ${exercise.equipment || 'Brak sprzętu'}<br>
-                        Opis: ${exercise.description || 'Brak opisu'}
-                    `;
-                    
-                    // Używamy alertu jako prostego rozwiązania
-                    alert(message.replace(/<br>/g, '\n'));
-                } else {
-                    Toast.show('Nie znaleziono ćwiczenia!', 'error');
-                }
-            },
-            
-            viewTournament: function(id) {
-                const tournaments = Storage.getData('tournaments') || [];
-                const tournament = tournaments.find(t => t && t.id === id);
-                
-                if (tournament) {
-                    const startDate = new Date(tournament.startDate);
-                    const endDate = new Date(tournament.endDate);
-                    const message = `
-                        <strong>${tournament.name || 'Brak nazwy'}</strong><br>
-                        Data: ${startDate.toLocaleDateString('pl-PL')} - ${endDate.toLocaleDateString('pl-PL')}<br>
-                        Miejsce: ${tournament.location || 'Brak danych'}<br>
-                        Poziom: ${this.getLevelLabel(tournament.level)}<br>
-                        Miejsca: ${tournament.teams || 0}/${tournament.maxTeams || 0}<br>
-                        Opis: ${tournament.description || 'Brak opisu'}
-                    `;
-                    
-                    // Używamy alertu jako prostego rozwiązania
-                    alert(message.replace(/<br>/g, '\n'));
-                } else {
-                    Toast.show('Nie znaleziono turnieju!', 'error');
-                }
-            }
-        };
-        
-        // Funkcje resetowania danych
-        function resetExerciseData() {
-            if (confirm('Czy na pewno chcesz zresetować wszystkie ćwiczenia? Stracisz wszystkie dane ćwiczeń.')) {
-                localStorage.removeItem('exercises');
-                Storage.initDefaultData();
-                DataManager.loadExercises();
-                Toast.show('Dane ćwiczeń zostały zresetowane!', 'warning');
-            }
+
+        // przypisanie eventów do ulepszeń
+        upgradeCapacityBtn.addEventListener('click', upgradeCapacity);
+        upgradeLookBtn.addEventListener('click', upgradeLook);
+
+        // start gry
+        function initGame() {
+            updateUI();
+            renderStops();
         }
-        
-        function resetMatchData() {
-            if (confirm('Czy na pewno chcesz zresetować wszystkie mecze? Stracisz wszystkie dane meczów.')) {
-                localStorage.removeItem('matches');
-                Storage.initDefaultData();
-                DataManager.loadMatches();
-                Toast.show('Dane meczów zostały zresetowane!', 'warning');
-            }
-        }
-        
-        function resetTournamentData() {
-            if (confirm('Czy na pewno chcesz zresetować wszystkie turnieje? Stracisz wszystkie dane turniejów.')) {
-                localStorage.removeItem('tournaments');
-                Storage.initDefaultData();
-                DataManager.loadTournaments();
-                Toast.show('Dane turniejów zostały zresetowane!', 'warning');
-            }
-        }
-        
-        function resetAllData() {
-            if (confirm('Czy na pewno chcesz zresetować WSZYSTKIE dane? Stracisz wszystkie zapisane informacje.')) {
-                localStorage.clear();
-                Storage.initDefaultData();
-                DataManager.loadUserProfile();
-                DataManager.loadMatches();
-                DataManager.loadExercises();
-                DataManager.loadTournaments();
-                DataManager.loadActivities();
-                Toast.show('Wszystkie dane zostały zresetowane!', 'warning');
-            }
-        }
-        
-        // Inicjalizacja aplikacji
-        document.addEventListener('DOMContentLoaded', function() {
-            // Inicjalizuj domyślne dane
-            Storage.initDefaultData();
-            
-            // Załaduj dane
-            DataManager.loadUserProfile();
-            DataManager.loadMatches();
-            DataManager.loadExercises();
-            DataManager.loadTournaments();
-            DataManager.loadActivities();
-            
-            // Tab switching functionality
-            const navLinks = document.querySelectorAll('.nav-links a');
-            const dashboardContents = document.querySelectorAll('.dashboard-content');
-            const pageTitle = document.getElementById('pageTitle');
-            
-            navLinks.forEach(link => {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    
-                    // Get the target tab ID
-                    const targetTab = this.getAttribute('data-tab');
-                    
-                    // Update active nav link
-                    navLinks.forEach(navLink => navLink.classList.remove('active'));
-                    this.classList.add('active');
-                    
-                    // Update active content
-                    dashboardContents.forEach(content => {
-                        content.classList.remove('active');
-                        if (content.id === targetTab) {
-                            content.classList.add('active');
-                            
-                            // Update page title based on active tab
-                            const tabName = this.querySelector('span').textContent;
-                            pageTitle.textContent = tabName;
-                        }
-                    });
-                    
-                    // Close mobile menu if open
-                    if (window.innerWidth <= 992) {
-                        sidebar.classList.remove('active');
-                        overlay.classList.remove('active');
-                    }
-                });
-            });
-            
-            // Mobile menu toggle
-            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('overlay');
-            
-            mobileMenuBtn.addEventListener('click', () => {
-                sidebar.classList.toggle('active');
-                overlay.classList.toggle('active');
-            });
-            
-            overlay.addEventListener('click', () => {
-                sidebar.classList.remove('active');
-                overlay.classList.remove('active');
-            });
-            
-            // Logout functionality
-            const logoutBtn = document.getElementById('logoutBtn');
-            logoutBtn.addEventListener('click', () => {
-                if (confirm('Czy na pewno chcesz się wylogować?')) {
-                    // Redirect to login page
-                    window.location.href = 'index.html';
-                }
-            });
-            
-            // Form submissions
-            document.getElementById('personalInfoForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                const formData = new FormData(this);
-                DataManager.saveUserProfile(formData);
-            });
-            
-            document.getElementById('teamInfoForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                const formData = new FormData(this);
-                DataManager.saveTeamInfo(formData);
-            });
-            
-            // Obsługa meczów
-            document.getElementById('addMatchBtn').addEventListener('click', function() {
-                document.getElementById('addMatchForm').style.display = 'block';
-                this.style.display = 'none';
-            });
-            
-            document.getElementById('cancelAddMatch').addEventListener('click', function() {
-                document.getElementById('addMatchForm').style.display = 'none';
-                document.getElementById('addMatchBtn').style.display = 'inline-block';
-                document.getElementById('newMatchForm').reset();
-            });
-            
-            document.getElementById('newMatchForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                const formData = new FormData(this);
-                DataManager.addMatch(formData);
-                this.reset();
-                document.getElementById('addMatchForm').style.display = 'none';
-                document.getElementById('addMatchBtn').style.display = 'inline-block';
-            });
-            
-            // Obsługa ćwiczeń
-            document.getElementById('addExerciseBtn').addEventListener('click', function() {
-                document.getElementById('addExerciseForm').style.display = 'block';
-                this.style.display = 'none';
-            });
-            
-            document.getElementById('cancelAddExercise').addEventListener('click', function() {
-                document.getElementById('addExerciseForm').style.display = 'none';
-                document.getElementById('addExerciseBtn').style.display = 'inline-block';
-                document.getElementById('newExerciseForm').reset();
-            });
-            
-            document.getElementById('newExerciseForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                const formData = new FormData(this);
-                DataManager.addExercise(formData);
-                this.reset();
-                document.getElementById('addExerciseForm').style.display = 'none';
-                document.getElementById('addExerciseBtn').style.display = 'inline-block';
-            });
-            
-            // Obsługa turniejów
-            document.getElementById('createTournamentBtn').addEventListener('click', function() {
-                document.getElementById('createTournamentForm').style.display = 'block';
-                this.style.display = 'none';
-            });
-            
-            document.getElementById('cancelCreateTournament').addEventListener('click', function() {
-                document.getElementById('createTournamentForm').style.display = 'none';
-                document.getElementById('createTournamentBtn').style.display = 'inline-block';
-                document.getElementById('newTournamentForm').reset();
-            });
-            
-            document.getElementById('newTournamentForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                const formData = new FormData(this);
-                DataManager.addTournament(formData);
-                this.reset();
-                document.getElementById('createTournamentForm').style.display = 'none';
-                document.getElementById('createTournamentBtn').style.display = 'inline-block';
-            });
-            
-            // Wyszukiwanie meczów
-            document.getElementById('searchMatchForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                Toast.show('Wyszukiwanie drużyn... W rzeczywistej aplikacji wyniki wyszukiwania zostałyby wyświetlone poniżej.', 'warning');
-            });
-            
-            // Filtrowanie ćwiczeń
-            document.getElementById('filterExercisesBtn').addEventListener('click', function() {
-                Toast.show('Filtrowanie ćwiczeń... W rzeczywistej aplikacji pojawiłaby się lista filtrów.', 'warning');
-            });
-            
-            // Dodaj ukryty przycisk resetu wszystkich danych (możesz go pokazać w potrzebie)
-            // document.getElementById('resetAllBtn').addEventListener('click', resetAllData);
-        });
-    </script>
+        initGame();
+    })();
+</script>
 </body>
 </html>
