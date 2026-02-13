@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LEPSZE BETFURY XD • DICE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Tutaj wszystkie style z poprzedniej wersji dice.html */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: radial-gradient(circle at 20% 30%, #0b0e1a, #03050a);
+            font-family: 'Inter', sans-serif;
+            color: #f0f4ff;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .nav-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(12, 18, 34, 0.9);
+            border: 1px solid #2d405b;
+            border-radius: 60px;
+            padding: 0.8rem 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .nav-logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(145deg, #ffe082, #ffb74d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+        .nav-link {
+            color: #b0d0ff;
+            text-decoration: none;
+            font-weight: 600;
+            padding: 0.5rem 1.2rem;
+            border-radius: 40px;
+        }
+        .nav-link.active {
+            background: #2565ae;
+            color: white;
+        }
+        .info-bar {
+            background: #0f172a;
+            border-radius: 30px;
+            padding: 1rem 2rem;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .price-info {
+            background: #1e3a5a;
+            padding: 0.5rem 1.5rem;
+            border-radius: 40px;
+            font-weight: 700;
+        }
+        .game-card {
+            background: #0c1320;
+            border-radius: 60px;
+            padding: 2rem;
+            border: 1px solid #3d5a7c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav-bar">
+            <span class="nav-logo">🎲 LEPSZE BETFURY XD</span>
+            <div class="nav-links">
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+                <a href="dice.html" class="nav-link active">Dice</a>
+                <a href="staking.html" class="nav-link">Staking</a>
+            </div>
+        </div>
+
+        <div class="info-bar">
+            <div><i class="fas fa-dollar-sign" style="color:#50dfb0;"></i> Twoje USDT: <strong id="usdtDisplay">1,000,000.00</strong></div>
+            <div><i class="fas fa-star" style="color:#ffd966;"></i> Twoje STAR: <strong id="starDisplay">0.0000</strong></div>
+            <div class="price-info">
+                <i class="fas fa-chart-line"></i> Cena STAR: <strong id="currentPrice">1.00</strong> USDT
+            </div>
+        </div>
+
+        <div class="game-card">
+            <h2 style="text-align:center; margin-bottom:2rem;">🎲 GRA W KOŚCI</h2>
+            <p style="text-align:center; color:#aac7e0; margin-bottom:2rem;">
+                Aktualna cena STAR: <strong id="gamePrice">1.00</strong> USDT<br>
+                Za 1$ obrotu otrzymujesz <strong id="starRate">1.0000</strong> STAR
+            </p>
+            
+            <div style="text-align: center;">
+                <button id="simulateBtn" style="background: #2e7d5e; color:white; border:none; padding:1rem 3rem; border-radius:50px; font-weight:700; cursor:pointer;">
+                    SYMULUJ ZAKŁAD 1000$
+                </button>
+            </div>
+
+            <div id="message" style="text-align:center; margin-top:2rem; min-height:2rem;"></div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            function getStarPrice() {
+                const totalMined = parseFloat(localStorage.getItem('totalMined') || '0');
+                const steps = Math.floor(totalMined / 10000000);
+                return 1.0 + (steps * 0.1);
+            }
+
+            let usdt = parseFloat(localStorage.getItem('usdt') || '1000000.00');
+            let star = parseFloat(localStorage.getItem('star') || '0');
+
+            function updateDisplay() {
+                const price = getStarPrice();
+                document.getElementById('usdtDisplay').textContent = usdt.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                document.getElementById('starDisplay').textContent = star.toFixed(4);
+                document.getElementById('currentPrice').textContent = price.toFixed(2);
+                document.getElementById('gamePrice').textContent = price.toFixed(2);
+                document.getElementById('starRate').textContent = (1/price).toFixed(4);
+            }
+
+            function simulateBet() {
+                const price = getStarPrice();
+                const betAmount = 1000;
+                
+                if (usdt < betAmount) {
+                    document.getElementById('message').innerHTML = '❌ Za mało USDT';
+                    return;
+                }
+
+                usdt -= betAmount;
+                
+                // WAŻNE: STAR = obrót / cena
+                const starEarned = betAmount / price;
+                star += starEarned;
+                
+                // totalMined = wszystkie zdobyte STAR
+                const totalMined = parseFloat(localStorage.getItem('totalMined') || '0');
+                localStorage.setItem('totalMined', (totalMined + starEarned).toFixed(2));
+                
+                localStorage.setItem('usdt', usdt.toFixed(2));
+                localStorage.setItem('star', star.toFixed(4));
+                
+                document.getElementById('message').innerHTML = `✅ Postawiono ${betAmount}$ · Cena: ${price.toFixed(2)}$ · Otrzymano: ${starEarned.toFixed(4)} STAR`;
+                updateDisplay();
+            }
+
+            document.getElementById('simulateBtn').addEventListener('click', simulateBet);
+            
+            setInterval(() => {
+                const newPrice = getStarPrice();
+                if (newPrice !== parseFloat(document.getElementById('currentPrice').textContent)) {
+                    updateDisplay();
+                }
+            }, 1000);
+
+            updateDisplay();
+        })();
+    </script>
+</body>
+</html>
