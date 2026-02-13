@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRYPTO DICE • STAKING • AUTO</title>
+    <title>CRYPTO DICE • AUTO PANEL • STAKING</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
@@ -22,7 +22,7 @@
             align-items: center;
         }
         .container {
-            max-width: 1300px;
+            max-width: 1400px;
             width: 100%;
         }
 
@@ -84,7 +84,7 @@
         /* grid */
         .game-grid {
             display: grid;
-            grid-template-columns: 1.3fr 0.9fr;
+            grid-template-columns: 1.3fr 1.1fr;
             gap: 2rem;
         }
 
@@ -226,86 +226,227 @@
             background: #2e6ec7;
         }
 
-        /* AUTO MODE */
-        .auto-section {
-            margin-top: 20px;
-            background: #0e1725;
-            border-radius: 30px;
-            padding: 1.2rem;
+        /* === AUTO PANEL - DOKŁADNIE ZE ZDJĘCIA === */
+        .auto-panel {
+            margin-top: 25px;
+            background: #0e1727;
+            border-radius: 32px;
+            padding: 1.5rem;
+            border: 1px solid #2e4868;
         }
+
         .auto-header {
             display: flex;
             align-items: center;
             gap: 15px;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
-        .auto-toggle {
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        .auto-header span {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #ffd966;
         }
-        .toggle-switch {
-            position: relative;
-            display: inline-block;
-            width: 60px;
-            height: 30px;
-        }
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-        .slider-toggle {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #2a3a52;
-            transition: .3s;
-            border-radius: 30px;
-        }
-        .slider-toggle:before {
-            position: absolute;
-            content: "";
-            height: 24px;
-            width: 24px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            transition: .3s;
-            border-radius: 50%;
-        }
-        input:checked + .slider-toggle {
-            background-color: #4caf92;
-        }
-        input:checked + .slider-toggle:before {
-            transform: translateX(30px);
-        }
-        .auto-controls {
+
+        .auto-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
+            gap: 20px;
         }
-        .auto-input {
-            background: #1f2c40;
-            border: 1px solid #3e5775;
+
+        /* lewa kolumna */
+        .auto-left {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .bets-count {
+            background: #0f1825;
             border-radius: 20px;
-            padding: 0.5rem 1rem;
-            color: white;
+            padding: 1rem;
         }
-        .auto-btn {
-            background: #2a405c;
+        .bets-count label {
+            display: block;
+            color: #b0c8e0;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+        }
+        .bets-count input {
+            width: 100%;
+            background: #1f2d40;
+            border: 1px solid #3f5a78;
+            border-radius: 16px;
+            padding: 0.8rem 1rem;
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .stop-profit-loss {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .stop-item {
+            background: #0f1825;
+            border-radius: 20px;
+            padding: 1rem;
+        }
+        .stop-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .stop-header label {
+            color: #b0c8e0;
+            font-size: 0.85rem;
+        }
+        .stop-value {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #ffd966;
+        }
+        .stop-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .stop-btn {
+            background: #253c54;
             border: none;
             color: white;
-            padding: 0.6rem;
+            padding: 0.5rem 1rem;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            flex: 1;
+        }
+        .stop-btn.reset {
+            background: #3a4e6b;
+        }
+        .stop-percent {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 8px;
+            color: #9bb3d0;
+            font-size: 0.9rem;
+        }
+        .stop-percent i {
+            color: #4db6ac;
+        }
+
+        /* prawa kolumna */
+        .auto-right {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .max-bet {
+            background: #0f1825;
             border-radius: 20px;
+            padding: 1rem;
+        }
+        .max-bet label {
+            display: block;
+            color: #b0c8e0;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+        }
+        .max-bet-input {
+            width: 100%;
+            background: #1f2d40;
+            border: 1px solid #3f5a78;
+            border-radius: 16px;
+            padding: 0.8rem 1rem;
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .on-win-loss {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .on-win, .on-loss {
+            background: #0f1825;
+            border-radius: 20px;
+            padding: 1rem;
+        }
+        .on-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .on-header span {
+            font-weight: 700;
+            color: #b0d0ff;
+        }
+        .on-controls {
+            display: flex;
+            gap: 10px;
+        }
+        .on-btn {
+            background: #253c54;
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 30px;
+            font-size: 0.8rem;
             font-weight: 600;
             cursor: pointer;
         }
-        .auto-btn.stop {
+        .on-percent {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+            background: #1a2538;
+            border-radius: 20px;
+            padding: 0.5rem 1rem;
+        }
+        .on-percent input {
+            width: 70px;
+            background: #0e1a2a;
+            border: 1px solid #3e5e80;
+            border-radius: 30px;
+            padding: 0.4rem 0.8rem;
+            color: white;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .auto-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .auto-start {
+            flex: 2;
+            background: #2e7d5e;
+            border: none;
+            color: white;
+            font-weight: 700;
+            padding: 1rem;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            cursor: pointer;
+        }
+        .auto-stop {
+            flex: 1;
             background: #b33951;
+            border: none;
+            color: white;
+            font-weight: 700;
+            padding: 1rem;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            cursor: pointer;
         }
 
         /* staking */
@@ -344,7 +485,7 @@
         .green { color: #8effc1; }
         .red { color: #ff9e9e; }
 
-        @media (max-width: 950px) {
+        @media (max-width: 1100px) {
             .game-grid { grid-template-columns: 1fr; }
         }
     </style>
@@ -380,14 +521,14 @@
         </div>
 
         <div class="game-grid">
-            <!-- DICE CARD -->
+            <!-- DICE CARD Z AUTO PANELEM -->
             <div class="dice-card">
                 <div class="dice-header">
                     <h2><i class="fas fa-dice"></i> CRYPTO DICE</h2>
                     <div class="multiplier-box" id="multiplierDisplay">2.00x</div>
                 </div>
 
-                <!-- Suwak: poniżej / powyżej -->
+                <!-- Suwak -->
                 <div class="slider-container">
                     <div class="range-labels">
                         <span style="color:#64b5f6;"><i class="fas fa-arrow-down"></i> PONIŻEJ</span>
@@ -429,30 +570,109 @@
                         </div>
                     </div>
                     
-                    <!-- AUTO MODE SECTION -->
-                    <div class="auto-section">
+                    <!-- === AUTO PANEL - DOKŁADNIE JAK NA ZDJĘCIU === -->
+                    <div class="auto-panel">
                         <div class="auto-header">
-                            <div class="auto-toggle">
-                                <span style="font-weight:600;"><i class="fas fa-robot"></i> TRYB AUTO</span>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="autoToggle">
-                                    <span class="slider-toggle"></span>
-                                </label>
-                            </div>
-                            <span id="autoStatus" style="color:#9fb0d0;">Wyłączony</span>
+                            <i class="fas fa-robot" style="color:#7ee0b0; font-size:1.4rem;"></i>
+                            <span>TRYB AUTOMATYCZNY</span>
                         </div>
-                        <div class="auto-controls">
-                            <div>
-                                <label style="font-size:0.8rem; color:#a0b6d9;">Liczba zakładów</label>
-                                <input type="number" id="autoBetsCount" class="auto-input" value="10" min="1" max="1000" style="width:100%;">
+
+                        <div class="auto-grid">
+                            <!-- LEWA KOLUMNA -->
+                            <div class="auto-left">
+                                <!-- LICZBA BETÓW -->
+                                <div class="bets-count">
+                                    <label>LICZBA BETÓW</label>
+                                    <input type="number" id="autoBetsCount" value="10" min="1" max="1000">
+                                </div>
+
+                                <!-- STOP NA PROFIT / STRACIE -->
+                                <div class="stop-profit-loss">
+                                    <div class="stop-item">
+                                        <div class="stop-header">
+                                            <label>STOP NA PROFIT</label>
+                                            <span class="stop-value" id="stopProfitValue">0</span>
+                                        </div>
+                                        <div class="stop-controls">
+                                            <button class="stop-btn" id="resetProfitBtn">Reset</button>
+                                            <button class="stop-btn" id="increaseProfitBtn">Zwiększ</button>
+                                        </div>
+                                        <div class="stop-percent">
+                                            <i class="fas fa-percent"></i>
+                                            <span id="stopProfitPercent">0%</span>
+                                        </div>
+                                    </div>
+                                    <div class="stop-item">
+                                        <div class="stop-header">
+                                            <label>STOP NA STRACIE</label>
+                                            <span class="stop-value" id="stopLossValue">8</span>
+                                        </div>
+                                        <div class="stop-controls">
+                                            <button class="stop-btn reset" id="resetLossBtn">Reset</button>
+                                            <button class="stop-btn" id="increaseLossBtn">Zwiększ</button>
+                                        </div>
+                                        <div class="stop-percent">
+                                            <i class="fas fa-percent"></i>
+                                            <span id="stopLossPercent">0%</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <label style="font-size:0.8rem; color:#a0b6d9;">Przerwa (ms)</label>
-                                <input type="number" id="autoDelay" class="auto-input" value="500" min="100" max="5000" step="100" style="width:100%;">
+
+                            <!-- PRAWA KOLUMNA -->
+                            <div class="auto-right">
+                                <!-- MAX BET -->
+                                <div class="max-bet">
+                                    <label>MAX BET:</label>
+                                    <input type="number" id="maxBet" class="max-bet-input" value="100" min="1" step="1">
+                                </div>
+
+                                <!-- NA WYGRANA / NA STRACIE -->
+                                <div class="on-win-loss">
+                                    <div class="on-win">
+                                        <div class="on-header">
+                                            <span>NA WYGRANA</span>
+                                            <i class="fas fa-arrow-up" style="color:#7ee0b0;"></i>
+                                        </div>
+                                        <div class="on-controls">
+                                            <button class="on-btn" id="onWinReset">Reset</button>
+                                            <button class="on-btn" id="onWinIncrease">Zwiększ</button>
+                                        </div>
+                                        <div class="on-percent">
+                                            <span>Kwota</span>
+                                            <input type="number" id="onWinPercent" value="0" min="0" max="1000" step="1">
+                                            <span>%</span>
+                                        </div>
+                                    </div>
+                                    <div class="on-loss">
+                                        <div class="on-header">
+                                            <span>NA STRACIE</span>
+                                            <i class="fas fa-arrow-down" style="color:#ff8a80;"></i>
+                                        </div>
+                                        <div class="on-controls">
+                                            <button class="on-btn" id="onLossReset">Reset</button>
+                                            <button class="on-btn" id="onLossIncrease">Zwiększ</button>
+                                        </div>
+                                        <div class="on-percent">
+                                            <span>Kwota</span>
+                                            <input type="number" id="onLossPercent" value="0" min="0" max="1000" step="1">
+                                            <span>%</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <button id="autoStartBtn" class="auto-btn"><i class="fas fa-play"></i> START</button>
-                            <button id="autoStopBtn" class="auto-btn stop"><i class="fas fa-stop"></i> STOP</button>
                         </div>
+
+                        <!-- Przyciski START/STOP -->
+                        <div class="auto-actions">
+                            <button class="auto-start" id="autoStartBtn">
+                                <i class="fas fa-play"></i> START AUTO
+                            </button>
+                            <button class="auto-stop" id="autoStopBtn">
+                                <i class="fas fa-stop"></i> STOP
+                            </button>
+                        </div>
+                        <div id="autoStatus" style="margin-top:15px; color:#aac7e0; text-align:center; font-size:0.9rem;"></div>
                     </div>
 
                     <button class="roll-btn" id="rollDiceBtn">
@@ -473,7 +693,7 @@
                         <span class="pool-amount" id="stakingPoolDisplay">0.00 USDT</span>
                     </div>
                     <div style="margin-top:15px; color:#aac7e0;">
-                        <i class="fas fa-circle-info"></i> Przegrane → Staking • Wygrane ← z puli • Pula może być na minusie
+                        <i class="fas fa-circle-info"></i> Przegrane → Staking • Wygrane ← z puli • Pula na minusie
                     </div>
                 </div>
 
@@ -489,6 +709,7 @@
                     </div>
                 </div>
 
+                <!-- Historia -->
                 <span style="font-weight:600;"><i class="fas fa-history"></i> Historia</span>
                 <ul class="history-list" id="historyList">
                     <li style="border-left-color: #ffb74d;">🎲 Zakład 10 USDT · 2.00x · WYGRANA +10 STAR</li>
@@ -497,7 +718,7 @@
             </div>
         </div>
         <footer style="margin-top:40px; color:#5d7290; text-align:center;">
-            ⚡ CRYPTO DICE | Staking USDT | Każdy zakład = STAR 1:1 | Pula może być ujemna
+            ⚡ CRYPTO DICE | Staking USDT | 1 USDT = 1 STAR | Pula na minusie
         </footer>
     </div>
 
@@ -508,6 +729,7 @@
             let star = 0.0;
             let stakingPool = 0.0;
             let totalTurnover = 0.0;
+            let startingUsdt = 1000.0; // do obliczania profit/strata
             const STAR_RATE = 1;
 
             // === AUTO MODE ===
@@ -525,14 +747,17 @@
             const betInput = document.getElementById('betAmount');
             const diceMsg = document.getElementById('diceMessage');
             const historyList = document.getElementById('historyList');
-
-            // AUTO elements
-            const autoToggle = document.getElementById('autoToggle');
             const autoStatus = document.getElementById('autoStatus');
-            const autoStartBtn = document.getElementById('autoStartBtn');
-            const autoStopBtn = document.getElementById('autoStopBtn');
+
+            // AUTO PANEL elementy
             const autoBetsCount = document.getElementById('autoBetsCount');
-            const autoDelay = document.getElementById('autoDelay');
+            const maxBetInput = document.getElementById('maxBet');
+            const stopProfitValue = document.getElementById('stopProfitValue');
+            const stopLossValue = document.getElementById('stopLossValue');
+            const stopProfitPercent = document.getElementById('stopProfitPercent');
+            const stopLossPercent = document.getElementById('stopLossPercent');
+            const onWinPercent = document.getElementById('onWinPercent');
+            const onLossPercent = document.getElementById('onLossPercent');
 
             // BETFRURY SLIDER
             const slider = document.getElementById('diceSlider');
@@ -546,11 +771,9 @@
                 usdtEl.textContent = usdt.toFixed(2);
                 starEl.textContent = star.toFixed(2);
                 
-                // Pula staking - może być ujemna, wyświetlamy bez znaku ale kolor czerwony
                 stakingPoolEl.textContent = stakingPool.toFixed(2);
                 stakingDisplay.textContent = stakingPool.toFixed(2) + ' USDT';
                 
-                // Dodajemy klasę jeśli ujemne
                 if (stakingPool < 0) {
                     stakingPoolEl.classList.add('staking-negative');
                     stakingDisplay.classList.add('negative');
@@ -580,6 +803,30 @@
 
             slider.addEventListener('input', updateDiceOdds);
 
+            // === OBLICZANIE PROFIT/STRATA ===
+            function getCurrentProfit() {
+                return usdt - startingUsdt;
+            }
+
+            // === SPRAWDZANIE WARUNKÓW STOP ===
+            function checkStopConditions() {
+                const profit = getCurrentProfit();
+                const stopProfit = parseFloat(stopProfitValue.textContent) || 0;
+                const stopLoss = parseFloat(stopLossValue.textContent) || 0;
+                
+                if (stopProfit > 0 && profit >= stopProfit) {
+                    autoStatus.textContent = `🛑 STOP na PROFIT: ${profit.toFixed(2)} USDT`;
+                    return true;
+                }
+                
+                if (stopLoss > 0 && profit <= -stopLoss) {
+                    autoStatus.textContent = `🛑 STOP na STRACIE: ${profit.toFixed(2)} USDT`;
+                    return true;
+                }
+                
+                return false;
+            }
+
             // === GŁÓWNA MECHANIKA GRY ===
             function rollDice() {
                 let betAmount = parseFloat(betInput.value);
@@ -589,7 +836,13 @@
                 }
                 betAmount = Math.round(betAmount * 100) / 100;
                 
-                // Sprawdzamy czy gracz ma USDT, ale jeśli pula jest ujemna to i tak może grać
+                // Sprawdzenie MAX BET
+                const maxBet = parseFloat(maxBetInput.value) || 1000;
+                if (betAmount > maxBet) {
+                    betAmount = maxBet;
+                    betInput.value = maxBet;
+                }
+                
                 if (usdt < betAmount) {
                     diceMsg.textContent = '❌ Za mało USDT';
                     return false;
@@ -597,42 +850,47 @@
 
                 // odejmujemy zakład
                 usdt -= betAmount;
-                // naliczamy STAR (zawsze za obrót)
                 star += betAmount * STAR_RATE;
                 totalTurnover += betAmount;
 
-                // losowanie liczby 0.00 - 99.99
                 const roll = Math.random() * 99.99;
                 const target = parseFloat(slider.value);
-                
-                // Zwycięstwo gdy roll < target (PONIŻEJ)
                 const isWin = roll < target;
                 
                 let multiplier = parseFloat((99 / target).toFixed(2));
                 if (multiplier < 1.01) multiplier = 1.01;
 
-                let winAmount = 0;
-                let message = '';
-
                 if (isWin) {
-                    // WYGRANA: gracz dostaje stawka * multiplier
-                    winAmount = betAmount * multiplier;
-                    
-                    // PULA MOŻE BYĆ NA MINUSIE - zawsze dodajemy całość, pula spada o extraWin
+                    const winAmount = betAmount * multiplier;
                     const extraWin = winAmount - betAmount;
                     
-                    usdt += winAmount; // zwrot + wygrana
-                    stakingPool -= extraWin; // PULA IDZIE NA MINUS - to celowo
+                    usdt += winAmount;
+                    stakingPool -= extraWin;
                     
-                    message = `🎉 WYGRANA! +${winAmount.toFixed(2)} USDT (pula ${stakingPool.toFixed(2)})`;
+                    diceMsg.textContent = `🎉 WYGRANA! +${winAmount.toFixed(2)} USDT (pula ${stakingPool.toFixed(2)})`;
+                    
+                    // === NA WYGRANA - zwiększ stawkę o % ===
+                    const winIncrease = parseFloat(onWinPercent.value) || 0;
+                    if (winIncrease > 0) {
+                        let newBet = betAmount * (1 + winIncrease / 100);
+                        const maxBetVal = parseFloat(maxBetInput.value) || 1000;
+                        if (newBet > maxBetVal) newBet = maxBetVal;
+                        betInput.value = newBet.toFixed(2);
+                    }
                 } else {
-                    // PRZEGRANA – stawka trafia do staking pool
                     stakingPool += betAmount;
-                    message = `😞 Przegrana. +${betAmount.toFixed(2)} USDT do puli (pula ${stakingPool.toFixed(2)})`;
+                    diceMsg.textContent = `😞 Przegrana. +${betAmount.toFixed(2)} USDT do puli (pula ${stakingPool.toFixed(2)})`;
+                    
+                    // === NA STRACIE - zwiększ stawkę o % ===
+                    const lossIncrease = parseFloat(onLossPercent.value) || 0;
+                    if (lossIncrease > 0) {
+                        let newBet = betAmount * (1 + lossIncrease / 100);
+                        const maxBetVal = parseFloat(maxBetInput.value) || 1000;
+                        if (newBet > maxBetVal) newBet = maxBetVal;
+                        betInput.value = newBet.toFixed(2);
+                    }
                 }
 
-                diceMsg.textContent = message;
-                
                 // Historia
                 const li = document.createElement('li');
                 li.style.borderLeftColor = isWin ? '#ffb74d' : '#ff8a80';
@@ -659,7 +917,7 @@
                 betInput.value = usdt.toFixed(2);
             });
 
-            // === TRYB AUTO ===
+            // === AUTO MODE ===
             function stopAuto() {
                 if (autoInterval) {
                     clearInterval(autoInterval);
@@ -667,38 +925,29 @@
                 }
                 autoMode = false;
                 autoBetsRemaining = 0;
-                autoToggle.checked = false;
-                autoStatus.textContent = 'Wyłączony';
-                autoStatus.style.color = '#9fb0d0';
-                diceMsg.textContent = '🛑 Tryb auto zatrzymany';
+                autoStatus.textContent = '🛑 Tryb auto zatrzymany';
             }
 
             function startAuto() {
-                if (autoMode) return;
+                if (autoMode) stopAuto();
                 
                 let count = parseInt(autoBetsCount.value);
                 if (isNaN(count) || count < 1) count = 10;
                 
-                let delay = parseInt(autoDelay.value);
-                if (isNaN(delay) || delay < 100) delay = 500;
+                let delay = 500; // stałe opóźnienie
                 
                 autoMode = true;
                 autoBetsRemaining = count;
-                autoToggle.checked = true;
-                autoStatus.textContent = `Aktywny (${autoBetsRemaining})`;
-                autoStatus.style.color = '#4caf92';
                 
-                diceMsg.textContent = `🤖 Tryb auto: ${count} zakładów, przerwa ${delay}ms`;
+                autoStatus.textContent = `🤖 Tryb auto: ${count} zakładów`;
                 
-                // Wykonaj pierwszy zakład od razu
-                if (autoBetsRemaining > 0) {
+                // Wykonaj pierwszy zakład
+                if (autoBetsRemaining > 0 && !checkStopConditions()) {
                     if (rollDice()) {
                         autoBetsRemaining--;
-                        autoStatus.textContent = `Aktywny (${autoBetsRemaining})`;
                     }
                 }
                 
-                // Ustaw interwał
                 autoInterval = setInterval(() => {
                     if (!autoMode) {
                         clearInterval(autoInterval);
@@ -707,31 +956,75 @@
                     }
                     
                     if (autoBetsRemaining <= 0) {
+                        autoStatus.textContent = '✅ Zakończono wszystkie zakłady';
+                        stopAuto();
+                        return;
+                    }
+                    
+                    if (checkStopConditions()) {
                         stopAuto();
                         return;
                     }
                     
                     if (rollDice()) {
                         autoBetsRemaining--;
-                        autoStatus.textContent = `Aktywny (${autoBetsRemaining})`;
+                        autoStatus.textContent = `🤖 Tryb auto: ${autoBetsRemaining} zakładów`;
                     } else {
-                        // Jeśli rollDice zwróci false (brak środków), zatrzymaj auto
                         stopAuto();
                     }
                 }, delay);
             }
 
             // Eventy dla auto
-            autoToggle.addEventListener('change', function() {
-                if (this.checked) {
-                    startAuto();
-                } else {
-                    stopAuto();
-                }
+            document.getElementById('autoStartBtn').addEventListener('click', startAuto);
+            document.getElementById('autoStopBtn').addEventListener('click', stopAuto);
+
+            // === STOP NA PROFIT/STRATA ===
+            let profitValue = 0;
+            let lossValue = 8;
+            
+            document.getElementById('resetProfitBtn').addEventListener('click', () => {
+                profitValue = 0;
+                stopProfitValue.textContent = '0';
+                stopProfitPercent.textContent = '0%';
+            });
+            
+            document.getElementById('increaseProfitBtn').addEventListener('click', () => {
+                profitValue += 10;
+                stopProfitValue.textContent = profitValue;
+                let percent = ((profitValue / startingUsdt) * 100).toFixed(0);
+                stopProfitPercent.textContent = percent + '%';
+            });
+            
+            document.getElementById('resetLossBtn').addEventListener('click', () => {
+                lossValue = 0;
+                stopLossValue.textContent = '0';
+                stopLossPercent.textContent = '0%';
+            });
+            
+            document.getElementById('increaseLossBtn').addEventListener('click', () => {
+                lossValue += 10;
+                stopLossValue.textContent = lossValue;
+                let percent = ((lossValue / startingUsdt) * 100).toFixed(0);
+                stopLossPercent.textContent = percent + '%';
             });
 
-            autoStartBtn.addEventListener('click', startAuto);
-            autoStopBtn.addEventListener('click', stopAuto);
+            // === NA WYGRANA/STRACIE ===
+            document.getElementById('onWinReset').addEventListener('click', () => {
+                onWinPercent.value = 0;
+            });
+            document.getElementById('onWinIncrease').addEventListener('click', () => {
+                let val = parseFloat(onWinPercent.value) || 0;
+                onWinPercent.value = val + 10;
+            });
+            
+            document.getElementById('onLossReset').addEventListener('click', () => {
+                onLossPercent.value = 0;
+            });
+            document.getElementById('onLossIncrease').addEventListener('click', () => {
+                let val = parseFloat(onLossPercent.value) || 0;
+                onLossPercent.value = val + 10;
+            });
 
             // INIT
             updateDiceOdds();
