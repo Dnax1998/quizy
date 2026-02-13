@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRYPTO DICE • STAKING • BETFURY STYLE</title>
+    <title>CRYPTO DICE • STAKING • AUTO</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
@@ -77,6 +77,9 @@
             gap: 15px;
             border: 1px solid #3e5e7c;
         }
+        .staking-negative {
+            color: #ff8a80 !important;
+        }
 
         /* grid */
         .game-grid {
@@ -85,7 +88,7 @@
             gap: 2rem;
         }
 
-        /* DICE CARD – BETFRURY STYLE */
+        /* DICE CARD */
         .dice-card {
             background: #0c1320;
             border-radius: 48px;
@@ -223,6 +226,88 @@
             background: #2e6ec7;
         }
 
+        /* AUTO MODE */
+        .auto-section {
+            margin-top: 20px;
+            background: #0e1725;
+            border-radius: 30px;
+            padding: 1.2rem;
+        }
+        .auto-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .auto-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 30px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider-toggle {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #2a3a52;
+            transition: .3s;
+            border-radius: 30px;
+        }
+        .slider-toggle:before {
+            position: absolute;
+            content: "";
+            height: 24px;
+            width: 24px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+        input:checked + .slider-toggle {
+            background-color: #4caf92;
+        }
+        input:checked + .slider-toggle:before {
+            transform: translateX(30px);
+        }
+        .auto-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .auto-input {
+            background: #1f2c40;
+            border: 1px solid #3e5775;
+            border-radius: 20px;
+            padding: 0.5rem 1rem;
+            color: white;
+        }
+        .auto-btn {
+            background: #2a405c;
+            border: none;
+            color: white;
+            padding: 0.6rem;
+            border-radius: 20px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .auto-btn.stop {
+            background: #b33951;
+        }
+
         /* staking */
         .staking-card {
             background: #0b111f;
@@ -240,6 +325,9 @@
             font-size: 2.5rem;
             font-weight: 800;
             color: #ffe082;
+        }
+        .pool-amount.negative {
+            color: #ff8a80;
         }
         .history-list {
             list-style: none;
@@ -286,16 +374,16 @@
             <div class="staking-badge">
                 <i class="fas fa-boxes" style="color:#fdd835;"></i>
                 <span style="font-weight:600;">STAKING</span>
-                <span id="stakingPoolAmount" style="font-size:1.8rem; font-weight:800; color:#ffe082;">0.00</span>
+                <span id="stakingPoolAmount" style="font-size:1.8rem; font-weight:800;">0.00</span>
                 <span>USDT</span>
             </div>
         </div>
 
         <div class="game-grid">
-            <!-- DICE – BETFRURY STYLE -->
+            <!-- DICE CARD -->
             <div class="dice-card">
                 <div class="dice-header">
-                    <h2><i class="fas fa-dice"></i> BETFRURY DICE</h2>
+                    <h2><i class="fas fa-dice"></i> CRYPTO DICE</h2>
                     <div class="multiplier-box" id="multiplierDisplay">2.00x</div>
                 </div>
 
@@ -340,6 +428,33 @@
                             <button class="multi-btn" id="maxBtn">MAX</button>
                         </div>
                     </div>
+                    
+                    <!-- AUTO MODE SECTION -->
+                    <div class="auto-section">
+                        <div class="auto-header">
+                            <div class="auto-toggle">
+                                <span style="font-weight:600;"><i class="fas fa-robot"></i> TRYB AUTO</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="autoToggle">
+                                    <span class="slider-toggle"></span>
+                                </label>
+                            </div>
+                            <span id="autoStatus" style="color:#9fb0d0;">Wyłączony</span>
+                        </div>
+                        <div class="auto-controls">
+                            <div>
+                                <label style="font-size:0.8rem; color:#a0b6d9;">Liczba zakładów</label>
+                                <input type="number" id="autoBetsCount" class="auto-input" value="10" min="1" max="1000" style="width:100%;">
+                            </div>
+                            <div>
+                                <label style="font-size:0.8rem; color:#a0b6d9;">Przerwa (ms)</label>
+                                <input type="number" id="autoDelay" class="auto-input" value="500" min="100" max="5000" step="100" style="width:100%;">
+                            </div>
+                            <button id="autoStartBtn" class="auto-btn"><i class="fas fa-play"></i> START</button>
+                            <button id="autoStopBtn" class="auto-btn stop"><i class="fas fa-stop"></i> STOP</button>
+                        </div>
+                    </div>
+
                     <button class="roll-btn" id="rollDiceBtn">
                         <i class="fas fa-dice-six"></i> ROLL
                     </button>
@@ -355,10 +470,10 @@
                 <div class="staking-pool">
                     <div style="display:flex; justify-content:space-between; align-items:baseline;">
                         <span style="font-size:1rem; color:#c3d4ff;">Dostępne w puli</span>
-                        <span class="pool-amount"><span id="stakingPoolDisplay">0.00</span> USDT</span>
+                        <span class="pool-amount" id="stakingPoolDisplay">0.00 USDT</span>
                     </div>
                     <div style="margin-top:15px; color:#aac7e0;">
-                        <i class="fas fa-circle-info"></i> Przegrane → Staking • Wygrane ← z puli
+                        <i class="fas fa-circle-info"></i> Przegrane → Staking • Wygrane ← z puli • Pula może być na minusie
                     </div>
                 </div>
 
@@ -382,7 +497,7 @@
             </div>
         </div>
         <footer style="margin-top:40px; color:#5d7290; text-align:center;">
-            ⚡ CRYPTO DICE | Staking USDT | Każdy zakład = STAR 1:1
+            ⚡ CRYPTO DICE | Staking USDT | Każdy zakład = STAR 1:1 | Pula może być ujemna
         </footer>
     </div>
 
@@ -395,6 +510,11 @@
             let totalTurnover = 0.0;
             const STAR_RATE = 1;
 
+            // === AUTO MODE ===
+            let autoMode = false;
+            let autoInterval = null;
+            let autoBetsRemaining = 0;
+
             // === ELEMENTY DOM ===
             const usdtEl = document.getElementById('usdtBalance');
             const starEl = document.getElementById('starBalance');
@@ -405,6 +525,14 @@
             const betInput = document.getElementById('betAmount');
             const diceMsg = document.getElementById('diceMessage');
             const historyList = document.getElementById('historyList');
+
+            // AUTO elements
+            const autoToggle = document.getElementById('autoToggle');
+            const autoStatus = document.getElementById('autoStatus');
+            const autoStartBtn = document.getElementById('autoStartBtn');
+            const autoStopBtn = document.getElementById('autoStopBtn');
+            const autoBetsCount = document.getElementById('autoBetsCount');
+            const autoDelay = document.getElementById('autoDelay');
 
             // BETFRURY SLIDER
             const slider = document.getElementById('diceSlider');
@@ -417,24 +545,33 @@
             function updateUI() {
                 usdtEl.textContent = usdt.toFixed(2);
                 starEl.textContent = star.toFixed(2);
+                
+                // Pula staking - może być ujemna, wyświetlamy bez znaku ale kolor czerwony
                 stakingPoolEl.textContent = stakingPool.toFixed(2);
-                stakingDisplay.textContent = stakingPool.toFixed(2);
+                stakingDisplay.textContent = stakingPool.toFixed(2) + ' USDT';
+                
+                // Dodajemy klasę jeśli ujemne
+                if (stakingPool < 0) {
+                    stakingPoolEl.classList.add('staking-negative');
+                    stakingDisplay.classList.add('negative');
+                } else {
+                    stakingPoolEl.classList.remove('staking-negative');
+                    stakingDisplay.classList.remove('negative');
+                }
+                
                 totalTurnoverEl.textContent = totalTurnover.toFixed(2);
                 totalStarEarnedEl.textContent = (totalTurnover * STAR_RATE).toFixed(2);
             }
 
-            // === PRZELICZANIE SZANSY I MNOŻNIKA (BETFRURY) ===
+            // === PRZELICZANIE SZANSY I MNOŻNIKA ===
             function updateDiceOdds() {
                 let val = parseFloat(slider.value);
                 targetSpan.textContent = val.toFixed(2);
                 
-                // Szansa: jeśli grasz "poniżej" = val%, mnożnik = 99 / val (zaokrąglamy)
-                // W Betfury klasycznie: mnożnik = 99 / (target) dla below, i 99 / (100-target) dla above.
-                // My upraszczamy: zawsze mnożnik = 99 / val (val = target)
                 let chance = val;
                 if (chance < 0.01) chance = 0.01;
                 let multiplier = (99 / chance);
-                multiplier = Math.round(multiplier * 100) / 100; // 2.xx
+                multiplier = Math.round(multiplier * 100) / 100;
                 
                 chanceSpan.textContent = chance.toFixed(2) + '%';
                 multiSpan.textContent = multiplier.toFixed(2) + 'x';
@@ -448,12 +585,14 @@
                 let betAmount = parseFloat(betInput.value);
                 if (isNaN(betAmount) || betAmount <= 0) {
                     diceMsg.textContent = '❌ Podaj poprawną kwotę';
-                    return;
+                    return false;
                 }
                 betAmount = Math.round(betAmount * 100) / 100;
+                
+                // Sprawdzamy czy gracz ma USDT, ale jeśli pula jest ujemna to i tak może grać
                 if (usdt < betAmount) {
                     diceMsg.textContent = '❌ Za mało USDT';
-                    return;
+                    return false;
                 }
 
                 // odejmujemy zakład
@@ -470,7 +609,7 @@
                 const isWin = roll < target;
                 
                 let multiplier = parseFloat((99 / target).toFixed(2));
-                if (multiplier < 1.01) multiplier = 1.01; // zabezpieczenie
+                if (multiplier < 1.01) multiplier = 1.01;
 
                 let winAmount = 0;
                 let message = '';
@@ -478,26 +617,18 @@
                 if (isWin) {
                     // WYGRANA: gracz dostaje stawka * multiplier
                     winAmount = betAmount * multiplier;
-                    // ale UWAGA: mamy już odjęte betAmount, więc teraz dodajemy całość winAmount
-                    // sprawdzamy pulę – wygrana musi pochodzić z puli stakingowej (dodatkowa część)
-                    const baseReturn = betAmount; // zwrot stawki
-                    const extraWin = winAmount - betAmount; // zysk powyżej stawki
-
-                    if (stakingPool >= extraWin) {
-                        usdt += winAmount; // zwrot + wygrana
-                        stakingPool -= extraWin;
-                        message = `🎉 WYGRANA! +${winAmount.toFixed(2)} USDT (zysk ${extraWin.toFixed(2)} z puli)`;
-                    } else {
-                        // brak środków – dajemy tyle ile możemy
-                        usdt += betAmount; // zwrot stawki
-                        usdt += stakingPool;
-                        message = `⚠️ Niska pula! Otrzymujesz ${stakingPool.toFixed(2)} USDT z puli.`;
-                        stakingPool = 0;
-                    }
+                    
+                    // PULA MOŻE BYĆ NA MINUSIE - zawsze dodajemy całość, pula spada o extraWin
+                    const extraWin = winAmount - betAmount;
+                    
+                    usdt += winAmount; // zwrot + wygrana
+                    stakingPool -= extraWin; // PULA IDZIE NA MINUS - to celowo
+                    
+                    message = `🎉 WYGRANA! +${winAmount.toFixed(2)} USDT (pula ${stakingPool.toFixed(2)})`;
                 } else {
                     // PRZEGRANA – stawka trafia do staking pool
                     stakingPool += betAmount;
-                    message = `😞 Przegrana. ${betAmount.toFixed(2)} USDT zasiliło staking.`;
+                    message = `😞 Przegrana. +${betAmount.toFixed(2)} USDT do puli (pula ${stakingPool.toFixed(2)})`;
                 }
 
                 diceMsg.textContent = message;
@@ -510,6 +641,7 @@
                 if (historyList.children.length > 7) historyList.removeChild(historyList.lastChild);
 
                 updateUI();
+                return true;
             }
 
             document.getElementById('rollDiceBtn').addEventListener('click', rollDice);
@@ -526,6 +658,80 @@
             document.getElementById('maxBtn').addEventListener('click', () => {
                 betInput.value = usdt.toFixed(2);
             });
+
+            // === TRYB AUTO ===
+            function stopAuto() {
+                if (autoInterval) {
+                    clearInterval(autoInterval);
+                    autoInterval = null;
+                }
+                autoMode = false;
+                autoBetsRemaining = 0;
+                autoToggle.checked = false;
+                autoStatus.textContent = 'Wyłączony';
+                autoStatus.style.color = '#9fb0d0';
+                diceMsg.textContent = '🛑 Tryb auto zatrzymany';
+            }
+
+            function startAuto() {
+                if (autoMode) return;
+                
+                let count = parseInt(autoBetsCount.value);
+                if (isNaN(count) || count < 1) count = 10;
+                
+                let delay = parseInt(autoDelay.value);
+                if (isNaN(delay) || delay < 100) delay = 500;
+                
+                autoMode = true;
+                autoBetsRemaining = count;
+                autoToggle.checked = true;
+                autoStatus.textContent = `Aktywny (${autoBetsRemaining})`;
+                autoStatus.style.color = '#4caf92';
+                
+                diceMsg.textContent = `🤖 Tryb auto: ${count} zakładów, przerwa ${delay}ms`;
+                
+                // Wykonaj pierwszy zakład od razu
+                if (autoBetsRemaining > 0) {
+                    if (rollDice()) {
+                        autoBetsRemaining--;
+                        autoStatus.textContent = `Aktywny (${autoBetsRemaining})`;
+                    }
+                }
+                
+                // Ustaw interwał
+                autoInterval = setInterval(() => {
+                    if (!autoMode) {
+                        clearInterval(autoInterval);
+                        autoInterval = null;
+                        return;
+                    }
+                    
+                    if (autoBetsRemaining <= 0) {
+                        stopAuto();
+                        return;
+                    }
+                    
+                    if (rollDice()) {
+                        autoBetsRemaining--;
+                        autoStatus.textContent = `Aktywny (${autoBetsRemaining})`;
+                    } else {
+                        // Jeśli rollDice zwróci false (brak środków), zatrzymaj auto
+                        stopAuto();
+                    }
+                }, delay);
+            }
+
+            // Eventy dla auto
+            autoToggle.addEventListener('change', function() {
+                if (this.checked) {
+                    startAuto();
+                } else {
+                    stopAuto();
+                }
+            });
+
+            autoStartBtn.addEventListener('click', startAuto);
+            autoStopBtn.addEventListener('click', stopAuto);
 
             // INIT
             updateDiceOdds();
