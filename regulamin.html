@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Regulamin – CS2 Liga</title>
+    <style>/* ten sam CSS */</style>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: #0f0f1e; color: #e0e0e0; }
+        a { color: #bb86fc; text-decoration: none; }
+        .container { width: 90%; max-width: 1000px; margin: 0 auto; }
+        header { background: #1f1f2e; padding: 1rem 0; border-bottom: 2px solid #bb86fc; }
+        header .container { display: flex; justify-content: space-between; align-items: center; max-width: 1200px; }
+        .logo { font-size: 1.8rem; font-weight: bold; color: #bb86fc; }
+        .logo span { color: #fff; }
+        nav ul { display: flex; list-style: none; gap: 1.5rem; align-items: center; }
+        nav ul li a { color: #e0e0e0; font-weight: 500; padding: 0.5rem 0; }
+        nav ul li a:hover, nav ul li a.active { color: #bb86fc; border-bottom: 2px solid #bb86fc; }
+        .btn { background: #bb86fc; color: #0f0f1e; padding: 0.5rem 1.2rem; border-radius: 5px; font-weight: bold; }
+        section { padding: 2rem 0; }
+        h1 { color: #bb86fc; margin-bottom: 2rem; }
+        h2 { color: #bb86fc; margin: 2rem 0 1rem; }
+        .regulamin-box { background: #1f1f2e; padding: 2rem; border-radius: 8px; }
+        .faq-item { margin-bottom: 1.5rem; border-bottom: 1px solid #2a2a3a; padding-bottom: 1rem; }
+        .faq-item h3 { margin-bottom: 0.5rem; color: #bb86fc; }
+        .footer { background: #1a1a2a; text-align: center; padding: 2rem 0; margin-top: 2rem; }
+        .dropdown-content { display: none; position: absolute; background: #1f1f2e; min-width: 200px; box-shadow: 0 8px 16px rgba(0,0,0,0.5); border-radius: 5px; }
+        .dropdown:hover .dropdown-content { display: block; }
+        .dropdown-content a { display: block; padding: 0.8rem 1rem; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container" style="max-width:1200px">
+            <div class="logo">CS2<span>Liga</span></div>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Strona główna</a></li>
+                    <li><a href="ligi.html">Ligi</a></li>
+                    <li><a href="druzyny.html">Drużyny</a></li>
+                    <li><a href="statystyki.html">Statystyki</a></li>
+                    <li><a href="aktualnosci.html">Aktualności</a></li>
+                    <li><a href="dolacz.html">Dołącz</a></li>
+                    <li><a href="regulamin.html" class="active">Regulamin</a></li>
+                    <li><a href="kontakt.html">Kontakt</a></li>
+                    <li class="dropdown">
+                        <a href="#">Panel ▼</a>
+                        <div class="dropdown-content">
+                            <a href="panel_gracza.html">Panel gracza</a>
+                            <a href="panel_kapitana.html">Panel kapitana</a>
+                            <a href="panel_admin.html">Panel admina</a>
+                        </div>
+                    </li>
+                    <li><a href="#" class="btn">Zaloguj</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <h1>Regulamin i FAQ</h1>
+
+        <div class="regulamin-box">
+            <h2>Regulamin ogólny</h2>
+            <p>1. Każda drużyna musi posiadać kapitana, który jest odpowiedzialny za kontakt z administracją.</p>
+            <p>2. Mecze rozgrywane są w systemie każdy z każdym w ramach dywizji.</p>
+            <p>3. Wyniki należy raportować w panelu kapitana w ciągu 24 godzin od meczu.</p>
+            <p>4. Fałszowanie wyników (np. przerabianie zdjęć) skutkuje dyskwalifikacją.</p>
+            <p>5. Awans i spadek: dwa pierwsze zespoły awansują, dwa ostatnie spadają.</p>
+
+            <h2>FAQ – Najczęstsze pytania</h2>
+            <div class="faq-item">
+                <h3>Ilu graczy potrzebuję do założenia drużyny?</h3>
+                <p>Minimalnie 5, maksymalnie 7 (w tym kapitan).</p>
+            </div>
+            <div class="faq-item">
+                <h3>Kiedy mogę zmienić skład?</h3>
+                <p>Zmiany są dozwolone między sezonami. W trakcie sezonu tylko w wyjątkowych sytuacjach za zgodą admina.</p>
+            </div>
+            <div class="faq-item">
+                <h3>Co jeśli przeciwnik nie stawi się na mecz?</h3>
+                <p>Należy odczekać 15 minut, zrobić zdjęcie ekranu z czekaniem i zgłosić spór w panelu. Drużyna nieobecna otrzyma walkowera.</p>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 CS2 Liga</p>
+        </div>
+    </footer>
+</body>
+</html>
