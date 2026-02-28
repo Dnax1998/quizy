@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Ligi – CS2 Liga</title>
+    <style>
+        /* Ten sam CSS co w index.html – wklej tutaj lub podłącz osobny plik */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: #0f0f1e; color: #e0e0e0; }
+        a { color: #bb86fc; text-decoration: none; }
+        .container { width: 90%; max-width: 1200px; margin: 0 auto; }
+        header { background: #1f1f2e; padding: 1rem 0; border-bottom: 2px solid #bb86fc; position: sticky; top: 0; }
+        header .container { display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 1.8rem; font-weight: bold; color: #bb86fc; }
+        .logo span { color: #fff; }
+        nav ul { display: flex; list-style: none; gap: 1.5rem; }
+        nav ul li a { color: #e0e0e0; font-weight: 500; padding: 0.5rem 0; }
+        nav ul li a:hover, nav ul li a.active { color: #bb86fc; border-bottom: 2px solid #bb86fc; }
+        .btn { background: #bb86fc; color: #0f0f1e; padding: 0.5rem 1.2rem; border-radius: 5px; font-weight: bold; }
+        section { padding: 2rem 0; }
+        h1, h2 { color: #bb86fc; margin-bottom: 1.5rem; }
+        .liga-block { background: #1f1f2e; border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        th, td { padding: 0.8rem; text-align: left; border-bottom: 1px solid #2a2a3a; }
+        th { background: #2a2a3a; color: #bb86fc; }
+        tr:hover { background: #2a2a3a; }
+        .footer { background: #1a1a2a; text-align: center; padding: 2rem 0; margin-top: 2rem; }
+        .dropdown-content { display: none; position: absolute; background: #1f1f2e; min-width: 200px; box-shadow: 0 8px 16px rgba(0,0,0,0.5); border-radius: 5px; }
+        .dropdown:hover .dropdown-content { display: block; }
+        .dropdown-content a { display: block; padding: 0.8rem 1rem; border-bottom: 1px solid #2a2a3a; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">CS2<span>Liga</span></div>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Strona główna</a></li>
+                    <li><a href="ligi.html" class="active">Ligi</a></li>
+                    <li><a href="druzyny.html">Drużyny</a></li>
+                    <li><a href="statystyki.html">Statystyki</a></li>
+                    <li><a href="aktualnosci.html">Aktualności</a></li>
+                    <li><a href="dolacz.html">Dołącz</a></li>
+                    <li><a href="regulamin.html">Regulamin</a></li>
+                    <li><a href="kontakt.html">Kontakt</a></li>
+                    <li class="dropdown">
+                        <a href="#">Panel ▼</a>
+                        <div class="dropdown-content">
+                            <a href="panel_gracza.html">Panel gracza</a>
+                            <a href="panel_kapitana.html">Panel kapitana</a>
+                            <a href="panel_admin.html">Panel admina</a>
+                        </div>
+                    </li>
+                    <li><a href="#" class="btn">Zaloguj</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <h1>Rozgrywki ligowe</h1>
+
+        <div class="liga-block" id="dywizja1">
+            <h2>Dywizja 1</h2>
+            <table>
+                <thead>
+                    <tr><th>Poz.</th><th>Drużyna</th><th>Mecze</th><th>Pkt</th><th>Bilans map</th><th>Forma</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>1</td><td>Virtus.Pro</td><td>10</td><td>25</td><td>20:5</td><td>✅✅✅✅❌</td></tr>
+                    <tr><td>2</td><td>FaZe Clan</td><td>10</td><td>22</td><td>18:8</td><td>✅✅❌✅✅</td></tr>
+                    <tr><td>3</td><td>G2 Esports</td><td>10</td><td>21</td><td>17:9</td><td>✅❌✅✅✅</td></tr>
+                    <tr><td>4</td><td>NaVi</td><td>10</td><td>19</td><td>15:11</td><td>✅✅❌❌✅</td></tr>
+                    <tr><td>5</td><td>Team Spirit</td><td>10</td><td>18</td><td>14:12</td><td>❌✅✅❌✅</td></tr>
+                </tbody>
+            </table>
+            <p style="margin-top:1rem;"><a href="#">Terminarz Dywizji 1</a> | <a href="#">Wyniki</a> | <a href="#">Statystyki</a></p>
+        </div>
+
+        <div class="liga-block" id="dywizja2">
+            <h2>Dywizja 2</h2>
+            <table>
+                <thead>
+                    <tr><th>Poz.</th><th>Drużyna</th><th>Mecze</th><th>Pkt</th><th>Bilans map</th><th>Forma</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>1</td><td>Team Spirit</td><td>10</td><td>24</td><td>19:6</td><td>✅✅✅✅✅</td></tr>
+                    <tr><td>2</td><td>OG</td><td>10</td><td>21</td><td>17:9</td><td>✅✅❌✅✅</td></tr>
+                    <tr><td>3</td><td>Liquid</td><td>10</td><td>19</td><td>15:10</td><td>✅❌✅✅❌</td></tr>
+                    <tr><td>4</td><td>Fnatic</td><td>10</td><td>17</td><td>14:12</td><td>❌✅✅❌✅</td></tr>
+                    <tr><td>5</td><td>ENCE</td><td>10</td><td>15</td><td>12:14</td><td>✅❌❌✅❌</td></tr>
+                </tbody>
+            </table>
+            <p style="margin-top:1rem;"><a href="#">Terminarz Dywizji 2</a> | <a href="#">Wyniki</a> | <a href="#">Statystyki</a></p>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 CS2 Liga</p>
+        </div>
+    </footer>
+</body>
+</html>
