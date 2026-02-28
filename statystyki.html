@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statystyki – CS2 Liga</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: #0f0f1e; color: #e0e0e0; line-height: 1.6; }
+        a { color: #bb86fc; text-decoration: none; }
+        .container { width: 90%; max-width: 1200px; margin: 0 auto; }
+        header { background: #1f1f2e; padding: 1rem 0; border-bottom: 2px solid #bb86fc; position: sticky; top: 0; z-index: 100; }
+        header .container { display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 1.8rem; font-weight: bold; color: #bb86fc; }
+        .logo span { color: #fff; }
+        nav ul { display: flex; list-style: none; gap: 1.5rem; align-items: center; }
+        nav ul li a { color: #e0e0e0; font-weight: 500; transition: 0.3s; padding: 0.5rem 0; }
+        nav ul li a:hover, nav ul li a.active { color: #bb86fc; border-bottom: 2px solid #bb86fc; }
+        .btn { background: #bb86fc; color: #0f0f1e; padding: 0.5rem 1.2rem; border-radius: 5px; font-weight: bold; border: none; cursor: pointer; }
+        .btn:hover { background: #9b67d9; }
+        section { padding: 2rem 0; }
+        h1, h2 { color: #bb86fc; margin-bottom: 1.5rem; }
+        .tabs { display: flex; gap: 1rem; margin-bottom: 2rem; border-bottom: 1px solid #2a2a3a; padding-bottom: 0.5rem; }
+        .tab { padding: 0.5rem 1rem; cursor: pointer; background: #1f1f2e; border-radius: 5px 5px 0 0; }
+        .tab.active { background: #bb86fc; color: #0f0f1e; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; background: #1f1f2e; border-radius: 8px; overflow: hidden; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #2a2a3a; }
+        th { background: #2a2a3a; color: #bb86fc; }
+        tr:hover { background: #2a2a3a; }
+        .footer { background: #1a1a2a; text-align: center; padding: 2rem 0; margin-top: 2rem; }
+        .dropdown-content { display: none; position: absolute; background: #1f1f2e; min-width: 200px; box-shadow: 0 8px 16px rgba(0,0,0,0.5); border-radius: 5px; }
+        .dropdown:hover .dropdown-content { display: block; }
+        .dropdown-content a { display: block; padding: 0.8rem 1rem; border-bottom: 1px solid #2a2a3a; color: #e0e0e0; }
+        .dropdown-content a:hover { background: #2a2a3a; color: #bb86fc; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">CS2<span>Liga</span></div>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Strona główna</a></li>
+                    <li><a href="ligi.html">Ligi</a></li>
+                    <li><a href="druzyny.html">Drużyny</a></li>
+                    <li><a href="statystyki.html" class="active">Statystyki</a></li>
+                    <li><a href="aktualnosci.html">Aktualności</a></li>
+                    <li><a href="dolacz.html">Dołącz</a></li>
+                    <li><a href="regulamin.html">Regulamin</a></li>
+                    <li><a href="kontakt.html">Kontakt</a></li>
+                    <li class="dropdown">
+                        <a href="#">Panel ▼</a>
+                        <div class="dropdown-content">
+                            <a href="panel_gracza.html">Panel gracza</a>
+                            <a href="panel_kapitana.html">Panel kapitana</a>
+                            <a href="panel_admin.html">Panel admina</a>
+                        </div>
+                    </li>
+                    <li><a href="#" class="btn">Zaloguj</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <h1>Statystyki i rankingi</h1>
+        
+        <div class="tabs">
+            <div class="tab active">Ranking drużyn</div>
+            <div class="tab">Ranking graczy</div>
+            <div class="tab">Najlepsi strzelcy</div>
+        </div>
+
+        <!-- Ranking drużyn -->
+        <table>
+            <thead>
+                <tr><th>Pozycja</th><th>Drużyna</th><th>Liga</th><th>Mecze</th><th>Punkty</th><th>Bilans</th><th>Forma</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>1</td><td>Virtus.Pro</td><td>Dywizja 1</td><td>12</td><td>30</td><td>24-6</td><td>✅✅✅✅❌</td></tr>
+                <tr><td>2</td><td>FaZe Clan</td><td>Dywizja 1</td><td>12</td><td>28</td><td>22-8</td><td>✅✅❌✅✅</td></tr>
+                <tr><td>3</td><td>Team Spirit</td><td>Dywizja 2</td><td>12</td><td>27</td><td>21-7</td><td>✅✅✅✅✅</td></tr>
+                <tr><td>4</td><td>G2 Esports</td><td>Dywizja 1</td><td>12</td><td>25</td><td>20-10</td><td>✅❌✅✅✅</td></tr>
+            </tbody>
+        </table>
+
+        <p style="margin-top: 2rem; text-align: right;"><a href="#">Pełny ranking drużyn →</a></p>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 CS2 Liga. Wszelkie prawa zastrzeżone.</p>
+            <p><a href="regulamin.html">Regulamin</a> | <a href="kontakt.html">Kontakt</a></p>
+        </div>
+    </footer>
+</body>
+</html>
