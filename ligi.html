@@ -2,32 +2,212 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ligi – CS2 Liga</title>
     <style>
-        /* Ten sam CSS co w index.html – wklej tutaj lub podłącz osobny plik */
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-        body { background: #0f0f1e; color: #e0e0e0; }
-        a { color: #bb86fc; text-decoration: none; }
-        .container { width: 90%; max-width: 1200px; margin: 0 auto; }
-        header { background: #1f1f2e; padding: 1rem 0; border-bottom: 2px solid #bb86fc; position: sticky; top: 0; }
-        header .container { display: flex; justify-content: space-between; align-items: center; }
-        .logo { font-size: 1.8rem; font-weight: bold; color: #bb86fc; }
-        .logo span { color: #fff; }
-        nav ul { display: flex; list-style: none; gap: 1.5rem; }
-        nav ul li a { color: #e0e0e0; font-weight: 500; padding: 0.5rem 0; }
-        nav ul li a:hover, nav ul li a.active { color: #bb86fc; border-bottom: 2px solid #bb86fc; }
-        .btn { background: #bb86fc; color: #0f0f1e; padding: 0.5rem 1.2rem; border-radius: 5px; font-weight: bold; }
-        section { padding: 2rem 0; }
-        h1, h2 { color: #bb86fc; margin-bottom: 1.5rem; }
-        .liga-block { background: #1f1f2e; border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem; }
-        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-        th, td { padding: 0.8rem; text-align: left; border-bottom: 1px solid #2a2a3a; }
-        th { background: #2a2a3a; color: #bb86fc; }
-        tr:hover { background: #2a2a3a; }
-        .footer { background: #1a1a2a; text-align: center; padding: 2rem 0; margin-top: 2rem; }
-        .dropdown-content { display: none; position: absolute; background: #1f1f2e; min-width: 200px; box-shadow: 0 8px 16px rgba(0,0,0,0.5); border-radius: 5px; }
-        .dropdown:hover .dropdown-content { display: block; }
-        .dropdown-content a { display: block; padding: 0.8rem 1rem; border-bottom: 1px solid #2a2a3a; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background: #0f0f1e;
+            color: #e0e0e0;
+            line-height: 1.6;
+        }
+        a {
+            text-decoration: none;
+            color: #bb86fc;
+        }
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        header {
+            background: #1f1f2e;
+            padding: 1rem 0;
+            border-bottom: 2px solid #bb86fc;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        header .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #bb86fc;
+        }
+        .logo span {
+            color: #fff;
+        }
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 1.5rem;
+            align-items: center;
+        }
+        nav ul li a {
+            color: #e0e0e0;
+            font-weight: 500;
+            transition: 0.3s;
+            padding: 0.5rem 0;
+        }
+        nav ul li a:hover,
+        nav ul li a.active {
+            color: #bb86fc;
+            border-bottom: 2px solid #bb86fc;
+        }
+        .btn {
+            background: #bb86fc;
+            color: #0f0f1e;
+            padding: 0.5rem 1.2rem;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background: #9b67d9;
+        }
+        section {
+            padding: 2rem 0;
+        }
+        h1 {
+            color: #bb86fc;
+            margin-bottom: 2rem;
+            font-size: 2rem;
+        }
+        .liga-block {
+            background: #1a1a2a;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .liga-block h2 {
+            color: #bb86fc;
+            margin-bottom: 1rem;
+            font-size: 1.8rem;
+            border-bottom: 1px solid #2a2a3a;
+            padding-bottom: 0.5rem;
+        }
+        .table-wrapper {
+            overflow-x: auto;
+            background: #1f1f2e;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 700px;
+        }
+        th {
+            background: #2a2a3a;
+            color: #bb86fc;
+            padding: 0.8rem 0.5rem;
+            font-weight: 600;
+            text-align: center;
+        }
+        td {
+            padding: 0.6rem 0.5rem;
+            text-align: center;
+            border-bottom: 1px solid #2a2a3a;
+        }
+        .team-name {
+            text-align: left;
+            font-weight: 500;
+        }
+        /* Kolory dla awansu / mistrza / spadku */
+        .awans {
+            background-color: rgba(0, 255, 0, 0.15);
+        }
+        .awans td:first-child {
+            border-left: 4px solid #00cc00;
+        }
+        .mistrz {
+            background-color: rgba(255, 215, 0, 0.2);
+        }
+        .mistrz td:first-child {
+            border-left: 4px solid gold;
+        }
+        .spadek {
+            background-color: rgba(255, 0, 0, 0.15);
+        }
+        .spadek td:first-child {
+            border-left: 4px solid #ff3333;
+        }
+        tr:hover {
+            background: #2a2a3a !important;
+        }
+        .legenda {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: #1a1a2a;
+            border-radius: 8px;
+        }
+        .legenda-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .kolor-box {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+        .kolor-awans {
+            background-color: #00cc00;
+        }
+        .kolor-mistrz {
+            background-color: gold;
+        }
+        .kolor-spadek {
+            background-color: #ff3333;
+        }
+        .footer {
+            background: #1a1a2a;
+            text-align: center;
+            padding: 2rem 0;
+            margin-top: 2rem;
+        }
+        .dropdown {
+            position: relative;
+        }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background: #1f1f2e;
+            min-width: 200px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+            z-index: 1;
+            border-radius: 5px;
+            top: 100%;
+            left: 0;
+        }
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+        .dropdown-content a {
+            display: block;
+            padding: 0.8rem 1rem;
+            color: #e0e0e0 !important;
+            border-bottom: 1px solid #2a2a3a;
+        }
+        .dropdown-content a:hover {
+            background: #2a2a3a;
+            color: #bb86fc !important;
+            border-bottom: none;
+        }
     </style>
 </head>
 <body>
@@ -58,47 +238,145 @@
         </div>
     </header>
 
-    <div class="container">
-        <h1>Rozgrywki ligowe</h1>
+    <section>
+        <div class="container">
+            <h1>Rozgrywki ligowe CS2</h1>
 
-        <div class="liga-block" id="dywizja1">
-            <h2>Dywizja 1</h2>
-            <table>
-                <thead>
-                    <tr><th>Poz.</th><th>Drużyna</th><th>Mecze</th><th>Pkt</th><th>Bilans map</th><th>Forma</th></tr>
-                </thead>
-                <tbody>
-                    <tr><td>1</td><td>Virtus.Pro</td><td>10</td><td>25</td><td>20:5</td><td>✅✅✅✅❌</td></tr>
-                    <tr><td>2</td><td>FaZe Clan</td><td>10</td><td>22</td><td>18:8</td><td>✅✅❌✅✅</td></tr>
-                    <tr><td>3</td><td>G2 Esports</td><td>10</td><td>21</td><td>17:9</td><td>✅❌✅✅✅</td></tr>
-                    <tr><td>4</td><td>NaVi</td><td>10</td><td>19</td><td>15:11</td><td>✅✅❌❌✅</td></tr>
-                    <tr><td>5</td><td>Team Spirit</td><td>10</td><td>18</td><td>14:12</td><td>❌✅✅❌✅</td></tr>
-                </tbody>
-            </table>
-            <p style="margin-top:1rem;"><a href="#">Terminarz Dywizji 1</a> | <a href="#">Wyniki</a> | <a href="#">Statystyki</a></p>
-        </div>
+            <!-- DYWIZJA 1 (Mistrzostwo) -->
+            <div class="liga-block">
+                <h2>Dywizja 1 – Mistrzowska</h2>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Drużyna</th>
+                                <th>M.</th>
+                                <th>W.</th>
+                                <th>D.</th>
+                                <th>L.</th>
+                                <th>Bramki</th>
+                                <th>Róż.</th>
+                                <th>Pkt.</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Miejsce 1: mistrz (złoty) -->
+                            <tr class="mistrz">
+                                <td>1</td>
+                                <td class="team-name">Virtus.Pro</td>
+                                <td>18</td>
+                                <td>14</td>
+                                <td>2</td>
+                                <td>2</td>
+                                <td>45:18</td>
+                                <td>+27</td>
+                                <td><strong>44</strong></td>
+                            </tr>
+                            <!-- Miejsca 2-8: normalne -->
+                            <tr><td>2</td><td class="team-name">FaZe Clan</td><td>18</td><td>12</td><td>3</td><td>3</td><td>40:21</td><td>+19</td><td><strong>39</strong></td></tr>
+                            <tr><td>3</td><td class="team-name">G2 Esports</td><td>18</td><td>11</td><td>4</td><td>3</td><td>38:22</td><td>+16</td><td><strong>37</strong></td></tr>
+                            <tr><td>4</td><td class="team-name">NaVi</td><td>18</td><td>10</td><td>3</td><td>5</td><td>35:25</td><td>+10</td><td><strong>33</strong></td></tr>
+                            <tr><td>5</td><td class="team-name">Team Spirit</td><td>18</td><td>8</td><td>5</td><td>5</td><td>30:26</td><td>+4</td><td><strong>29</strong></td></tr>
+                            <tr><td>6</td><td class="team-name">MOUZ</td><td>18</td><td>7</td><td>4</td><td>7</td><td>28:29</td><td>-1</td><td><strong>25</strong></td></tr>
+                            <tr><td>7</td><td class="team-name">ENCE</td><td>18</td><td>5</td><td>5</td><td>8</td><td>24:32</td><td>-8</td><td><strong>20</strong></td></tr>
+                            <tr><td>8</td><td class="team-name">Cloud9</td><td>18</td><td>4</td><td>4</td><td>10</td><td>22:35</td><td>-13</td><td><strong>16</strong></td></tr>
+                            <!-- Miejsca 9-10: spadek (czerwony) -->
+                            <tr class="spadek">
+                                <td>9</td>
+                                <td class="team-name">Astralis</td>
+                                <td>18</td>
+                                <td>3</td>
+                                <td>3</td>
+                                <td>12</td>
+                                <td>18:41</td>
+                                <td>-23</td>
+                                <td><strong>12</strong></td>
+                            </tr>
+                            <tr class="spadek">
+                                <td>10</td>
+                                <td class="team-name">Evil Geniuses</td>
+                                <td>18</td>
+                                <td>1</td>
+                                <td>1</td>
+                                <td>16</td>
+                                <td>12:49</td>
+                                <td>-37</td>
+                                <td><strong>4</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 
-        <div class="liga-block" id="dywizja2">
-            <h2>Dywizja 2</h2>
-            <table>
-                <thead>
-                    <tr><th>Poz.</th><th>Drużyna</th><th>Mecze</th><th>Pkt</th><th>Bilans map</th><th>Forma</th></tr>
-                </thead>
-                <tbody>
-                    <tr><td>1</td><td>Team Spirit</td><td>10</td><td>24</td><td>19:6</td><td>✅✅✅✅✅</td></tr>
-                    <tr><td>2</td><td>OG</td><td>10</td><td>21</td><td>17:9</td><td>✅✅❌✅✅</td></tr>
-                    <tr><td>3</td><td>Liquid</td><td>10</td><td>19</td><td>15:10</td><td>✅❌✅✅❌</td></tr>
-                    <tr><td>4</td><td>Fnatic</td><td>10</td><td>17</td><td>14:12</td><td>❌✅✅❌✅</td></tr>
-                    <tr><td>5</td><td>ENCE</td><td>10</td><td>15</td><td>12:14</td><td>✅❌❌✅❌</td></tr>
-                </tbody>
-            </table>
-            <p style="margin-top:1rem;"><a href="#">Terminarz Dywizji 2</a> | <a href="#">Wyniki</a> | <a href="#">Statystyki</a></p>
+            <!-- DYWIZJA 2 (Awans/Spadek) -->
+            <div class="liga-block">
+                <h2>Dywizja 2</h2>
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr><th>#</th><th>Drużyna</th><th>M.</th><th>W.</th><th>D.</th><th>L.</th><th>Bramki</th><th>Róż.</th><th>Pkt.</th></tr></thead>
+                        <tbody>
+                            <!-- Awans -->
+                            <tr class="awans"><td>1</td><td class="team-name">Heroic</td><td>18</td><td>13</td><td>2</td><td>3</td><td>41:19</td><td>+22</td><td><strong>41</strong></td></tr>
+                            <tr class="awans"><td>2</td><td class="team-name">FURIA</td><td>18</td><td>12</td><td>3</td><td>3</td><td>38:21</td><td>+17</td><td><strong>39</strong></td></tr>
+                            <!-- Środek -->
+                            <tr><td>3</td><td class="team-name">BIG</td><td>18</td><td>10</td><td>4</td><td>4</td><td>35:24</td><td>+11</td><td><strong>34</strong></td></tr>
+                            <tr><td>4</td><td class="team-name">NiP</td><td>18</td><td>9</td><td>3</td><td>6</td><td>32:27</td><td>+5</td><td><strong>30</strong></td></tr>
+                            <tr><td>5</td><td class="team-name">OG</td><td>18</td><td>7</td><td>5</td><td>6</td><td>29:28</td><td>+1</td><td><strong>26</strong></td></tr>
+                            <tr><td>6</td><td class="team-name">Liquid</td><td>18</td><td>6</td><td>4</td><td>8</td><td>26:30</td><td>-4</td><td><strong>22</strong></td></tr>
+                            <tr><td>7</td><td class="team-name">Fnatic</td><td>18</td><td>5</td><td>4</td><td>9</td><td>24:33</td><td>-9</td><td><strong>19</strong></td></tr>
+                            <tr><td>8</td><td class="team-name">Complexity</td><td>18</td><td>4</td><td>3</td><td>11</td><td>20:36</td><td>-16</td><td><strong>15</strong></td></tr>
+                            <!-- Spadek -->
+                            <tr class="spadek"><td>9</td><td class="team-name">Imperial</td><td>18</td><td>3</td><td>2</td><td>13</td><td>18:41</td><td>-23</td><td><strong>11</strong></td></tr>
+                            <tr class="spadek"><td>10</td><td class="team-name">paiN</td><td>18</td><td>2</td><td>2</td><td>14</td><td>15:43</td><td>-28</td><td><strong>8</strong></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- DYWIZJA 3 (Awans/Spadek) -->
+            <div class="liga-block">
+                <h2>Dywizja 3</h2>
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr><th>#</th><th>Drużyna</th><th>M.</th><th>W.</th><th>D.</th><th>L.</th><th>Bramki</th><th>Róż.</th><th>Pkt.</th></tr></thead>
+                        <tbody>
+                            <tr class="awans"><td>1</td><td class="team-name">9z Team</td><td>18</td><td>14</td><td>1</td><td>3</td><td>47:22</td><td>+25</td><td><strong>43</strong></td></tr>
+                            <tr class="awans"><td>2</td><td class="team-name">Eternal Fire</td><td>18</td><td>12</td><td>3</td><td>3</td><td>40:23</td><td>+17</td><td><strong>39</strong></td></tr>
+                            <tr><td>3</td><td class="team-name">Monte</td><td>18</td><td>10</td><td>4</td><td>4</td><td>36:25</td><td>+11</td><td><strong>34</strong></td></tr>
+                            <tr><td>4</td><td class="team-name">GamerLegion</td><td>18</td><td>9</td><td>3</td><td>6</td><td>33:28</td><td>+5</td><td><strong>30</strong></td></tr>
+                            <tr><td>5</td><td class="team-name">Apeks</td><td>18</td><td>8</td><td>2</td><td>8</td><td>30:31</td><td>-1</td><td><strong>26</strong></td></tr>
+                            <tr><td>6</td><td class="team-name">FORZE</td><td>18</td><td>6</td><td>4</td><td>8</td><td>27:33</td><td>-6</td><td><strong>22</strong></td></tr>
+                            <tr><td>7</td><td class="team-name">1WIN</td><td>18</td><td>5</td><td>3</td><td>10</td><td>24:35</td><td>-11</td><td><strong>18</strong></td></tr>
+                            <tr><td>8</td><td class="team-name">SAW</td><td>18</td><td>4</td><td>4</td><td>10</td><td>22:36</td><td>-14</td><td><strong>16</strong></td></tr>
+                            <tr class="spadek"><td>9</td><td class="team-name">B8</td><td>18</td><td>3</td><td>2</td><td>13</td><td>19:42</td><td>-23</td><td><strong>11</strong></td></tr>
+                            <tr class="spadek"><td>10</td><td class="team-name">Illuminar</td><td>18</td><td>2</td><td>2</td><td>14</td><td>16:44</td><td>-28</td><td><strong>8</strong></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="legenda">
+                <div class="legenda-item">
+                    <div class="kolor-box kolor-mistrz"></div>
+                    <span>Mistrz Dywizji 1</span>
+                </div>
+                <div class="legenda-item">
+                    <div class="kolor-box kolor-awans"></div>
+                    <span>awans do wyższej ligi</span>
+                </div>
+                <div class="legenda-item">
+                    <div class="kolor-box kolor-spadek"></div>
+                    <span>spadek do niższej ligi</span>
+                </div>
+            </div>
         </div>
-    </div>
+    </section>
 
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2025 CS2 Liga</p>
+            <p>&copy; 2025 CS2 Liga. Wszelkie prawa zastrzeżone.</p>
+            <p><a href="regulamin.html">Regulamin</a> | <a href="kontakt.html">Kontakt</a></p>
         </div>
     </footer>
 </body>
