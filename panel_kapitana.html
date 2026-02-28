@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel kapitana – CS2 Liga</title>
+    <style>/* ten sam CSS */</style>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: #0f0f1e; color: #e0e0e0; }
+        a { color: #bb86fc; }
+        .container { width: 90%; max-width: 1200px; margin: 0 auto; }
+        header { background: #1f1f2e; padding: 1rem 0; border-bottom: 2px solid #bb86fc; }
+        header .container { display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 1.8rem; font-weight: bold; color: #bb86fc; }
+        .logo span { color: #fff; }
+        nav ul { display: flex; list-style: none; gap: 1.5rem; align-items: center; }
+        nav ul li a { color: #e0e0e0; font-weight: 500; padding: 0.5rem 0; }
+        nav ul li a:hover, nav ul li a.active { color: #bb86fc; border-bottom: 2px solid #bb86fc; }
+        .btn { background: #bb86fc; color: #0f0f1e; padding: 0.5rem 1.2rem; border-radius: 5px; font-weight: bold; border: none; cursor: pointer; }
+        .btn-small { background: #2a2a3a; color: #fff; padding: 0.3rem 0.8rem; border-radius: 3px; font-size: 0.9rem; }
+        .panel-menu { display: flex; gap: 1rem; background: #1f1f2e; padding: 1rem; border-radius: 8px; margin: 2rem 0; flex-wrap: wrap; }
+        .panel-menu a { padding: 0.5rem 1rem; border-radius: 5px; }
+        .panel-menu a.active { background: #bb86fc; color: #0f0f1e; }
+        .kafelki { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .kafel { background: #1f1f2e; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #bb86fc; }
+        .mecz-row { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #2a2a3a; }
+        .footer { background: #1a1a2a; text-align: center; padding: 2rem 0; margin-top: 2rem; }
+        .dropdown-content { display: none; position: absolute; background: #1f1f2e; min-width: 200px; box-shadow: 0 8px 16px rgba(0,0,0,0.5); border-radius: 5px; }
+        .dropdown:hover .dropdown-content { display: block; }
+        .dropdown-content a { display: block; padding: 0.8rem 1rem; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">CS2<span>Liga</span></div>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Strona główna</a></li>
+                    <li><a href="ligi.html">Ligi</a></li>
+                    <li><a href="druzyny.html">Drużyny</a></li>
+                    <li><a href="statystyki.html">Statystyki</a></li>
+                    <li><a href="aktualnosci.html">Aktualności</a></li>
+                    <li><a href="dolacz.html">Dołącz</a></li>
+                    <li><a href="regulamin.html">Regulamin</a></li>
+                    <li><a href="kontakt.html">Kontakt</a></li>
+                    <li class="dropdown">
+                        <a href="#" class="active">Panel ▼</a>
+                        <div class="dropdown-content">
+                            <a href="panel_gracza.html">Panel gracza</a>
+                            <a href="panel_kapitana.html" class="active">Panel kapitana</a>
+                            <a href="panel_admin.html">Panel admina</a>
+                        </div>
+                    </li>
+                    <li><a href="#" class="btn">Wyloguj</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <h1>Panel kapitana – Virtus.Pro</h1>
+
+        <div class="panel-menu">
+            <a href="#" class="active">Drużyna</a>
+            <a href="#">Mecze</a>
+            <a href="#">Raportuj wynik</a>
+            <a href="#">Potwierdzenia</a>
+            <a href="#">Spory</a>
+            <a href="#">Ustawienia</a>
+        </div>
+
+        <div class="kafelki">
+            <div class="kafel">
+                <h3>Skład drużyny</h3>
+                <ul style="list-style:none;">
+                    <li>byali (kapitan)</li>
+                    <li>NEO</li>
+                    <li>pasha</li>
+                    <li>Snax</li>
+                    <li>TaZ</li>
+                </ul>
+                <button class="btn-small">Zaprość gracza</button>
+            </div>
+            <div class="kafel">
+                <h3>Nadchodzące mecze</h3>
+                <div class="mecz-row"><span>vs FaZe</span><span>15.03 20:00</span><button class="btn-small">Raportuj</button></div>
+                <div class="mecz-row"><span>vs G2</span><span>18.03 19:30</span><button class="btn-small">Raportuj</button></div>
+            </div>
+            <div class="kafel">
+                <h3>Oczekujące potwierdzenia</h3>
+                <p>Brak oczekujących potwierdzeń</p>
+            </div>
+            <div class="kafel">
+                <h3>Ostatni spór</h3>
+                <p>Brak aktywnych sporów</p>
+            </div>
+        </div>
+
+        <h2>Formularz raportowania wyniku (przykład)</h2>
+        <form style="background:#1f1f2e; padding:2rem; border-radius:8px;">
+            <div style="margin-bottom:1rem;">
+                <label>Przeciwnik: <strong>FaZe Clan</strong></label>
+            </div>
+            <div style="margin-bottom:1rem;">
+                <label>Wynik (wasze mapy : ich mapy):</label><br>
+                <input type="number" min="0" max="3" style="width:60px; background:#2a2a3a; color:#fff; border:none; padding:0.5rem;"> : <input type="number" min="0" max="3" style="width:60px; background:#2a2a3a; color:#fff; border:none; padding:0.5rem;">
+            </div>
+            <div style="margin-bottom:1rem;">
+                <label>Załącznik (zdjęcie wyniku):</label><br>
+                <input type="file" accept="image/*">
+            </div>
+            <div style="margin-bottom:1rem;">
+                <label>Komentarz (opcjonalnie):</label><br>
+                <textarea rows="3" style="width:100%; background:#2a2a3a; color:#fff; border:none; padding:0.5rem;"></textarea>
+            </div>
+            <button class="btn">Wyślij raport</button>
+        </form>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 CS2 Liga</p>
+        </div>
+    </footer>
+</body>
+</html>
