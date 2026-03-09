@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>System kompletacji paczek</title>
+<title>Kompletacja produktów</title>
 
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 <script src="https://unpkg.com/quagga/dist/quagga.min.js"></script>
@@ -52,11 +52,13 @@ background:#9be79b;
 </head>
 <body>
 
-<h1>📦 System kompletacji</h1>
+<h1>📦 Kompletacja zamówienia</h1>
 
-<h2>1️⃣ Zrób zdjęcie dokumentu</h2>
+<h2>1️⃣ Zrób zdjęcie listy</h2>
 
 <input type="file" id="photoInput" accept="image/*" capture="environment">
+
+<br>
 
 <button onclick="scanPhoto()">📄 Odczytaj dokument</button>
 
@@ -76,13 +78,14 @@ let order=[];
 
 const list=document.getElementById("productList");
 
-/* tutaj wpisujesz kody kreskowe produktów */
+/* tutaj wpisujesz kody kreskowe */
 
 const productCodes={
 
 "8720359200198":"ALOE VERA GEL",
 "8720359205773":"FOREVER ALOE MANGO",
-"5909876543210":"MINERAŁY NATURE-MIN"
+"5901234567890":"FOREVER FREEDOM",
+"5909876543210":"FOREVER ACTIVE HA"
 
 };
 
@@ -112,12 +115,12 @@ function scanPhoto(){
 
 const file=document.getElementById("photoInput").files[0];
 
-if(!file) return;
+if(!file){
+alert("Najpierw zrób zdjęcie dokumentu");
+return;
+}
 
-Tesseract.recognize(
-file,
-'eng'
-).then(({data:{text}})=>{
+Tesseract.recognize(file,'eng').then(({data:{text}})=>{
 
 console.log(text);
 
@@ -127,18 +130,27 @@ let lines=text.split("\n");
 
 lines.forEach(line=>{
 
-let match=line.match(/\d+\s+(\d+)\s+(.+)/);
+/* wyciąga wszystkie liczby z wiersza */
 
-if(match){
+let numbers=line.match(/\d+/g);
 
-let qty=parseInt(match[1]);
-let name=match[2].trim();
+if(numbers && numbers.length>=2){
+
+let qty=parseInt(numbers[1]); // druga liczba = ilość
+
+/* usuwa LP i ilość z początku wiersza */
+
+let name=line.replace(/^\D*\d+\s+\d+\s*/,'').trim();
+
+if(name.length>3){
 
 order.push({
 name:name,
 qty:qty,
 picked:0
 });
+
+}
 
 }
 
@@ -183,21 +195,25 @@ Quagga.onDetected(function(result){
 
 let code=result.codeResult.code;
 
+console.log("kod:",code);
+
 if(productCodes[code]){
 
 let productName=productCodes[code];
 
 order.forEach(p=>{
 
-if(p.name.includes(productName) && p.picked<p.qty){
+if(p.name.toLowerCase().includes(productName.toLowerCase()) && p.picked<p.qty){
+
 p.picked++;
+
 }
 
 });
 
-}
-
 render();
+
+}
 
 });
 
