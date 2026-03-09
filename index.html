@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>Kompletacja produktów</title>
+<title>System kompletacji</title>
 
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 <script src="https://unpkg.com/quagga/dist/quagga.min.js"></script>
@@ -30,6 +30,10 @@ border:3px solid #333;
 border-radius:10px;
 }
 
+canvas{
+display:none;
+}
+
 ul{
 list-style:none;
 padding:0;
@@ -54,13 +58,15 @@ background:#9be79b;
 
 <h1>📦 Kompletacja zamówienia</h1>
 
-<h2>1️⃣ Zrób zdjęcie listy</h2>
+<h2>1️⃣ Zrób zdjęcie dokumentu</h2>
 
 <input type="file" id="photoInput" accept="image/*" capture="environment">
 
 <br>
 
 <button onclick="scanPhoto()">📄 Odczytaj dokument</button>
+
+<canvas id="canvas"></canvas>
 
 <h2>Lista produktów</h2>
 
@@ -78,15 +84,11 @@ let order=[];
 
 const list=document.getElementById("productList");
 
-/* tutaj wpisujesz kody kreskowe */
-
 const productCodes={
-
 "8720359200198":"ALOE VERA GEL",
 "8720359205773":"FOREVER ALOE MANGO",
-"5901234567890":"Forever Freedom S",
+"5901234567890":"FOREVER FREEDOM",
 "5909876543210":"FOREVER ACTIVE HA"
-
 };
 
 function render(){
@@ -109,7 +111,47 @@ list.appendChild(li);
 
 }
 
-/* OCR dokumentu */
+function preprocessImage(file,callback){
+
+const img=new Image();
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
+
+img.onload=function(){
+
+canvas.width=img.width;
+canvas.height=img.height;
+
+ctx.drawImage(img,0,0);
+
+let imageData=ctx.getImageData(0,0,canvas.width,canvas.height);
+let data=imageData.data;
+
+for(let i=0;i<data.length;i+=4){
+
+let avg=(data[i]+data[i+1]+data[i+2])/3;
+
+if(avg>150){
+data[i]=255;
+data[i+1]=255;
+data[i+2]=255;
+}else{
+data[i]=0;
+data[i+1]=0;
+data[i+2]=0;
+}
+
+}
+
+ctx.putImageData(imageData,0,0);
+
+canvas.toBlob(callback);
+
+};
+
+img.src=URL.createObjectURL(file);
+
+}
 
 function scanPhoto(){
 
@@ -120,7 +162,9 @@ alert("Najpierw zrób zdjęcie dokumentu");
 return;
 }
 
-Tesseract.recognize(file,'eng').then(({data:{text}})=>{
+preprocessImage(file,function(processed){
+
+Tesseract.recognize(processed,'eng').then(({data:{text}})=>{
 
 console.log(text);
 
@@ -130,19 +174,18 @@ let lines=text.split("\n");
 
 lines.forEach(line=>{
 
-/* wyciąga wszystkie liczby z wiersza */
-
 let numbers=line.match(/\d+/g);
 
 if(numbers && numbers.length>=2){
 
-let qty=parseInt(numbers[1]); // druga liczba = ilość
-
-/* usuwa LP i ilość z początku wiersza */
+let qty=parseInt(numbers[1]);
 
 let name=line.replace(/^\D*\d+\s+\d+\s*/,'').trim();
 
-if(name.length>3){
+if(
+name.length>5 &&
+/[A-Z]{3,}/.test(name)
+){
 
 order.push({
 name:name,
@@ -160,9 +203,9 @@ render();
 
 });
 
-}
+});
 
-/* skaner kodów */
+}
 
 function startScanner(){
 
@@ -194,8 +237,6 @@ Quagga.start();
 Quagga.onDetected(function(result){
 
 let code=result.codeResult.code;
-
-console.log("kod:",code);
 
 if(productCodes[code]){
 
