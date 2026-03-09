@@ -1,25 +1,18 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>System kompletacji</title>
+<title>Magazyn</title>
 
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 <script src="https://unpkg.com/quagga/dist/quagga.min.js"></script>
 
 <style>
 
 body{
 font-family:Arial;
-background:#f2f2f2;
 text-align:center;
+background:#f2f2f2;
 padding:20px;
-}
-
-button{
-padding:15px;
-font-size:18px;
-margin:10px;
 }
 
 #scanner{
@@ -27,11 +20,6 @@ width:100%;
 max-width:500px;
 margin:auto;
 border:3px solid #333;
-border-radius:10px;
-}
-
-canvas{
-display:none;
 }
 
 ul{
@@ -41,14 +29,9 @@ padding:0;
 
 li{
 background:#eee;
-margin:6px;
-padding:12px;
+padding:10px;
+margin:5px;
 border-radius:6px;
-font-size:18px;
-}
-
-.done{
-background:#9be79b;
 }
 
 </style>
@@ -56,154 +39,46 @@ background:#9be79b;
 </head>
 <body>
 
-<h1>📦 Kompletacja zamówienia</h1>
+<h1>📦 Kompletacja</h1>
 
-<h2>1️⃣ Zrób zdjęcie dokumentu</h2>
-
-<input type="file" id="photoInput" accept="image/*" capture="environment">
-
-<br>
-
-<button onclick="scanPhoto()">📄 Odczytaj dokument</button>
-
-<canvas id="canvas"></canvas>
-
-<h2>Lista produktów</h2>
-
-<ul id="productList"></ul>
-
-<h2>2️⃣ Skanuj produkty</h2>
-
-<button onclick="startScanner()">📷 Skanuj kod</button>
+<button onclick="startScanner()">📷 Skanuj produkt</button>
 
 <div id="scanner"></div>
 
+<h2>Produkty</h2>
+
+<ul id="list"></ul>
+
 <script>
 
-let order=[];
+const products={
 
-const list=document.getElementById("productList");
+"037":"MINERAŁY NATURE-MIN",
+"036":"MLECZKO PSZCZELE FOREVER",
+"206":"FOREVER CALCIUM",
+"374":"FOREVER VITALIZE MEN",
+"247":"FOREVER VITALIZE WOMEN",
+"051":"KREM ALOESOWO PROPOLISOWY"
 
-const productCodes={
-"8720359200198":"ALOE VERA GEL",
-"8720359205773":"FOREVER ALOE MANGO",
-"5901234567890":"FOREVER FREEDOM",
-"5909876543210":"FOREVER ACTIVE HA"
 };
+
+let order={};
 
 function render(){
 
+const list=document.getElementById("list");
+
 list.innerHTML="";
 
-order.forEach(p=>{
+for(let code in order){
 
 let li=document.createElement("li");
 
-li.innerText=p.name+" ("+p.picked+"/"+p.qty+")";
-
-if(p.picked==p.qty){
-li.classList.add("done");
-}
+li.innerText=products[code]+" ("+order[code]+")";
 
 list.appendChild(li);
 
-});
-
 }
-
-function preprocessImage(file,callback){
-
-const img=new Image();
-const canvas=document.getElementById("canvas");
-const ctx=canvas.getContext("2d");
-
-img.onload=function(){
-
-canvas.width=img.width;
-canvas.height=img.height;
-
-ctx.drawImage(img,0,0);
-
-let imageData=ctx.getImageData(0,0,canvas.width,canvas.height);
-let data=imageData.data;
-
-for(let i=0;i<data.length;i+=4){
-
-let avg=(data[i]+data[i+1]+data[i+2])/3;
-
-if(avg>150){
-data[i]=255;
-data[i+1]=255;
-data[i+2]=255;
-}else{
-data[i]=0;
-data[i+1]=0;
-data[i+2]=0;
-}
-
-}
-
-ctx.putImageData(imageData,0,0);
-
-canvas.toBlob(callback);
-
-};
-
-img.src=URL.createObjectURL(file);
-
-}
-
-function scanPhoto(){
-
-const file=document.getElementById("photoInput").files[0];
-
-if(!file){
-alert("Najpierw zrób zdjęcie dokumentu");
-return;
-}
-
-preprocessImage(file,function(processed){
-
-Tesseract.recognize(processed,'eng').then(({data:{text}})=>{
-
-console.log(text);
-
-order=[];
-
-let lines=text.split("\n");
-
-lines.forEach(line=>{
-
-let numbers=line.match(/\d+/g);
-
-if(numbers && numbers.length>=2){
-
-let qty=parseInt(numbers[1]);
-
-let name=line.replace(/^\D*\d+\s+\d+\s*/,'').trim();
-
-if(
-name.length>5 &&
-/[A-Z]{3,}/.test(name)
-){
-
-order.push({
-name:name,
-qty:qty,
-picked:0
-});
-
-}
-
-}
-
-});
-
-render();
-
-});
-
-});
 
 }
 
@@ -214,9 +89,7 @@ Quagga.init({
 inputStream:{
 type:"LiveStream",
 target:document.querySelector('#scanner'),
-constraints:{
-facingMode:"environment"
-}
+constraints:{facingMode:"environment"}
 },
 
 decoder:{
@@ -238,19 +111,15 @@ Quagga.onDetected(function(result){
 
 let code=result.codeResult.code;
 
-if(productCodes[code]){
+let shortCode=code.slice(-3);
 
-let productName=productCodes[code];
+if(products[shortCode]){
 
-order.forEach(p=>{
-
-if(p.name.toLowerCase().includes(productName.toLowerCase()) && p.picked<p.qty){
-
-p.picked++;
-
+if(!order[shortCode]){
+order[shortCode]=0;
 }
 
-});
+order[shortCode]++;
 
 render();
 
