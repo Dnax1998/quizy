@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>Magazyn – kompletacja</title>
+<title>System kompletacji paczek</title>
 
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 <script src="https://unpkg.com/quagga/dist/quagga.min.js"></script>
@@ -54,13 +54,13 @@ background:#9be79b;
 
 <h1>📦 System kompletacji</h1>
 
-<h2>1️⃣ Zrób zdjęcie listy</h2>
+<h2>1️⃣ Zrób zdjęcie dokumentu</h2>
 
 <input type="file" id="photoInput" accept="image/*" capture="environment">
 
-<button onclick="scanPhoto()">📄 Odczytaj listę</button>
+<button onclick="scanPhoto()">📄 Odczytaj dokument</button>
 
-<h2>Produkty</h2>
+<h2>Lista produktów</h2>
 
 <ul id="productList"></ul>
 
@@ -76,10 +76,14 @@ let order=[];
 
 const list=document.getElementById("productList");
 
+/* tutaj wpisujesz kody kreskowe produktów */
+
 const productCodes={
-"8720359200198":"Aloe Vera Gel",
-"8720359205773":"Freedom 1L",
-"5909876543210":"Chipsy"
+
+"8720359200198":"ALOE VERA GEL",
+"8720359205773":"FOREVER ALOE MANGO",
+"5909876543210":"MINERAŁY NATURE-MIN"
+
 };
 
 function render(){
@@ -102,6 +106,8 @@ list.appendChild(li);
 
 }
 
+/* OCR dokumentu */
+
 function scanPhoto(){
 
 const file=document.getElementById("photoInput").files[0];
@@ -113,29 +119,38 @@ file,
 'eng'
 ).then(({data:{text}})=>{
 
-let numbers=text.match(/\d+/g);
+console.log(text);
 
 order=[];
 
-if(numbers){
+let lines=text.split("\n");
 
-numbers.forEach((n,i)=>{
+lines.forEach(line=>{
+
+let match=line.match(/\d+\s+(\d+)\s+(.+)/);
+
+if(match){
+
+let qty=parseInt(match[1]);
+let name=match[2].trim();
 
 order.push({
-name:"Produkt "+(i+1),
-qty:parseInt(n),
+name:name,
+qty:qty,
 picked:0
 });
 
-});
-
 }
+
+});
 
 render();
 
 });
 
 }
+
+/* skaner kodów */
 
 function startScanner(){
 
