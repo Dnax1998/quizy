@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>System kompletacji</title>
+<title>Magazyn – kompletacja</title>
 
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 <script src="https://unpkg.com/quagga/dist/quagga.min.js"></script>
@@ -11,9 +11,15 @@
 
 body{
 font-family:Arial;
-text-align:center;
 background:#f2f2f2;
+text-align:center;
 padding:20px;
+}
+
+button{
+padding:15px;
+font-size:18px;
+margin:10px;
 }
 
 #scanner{
@@ -31,8 +37,8 @@ padding:0;
 
 li{
 background:#eee;
-padding:12px;
 margin:6px;
+padding:12px;
 border-radius:6px;
 font-size:18px;
 }
@@ -41,26 +47,20 @@ font-size:18px;
 background:#9be79b;
 }
 
-button{
-padding:14px;
-font-size:18px;
-margin:10px;
-}
-
 </style>
 
 </head>
 <body>
 
-<h1>📦 Kompletacja paczki</h1>
+<h1>📦 System kompletacji</h1>
 
-<h2>1️⃣ Zrób zdjęcie listy produktów</h2>
+<h2>1️⃣ Zrób zdjęcie listy</h2>
 
 <input type="file" id="photoInput" accept="image/*" capture="environment">
 
-<button onclick="scanPhoto()">📄 Odczytaj produkty</button>
+<button onclick="scanPhoto()">📄 Odczytaj listę</button>
 
-<h2>Lista produktów</h2>
+<h2>Produkty</h2>
 
 <ul id="productList"></ul>
 
@@ -72,16 +72,14 @@ margin:10px;
 
 <script>
 
-let order = [];
+let order=[];
 
-const list = document.getElementById("productList");
+const list=document.getElementById("productList");
 
-const productCodes = {
-
-"Aloe Vera Gel 1L":"8720359200198",
-"Freedom 1L":"8720359205773",
-"Chipsy":"5909876543210"
-
+const productCodes={
+"8720359200198":"Aloe Vera Gel",
+"8720359205773":"Freedom 1L",
+"5909876543210":"Chipsy"
 };
 
 function render(){
@@ -112,36 +110,26 @@ if(!file) return;
 
 Tesseract.recognize(
 file,
-'pol+eng'
+'eng'
 ).then(({data:{text}})=>{
 
-let lines=text.split("\n");
+let numbers=text.match(/\d+/g);
 
 order=[];
 
-lines.forEach(line=>{
+if(numbers){
 
-let parts=line.split("-");
-
-if(parts.length==2){
-
-let name=parts[0].trim();
-let qty=parseInt(parts[1]);
-
-if(productCodes[name]){
+numbers.forEach((n,i)=>{
 
 order.push({
-name:name,
-code:productCodes[name],
-qty:qty,
+name:"Produkt "+(i+1),
+qty:parseInt(n),
 picked:0
 });
 
-}
-
-}
-
 });
+
+}
 
 render();
 
@@ -180,13 +168,19 @@ Quagga.onDetected(function(result){
 
 let code=result.codeResult.code;
 
+if(productCodes[code]){
+
+let productName=productCodes[code];
+
 order.forEach(p=>{
 
-if(p.code==code && p.picked<p.qty){
+if(p.name.includes(productName) && p.picked<p.qty){
 p.picked++;
 }
 
 });
+
+}
 
 render();
 
