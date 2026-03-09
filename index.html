@@ -2,11 +2,13 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>System kompletacji paczek</title>
+<title>System kompletacji</title>
 
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 <script src="https://unpkg.com/quagga/dist/quagga.min.js"></script>
 
 <style>
+
 body{
 font-family:Arial;
 text-align:center;
@@ -29,8 +31,8 @@ padding:0;
 
 li{
 background:#eee;
-padding:10px;
-margin:5px;
+padding:12px;
+margin:6px;
 border-radius:6px;
 font-size:18px;
 }
@@ -40,33 +42,47 @@ background:#9be79b;
 }
 
 button{
-padding:15px;
+padding:14px;
 font-size:18px;
 margin:10px;
 }
+
 </style>
 
 </head>
 <body>
 
-<h1>📦 Kompletacja paczek</h1>
+<h1>📦 Kompletacja paczki</h1>
+
+<h2>1️⃣ Zrób zdjęcie listy produktów</h2>
+
+<input type="file" id="photoInput" accept="image/*" capture="environment">
+
+<button onclick="scanPhoto()">📄 Odczytaj produkty</button>
+
+<h2>Lista produktów</h2>
+
+<ul id="productList"></ul>
+
+<h2>2️⃣ Skanuj produkty</h2>
 
 <button onclick="startScanner()">📷 Skanuj kod</button>
 
 <div id="scanner"></div>
 
-<h2>Produkty</h2>
-<ul id="productList"></ul>
-
 <script>
 
-const order = [
-{name:"Aloe Vera Gel 1L", code:"8720359200198", qty:5, picked:0},
-{name:"Freedom 1L", code:"8720359205773", qty:2, picked:0},
-{name:"Chipsy", code:"5909876543210", qty:3, picked:0}
-];
+let order = [];
 
 const list = document.getElementById("productList");
+
+const productCodes = {
+
+"Aloe Vera Gel 1L":"8720359200198",
+"Freedom 1L":"8720359205773",
+"Chipsy":"5909876543210"
+
+};
 
 function render(){
 
@@ -75,6 +91,7 @@ list.innerHTML="";
 order.forEach(p=>{
 
 let li=document.createElement("li");
+
 li.innerText=p.name+" ("+p.picked+"/"+p.qty+")";
 
 if(p.picked==p.qty){
@@ -87,11 +104,55 @@ list.appendChild(li);
 
 }
 
+function scanPhoto(){
+
+const file=document.getElementById("photoInput").files[0];
+
+if(!file) return;
+
+Tesseract.recognize(
+file,
+'pol+eng'
+).then(({data:{text}})=>{
+
+let lines=text.split("\n");
+
+order=[];
+
+lines.forEach(line=>{
+
+let parts=line.split("-");
+
+if(parts.length==2){
+
+let name=parts[0].trim();
+let qty=parseInt(parts[1]);
+
+if(productCodes[name]){
+
+order.push({
+name:name,
+code:productCodes[name],
+qty:qty,
+picked:0
+});
+
+}
+
+}
+
+});
+
 render();
+
+});
+
+}
 
 function startScanner(){
 
 Quagga.init({
+
 inputStream:{
 type:"LiveStream",
 target:document.querySelector('#scanner'),
@@ -99,6 +160,7 @@ constraints:{
 facingMode:"environment"
 }
 },
+
 decoder:{
 readers:["ean_reader","code_128_reader"]
 }
@@ -107,7 +169,7 @@ readers:["ean_reader","code_128_reader"]
 
 if(err){
 console.log(err);
-return
+return;
 }
 
 Quagga.start();
