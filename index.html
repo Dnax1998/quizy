@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto LOTTO – Wybierz 6 liczb i wygraj Jackpot!</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0C0F16;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            color: #F0F0F0;
+            line-height: 1.4;
+        }
+
+        /* kontener główny */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* ========== NAGŁÓWEK ========== */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            border-bottom: 1px solid rgba(255, 166, 0, 0.3);
+            padding-bottom: 1rem;
+        }
+
+        .logo h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #FFD966, #FF8C00);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .nav {
+            display: flex;
+            gap: 2.5rem;
+        }
+
+        .nav a {
+            color: #B0B3C0;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+
+        .nav a:hover {
+            color: #FFA500;
+        }
+
+        /* ========== HERO ========== */
+        .hero {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .hero h2 {
+            font-size: 2.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #FFF, #FFD966);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: #CCC;
+        }
+
+        .hero p strong {
+            color: #FFA500;
+        }
+
+        /* ========== DWIE KOLUMNY ========== */
+        .two-columns {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 2rem;
+        }
+
+        /* LEWA KOLUMNA – STATYSTYKI */
+        .stats-panel {
+            background: #11161F;
+            border-radius: 32px;
+            padding: 1.8rem;
+            border: 1px solid rgba(255, 165, 0, 0.2);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        .stats-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 1.8rem;
+            border-left: 5px solid #FFA500;
+            padding-left: 1rem;
+        }
+
+        .stat-block {
+            margin-bottom: 2rem;
+        }
+
+        .stat-block h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #FFD966;
+            margin-bottom: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .numbers-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+        }
+
+        .number-badge {
+            background: #1E2635;
+            border-radius: 40px;
+            padding: 0.3rem 1rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .result-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .result-item {
+            background: #1E2635;
+            border-radius: 40px;
+            padding: 0.3rem 1rem;
+            width: fit-content;
+            font-size: 0.9rem;
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .history-item {
+            font-size: 0.95rem;
+        }
+
+        .history-item strong {
+            color: #FFA500;
+            font-weight: 700;
+        }
+
+        /* PRAWA KOLUMNA */
+        .right-col {
+            display: flex;
+            flex-direction: column;
+            gap: 1.8rem;
+        }
+
+        /* Aktywność jackpotu */
+        .jackpot-card {
+            background: #11161F;
+            border-radius: 32px;
+            padding: 1.6rem;
+            text-align: center;
+            border: 1px solid rgba(255, 165, 0, 0.2);
+        }
+
+        .jackpot-increase {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #FFA500;
+            margin-bottom: 0.8rem;
+        }
+
+        .players-count {
+            font-size: 1rem;
+            color: #DDD;
+            margin-bottom: 0.5rem;
+        }
+
+        .countdown {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .countdown span {
+            color: #FFA500;
+            font-family: monospace;
+            font-size: 1.3rem;
+        }
+
+        /* Panel wyboru liczb */
+        .numbers-card {
+            background: #11161F;
+            border-radius: 32px;
+            padding: 1.8rem;
+            border: 1px solid rgba(255, 165, 0, 0.2);
+        }
+
+        .numbers-card h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        .numbers-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 0.6rem;
+            margin-bottom: 2rem;
+        }
+
+        .num-btn {
+            background: #1E2635;
+            border: none;
+            color: white;
+            font-size: 0.9rem;
+            font-weight: 500;
+            padding: 0.6rem 0;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .num-btn.selected {
+            background: #FFA500;
+            color: #0C0F16;
+            font-weight: 700;
+            box-shadow: 0 0 6px #FFA500;
+        }
+
+        .num-btn:hover {
+            background: #2A3448;
+        }
+
+        .play-btn {
+            background: linear-gradient(135deg, #FFA500, #FF6A00);
+            border: none;
+            width: 100%;
+            padding: 1rem;
+            font-size: 1.5rem;
+            font-weight: 800;
+            border-radius: 60px;
+            color: #0C0F16;
+            cursor: pointer;
+            transition: transform 0.1s, filter 0.2s;
+            margin-bottom: 1rem;
+        }
+
+        .play-btn:active {
+            transform: scale(0.98);
+        }
+
+        .balance {
+            text-align: center;
+            font-size: 1rem;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 40px;
+            padding: 0.5rem;
+            width: fit-content;
+            margin: 0 auto;
+        }
+
+        .balance span {
+            font-weight: 700;
+            color: #FFA500;
+            font-size: 1.2rem;
+        }
+
+        /* responsywność */
+        @media (max-width: 1000px) {
+            .two-columns {
+                grid-template-columns: 1fr;
+            }
+            .numbers-grid {
+                grid-template-columns: repeat(6, 1fr);
+            }
+        }
+
+        @media (max-width: 650px) {
+            .container {
+                padding: 1rem;
+            }
+            .numbers-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- nagłówek -->
+    <div class="header">
+        <div class="logo">
+            <h1>Crypto LOTTO</h1>
+        </div>
+        <div class="nav">
+            <a href="#">Strona Główna</a>
+            <a href="#">Jak Grać</a>
+            <a href="#">Pomoc</a>
+        </div>
+    </div>
+
+    <!-- hero -->
+    <div class="hero">
+        <h2>Crypto LOTTO</h2>
+        <p>Wybierz 6 liczb i wygraj wielki <strong>Jackpot!</strong></p>
+    </div>
+
+    <!-- dwie kolumny -->
+    <div class="two-columns">
+        <!-- lewa: statystyki -->
+        <div class="stats-panel">
+            <div class="stats-title">Statystyki Losowane</div>
+
+            <div class="stat-block">
+                <h4>Najczęściej Losowane:</h4>
+                <div class="numbers-list">
+                    <span class="number-badge">8</span>
+                    <span class="number-badge">21</span>
+                    <span class="number-badge">33</span>
+                    <span class="number-badge">37</span>
+                </div>
+            </div>
+
+            <div class="stat-block">
+                <h4>Najrzadsee Liczby:</h4>
+                <div class="numbers-list">
+                    <span class="number-badge">5</span>
+                    <span class="number-badge">42</span>
+                    <span class="number-badge">1</span>
+                    <span class="number-badge">28</span>
+                </div>
+            </div>
+
+            <div class="stat-block">
+                <h4>Ostatnie Wyniki:</h4>
+                <div class="result-list">
+                    <div class="result-item">3, 15, 24, 31, 40, 46</div>
+                    <div class="result-item">7, 19, 27, 33, 45, 48</div>
+                    <div class="result-item">2, 14, 26, 32, 36, 41</div>
+                </div>
+            </div>
+
+            <div class="stat-block">
+                <h4>Historia Losowań:</h4>
+                <div class="history-list">
+                    <div class="history-item"><strong>#10674</strong> 4/6</div>
+                    <div class="history-item"><strong>#10673</strong> 2/6</div>
+                    <div class="history-item"><strong>#10672</strong> 5/6</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- prawa: aktywność i wybór liczb -->
+        <div class="right-col">
+            <div class="jackpot-card">
+                <div class="jackpot-increase">+1,200 USDT w ostatniej godzinie</div>
+                <div class="players-count">Aktywnych Graczy: 7,842</div>
+                <div class="countdown">Losowanie za: <span id="timer">01:24:36</span></div>
+            </div>
+
+            <div class="numbers-card">
+                <h3>Wybierz 6 Liczb</h3>
+                <div class="numbers-grid" id="numbersGrid"></div>
+                <button class="play-btn" id="playBtn">ZAGRĄJ!</button>
+                <div class="balance">Twoje Saldo: <span id="balance">1,250</span> USDT</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // generowanie siatki liczb 1-48
+    const grid = document.getElementById('numbersGrid');
+    const playBtn = document.getElementById('playBtn');
+    const balanceSpan = document.getElementById('balance');
+    const timerSpan = document.getElementById('timer');
+
+    let selectedNumbers = [];
+    let userBalance = 1250;   // symulacja salda
+    const TICKET_PRICE = 10;  // cena losu (USDT)
+
+    // tworzenie przycisków
+    for (let i = 1; i <= 48; i++) {
+        const btn = document.createElement('button');
+        btn.textContent = i;
+        btn.classList.add('num-btn');
+        btn.dataset.num = i;
+        btn.addEventListener('click', () => toggleNumber(btn, i));
+        grid.appendChild(btn);
+    }
+
+    function toggleNumber(btn, num) {
+        if (selectedNumbers.includes(num)) {
+            selectedNumbers = selectedNumbers.filter(n => n !== num);
+            btn.classList.remove('selected');
+        } else {
+            if (selectedNumbers.length >= 6) {
+                alert('Możesz wybrać tylko 6 liczb!');
+                return;
+            }
+            selectedNumbers.push(num);
+            btn.classList.add('selected');
+        }
+    }
+
+    playBtn.addEventListener('click', () => {
+        if (selectedNumbers.length !== 6) {
+            alert('Wybierz dokładnie 6 liczb!');
+            return;
+        }
+        if (userBalance < TICKET_PRICE) {
+            alert('Niewystarczające saldo USDT!');
+            return;
+        }
+        // symulacja zakupu
+        userBalance -= TICKET_PRICE;
+        balanceSpan.textContent = userBalance;
+        alert(`✅ Zakupiono los z liczbami: ${selectedNumbers.join(', ')}. Powodzenia!`);
+
+        // czyszczenie zaznaczenia
+        selectedNumbers.forEach(num => {
+            const btns = document.querySelectorAll('.num-btn');
+            btns.forEach(btn => {
+                if (parseInt(btn.textContent) === num) btn.classList.remove('selected');
+            });
+        });
+        selectedNumbers = [];
+    });
+
+    // odliczanie (tak jak na obrazku)
+    let timeSeconds = 1 * 3600 + 24 * 60 + 36; // 01:24:36
+    function updateTimer() {
+        const hours = Math.floor(timeSeconds / 3600);
+        const minutes = Math.floor((timeSeconds % 3600) / 60);
+        const seconds = timeSeconds % 60;
+        timerSpan.textContent = `${hours.toString().padStart(2,'0')}:${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
+        if (timeSeconds > 0) {
+            timeSeconds--;
+            setTimeout(updateTimer, 1000);
+        }
+    }
+    updateTimer();
+</script>
+</body>
+</html>
