@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Crypto Lotto USDT – nowoczesna loteria blockchain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        body {
+            background: radial-gradient(circle at 10% 30%, #0a0f1e, #03050b);
+            min-height: 100vh;
+        }
+        .glass-card {
+            background: rgba(15, 25, 35, 0.65);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+        }
+        .glass-card:hover {
+            border-color: rgba(0, 255, 255, 0.5);
+            box-shadow: 0 8px 25px rgba(0,200,200,0.2);
+        }
+        .neon-text {
+            text-shadow: 0 0 5px #0ff, 0 0 10px #0ff;
+        }
+        .number-btn {
+            transition: all 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+        }
+        .number-btn.selected {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: #0f172a;
+            transform: scale(1.08);
+            box-shadow: 0 0 12px #f59e0b;
+        }
+        .animate-pulse-fast {
+            animation: pulse 0.8s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.02); }
+        }
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #1e293b;
+            backdrop-filter: blur(8px);
+            border-left: 4px solid #22c55e;
+            padding: 12px 20px;
+            border-radius: 12px;
+            color: white;
+            font-size: 14px;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .glow-button {
+            transition: all 0.2s;
+        }
+        .glow-button:hover {
+            filter: drop-shadow(0 0 8px #a855f7);
+        }
+        .history-item {
+            transition: all 0.2s;
+        }
+        .history-item:hover {
+            background: rgba(0,255,255,0.1);
+            transform: translateX(4px);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container mx-auto px-4 py-6 max-w-7xl">
+    <!-- Header z portfelem i siecią -->
+    <div class="flex flex-wrap justify-between items-center gap-4 mb-8">
+        <div class="flex items-center gap-3">
+            <div class="text-4xl">🎰</div>
+            <h1 class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">Crypto Lotto USDT</h1>
+        </div>
+        <div class="flex gap-3 items-center">
+            <div id="networkBadge" class="px-3 py-1 rounded-full text-xs bg-gray-800 text-gray-300 hidden"></div>
+            <div id="usdtBalance" class="text-sm bg-gray-800/50 px-3 py-1 rounded-full hidden">💰 0 USDT</div>
+            <button id="connectWalletBtn" class="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 px-5 py-2 rounded-full font-semibold transition shadow-lg glow-button">🔌 Connect Wallet</button>
+            <div id="walletAddress" class="hidden text-gray-300 text-sm bg-gray-800/50 px-3 py-1 rounded-full"></div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Lewa kolumna: info o rundzie + statystyki -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Runda główna -->
+            <div class="glass-card rounded-2xl p-6">
+                <div class="flex justify-between items-start">
+                    <h2 class="text-2xl font-bold">📊 Runda <span id="roundId" class="neon-text">?</span></h2>
+                    <span id="roundStatusBadge" class="px-3 py-1 rounded-full text-sm bg-green-600/30 text-green-300">Aktywna</span>
+                </div>
+                <div class="mt-4 grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-gray-400 text-sm">Pula nagród</p>
+                        <p class="text-3xl font-mono font-bold" id="prizePool">0</p>
+                        <p class="text-xs text-gray-500">USDT</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-400 text-sm">Sprzedane losy</p>
+                        <p class="text-3xl font-mono font-bold" id="totalTickets">0</p>
+                    </div>
+                </div>
+                <div id="winningNumbersContainer" class="mt-4 hidden p-3 bg-black/30 rounded-xl">
+                    <p class="text-sm text-gray-300">🏆 Zwycięskie liczby:</p>
+                    <div id="winningNumbers" class="flex gap-2 mt-1 flex-wrap"></div>
+                </div>
+                <div class="mt-4 text-xs text-gray-500 italic">Losowanie odbywa się w inteligentnym kontrakcie – w pełni przejrzyste</div>
+            </div>
+
+            <!-- Historia losowań (przykładowa) -->
+            <div class="glass-card rounded-2xl p-6">
+                <h2 class="text-xl font-bold mb-3 flex items-center gap-2">📜 Historia losowań</h2>
+                <div id="historyList" class="space-y-2 max-h-64 overflow-y-auto pr-1">
+                    <!-- dynamicznie wypełniane JS -->
+                </div>
+                <button id="loadHistoryBtn" class="mt-3 text-sm text-cyan-400 hover:text-cyan-300 transition">Załaduj więcej</button>
+            </div>
+        </div>
+
+        <!-- Prawa kolumna: kupno losu + quick pick -->
+        <div class="space-y-6">
+            <div class="glass-card rounded-2xl p-6">
+                <h2 class="text-2xl font-bold mb-4">🎟️ Kup los</h2>
+                <p class="mb-2">Cena losu: <span id="ticketPriceDisplay" class="font-mono text-cyan-300">...</span> USDT</p>
+                <div class="mb-5">
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="text-gray-300">Wybierz 6 liczb (1-48):</label>
+                        <button id="quickPickBtn" class="text-xs bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded-full transition">✨ Quick pick</button>
+                    </div>
+                    <div id="numbersGrid" class="grid grid-cols-8 gap-2 mb-3"></div>
+                    <div id="selectedNumbersDisplay" class="text-gray-400 text-sm mb-3">Wybrane: <span id="selectedNumbers">brak</span></div>
+                    <button id="buyTicketBtn" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 py-3 rounded-xl font-bold transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg glow-button" disabled>Kup los</button>
+                </div>
+            </div>
+
+            <!-- Twoje losy i nagroda -->
+            <div id="userTicketsCard" class="glass-card rounded-2xl p-6 hidden">
+                <h2 class="text-xl font-bold mb-2">🎫 Twoje losy w tej rundzie</h2>
+                <div id="userTicketsList" class="space-y-2 max-h-48 overflow-y-auto"></div>
+            </div>
+
+            <div id="claimCard" class="glass-card rounded-2xl p-6 hidden border-l-4 border-yellow-500">
+                <h2 class="text-xl font-bold mb-1">🏆 Niewypłacona nagroda</h2>
+                <p id="pendingReward" class="text-2xl font-mono font-bold text-yellow-300">0 USDT</p>
+                <button id="claimBtn" class="mt-3 bg-yellow-600 hover:bg-yellow-500 px-5 py-2 rounded-lg font-semibold transition">Odbierz nagrodę</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ========== KONFIGURACJA (ZMIEŃ NA SWOJE!) ==========
+    const CONTRACT_ADDRESS = "0xYourContractAddressHere";
+    const USDT_ADDRESS = "0xdAC17F958D2ee523a2206206994597C13D831ec7"; // mainnet USDT – dla testu użyj testnetowego
+    const CONTRACT_ABI = [
+        // Pełne ABI kontraktu – skopiuj z Remix lub pliku JSON
+        "function ticketPrice() view returns (uint256)",
+        "function buyTicket(uint8[6] calldata numbers) external",
+        "function currentRoundId() view returns (uint256)",
+        "function getRoundInfo(uint256 roundId) view returns (uint256 prizePool, uint256 totalTickets, bool isDrawn, uint8[6] winningNumbers, uint256[6] categoryPools)",
+        "function getTicket(uint256 roundId, uint256 ticketId) view returns (address player, uint8[6] numbers, bool claimed)",
+        "function claimPrize(uint256 roundId) external",
+        "function getPendingReward(uint256 roundId, address player) view returns (uint256)",
+        "function userTicketIds(address, uint256) view returns (uint256[])"
+    ];
+    const EXPECTED_CHAIN_ID = "0x1"; // Ethereum mainnet – zmień dla testnetu (np. "0x5" dla Goerli)
+    // ===================================================
+
+    // Stan aplikacji
+    let provider, signer, lottoContract, usdtContract;
+    let currentRoundId = 1;
+    let selectedNumbers = [];
+    let userAddress = null;
+    let isConnected = false;
+    let usdtBalance = "0";
+
+    // Elementy DOM
+    const connectBtn = document.getElementById('connectWalletBtn');
+    const walletSpan = document.getElementById('walletAddress');
+    const networkBadge = document.getElementById('networkBadge');
+    const usdtBalanceSpan = document.getElementById('usdtBalance');
+    const roundIdSpan = document.getElementById('roundId');
+    const prizePoolSpan = document.getElementById('prizePool');
+    const totalTicketsSpan = document.getElementById('totalTickets');
+    const roundStatusBadge = document.getElementById('roundStatusBadge');
+    const winningNumbersContainer = document.getElementById('winningNumbersContainer');
+    const winningNumbersDiv = document.getElementById('winningNumbers');
+    const ticketPriceDisplay = document.getElementById('ticketPriceDisplay');
+    const numbersGrid = document.getElementById('numbersGrid');
+    const selectedNumbersSpan = document.getElementById('selectedNumbers');
+    const buyTicketBtn = document.getElementById('buyTicketBtn');
+    const quickPickBtn = document.getElementById('quickPickBtn');
+    const userTicketsCard = document.getElementById('userTicketsCard');
+    const userTicketsList = document.getElementById('userTicketsList');
+    const claimCard = document.getElementById('claimCard');
+    const pendingRewardSpan = document.getElementById('pendingReward');
+    const claimBtn = document.getElementById('claimBtn');
+    const historyList = document.getElementById('historyList');
+    const loadHistoryBtn = document.getElementById('loadHistoryBtn');
+
+    // Helpery
+    function formatUSDT(wei) {
+        return ethers.utils.formatUnits(wei, 18);
+    }
+    function parseUSDT(amount) {
+        return ethers.utils.parseUnits(amount.toString(), 18);
+    }
+
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.style.borderLeftColor = type === 'error' ? '#ef4444' : '#22c55e';
+        toast.innerHTML = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 4000);
+    }
+
+    // Generowanie siatki liczb
+    function buildNumberGrid() {
+        numbersGrid.innerHTML = '';
+        for (let i = 1; i <= 48; i++) {
+            const btn = document.createElement('button');
+            btn.textContent = i;
+            btn.className = 'number-btn w-9 h-9 md:w-10 md:h-10 rounded-full bg-gray-800 text-white hover:bg-gray-700 focus:outline-none text-sm font-medium';
+            btn.addEventListener('click', () => toggleNumber(i, btn));
+            numbersGrid.appendChild(btn);
+        }
+    }
+
+    function toggleNumber(num, btn) {
+        if (selectedNumbers.includes(num)) {
+            selectedNumbers = selectedNumbers.filter(n => n !== num);
+            btn.classList.remove('selected');
+        } else {
+            if (selectedNumbers.length >= 6) {
+                showToast('Możesz wybrać tylko 6 liczb!', 'error');
+                return;
+            }
+            selectedNumbers.push(num);
+            btn.classList.add('selected');
+        }
+        selectedNumbersSpan.textContent = selectedNumbers.length ? selectedNumbers.join(', ') : 'brak';
+        buyTicketBtn.disabled = selectedNumbers.length !== 6;
+    }
+
+    function quickPick() {
+        const numbers = new Set();
+        while (numbers.size < 6) {
+            numbers.add(Math.floor(Math.random() * 48) + 1);
+        }
+        const newSelection = Array.from(numbers).sort((a,b)=>a-b);
+        // odznacz wszystkie
+        document.querySelectorAll('.number-btn').forEach(btn => btn.classList.remove('selected'));
+        selectedNumbers = [];
+        newSelection.forEach(num => {
+            selectedNumbers.push(num);
+            const btns = document.querySelectorAll('.number-btn');
+            btns.forEach(btn => {
+                if (parseInt(btn.textContent) === num) btn.classList.add('selected');
+            });
+        });
+        selectedNumbersSpan.textContent = selectedNumbers.join(', ');
+        buyTicketBtn.disabled = false;
+        showToast('Wylosowano 6 liczb!', 'success');
+    }
+
+    // Pobieranie salda USDT
+    async function fetchUsdtBalance() {
+        if (!usdtContract || !userAddress) return;
+        try {
+            const balance = await usdtContract.balanceOf(userAddress);
+            usdtBalance = formatUSDT(balance);
+            usdtBalanceSpan.classList.remove('hidden');
+            usdtBalanceSpan.innerHTML = `💰 ${parseFloat(usdtBalance).toFixed(2)} USDT`;
+        } catch(e) { console.warn(e); }
+    }
+
+    // Sprawdzanie sieci
+    async function checkNetwork() {
+        if (!window.ethereum) return;
+        const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+        if (chainId !== EXPECTED_CHAIN_ID) {
+            networkBadge.classList.remove('hidden');
+            networkBadge.innerHTML = `⚠️ Zła sieć (oczekiwana: ${EXPECTED_CHAIN_ID})`;
+            networkBadge.classList.add('bg-red-800/50', 'text-red-300');
+            return false;
+        } else {
+            networkBadge.classList.add('hidden');
+            return true;
+        }
+    }
+
+    // Odświeżanie informacji o rundzie
+    async function refreshRoundInfo() {
+        if (!lottoContract) return;
+        try {
+            const round = await lottoContract.getRoundInfo(currentRoundId);
+            const prizePool = formatUSDT(round.prizePool);
+            const totalTickets = round.totalTickets.toString();
+            const isDrawn = round.isDrawn;
+            const winningNumbers = round.winningNumbers;
+
+            prizePoolSpan.textContent = parseFloat(prizePool).toLocaleString();
+            totalTicketsSpan.textContent = totalTickets;
+            roundStatusBadge.textContent = isDrawn ? 'Zakończona' : 'Aktywna';
+            roundStatusBadge.className = `px-3 py-1 rounded-full text-sm ${isDrawn ? 'bg-gray-600/30 text-gray-300' : 'bg-green-600/30 text-green-300'}`;
+            if (isDrawn && winningNumbers.some(n => n !== 0)) {
+                winningNumbersContainer.classList.remove('hidden');
+                winningNumbersDiv.innerHTML = winningNumbers.map(n => `<span class="bg-gray-800 px-2 py-1 rounded-full text-xs">${n}</span>`).join('');
+            } else {
+                winningNumbersContainer.classList.add('hidden');
+            }
+        } catch (err) { console.error(err); }
+    }
+
+    async function fetchTicketPrice() {
+        if (!lottoContract) return;
+        const price = await lottoContract.ticketPrice();
+        ticketPriceDisplay.textContent = formatUSDT(price);
+    }
+
+    async function fetchUserTickets() {
+        if (!lottoContract || !userAddress) return;
+        try {
+            const ticketIds = await lottoContract.userTicketIds(userAddress, currentRoundId);
+            if (!ticketIds || ticketIds.length === 0) {
+                userTicketsCard.classList.add('hidden');
+                return;
+            }
+            userTicketsCard.classList.remove('hidden');
+            userTicketsList.innerHTML = '';
+            for (let i = 0; i < ticketIds.length; i++) {
+                const ticket = await lottoContract.getTicket(currentRoundId, ticketIds[i]);
+                const numbers = ticket.numbers.filter(n => n !== 0);
+                const claimed = ticket.claimed;
+                const div = document.createElement('div');
+                div.className = 'bg-gray-800/50 p-2 rounded flex justify-between items-center';
+                div.innerHTML = `<span class="font-mono text-sm">${numbers.join(', ')}</span> <span class="text-xs ${claimed ? 'text-green-400' : 'text-yellow-400'}">${claimed ? '✓ odebrany' : '⏳ oczekuje'}</span>`;
+                userTicketsList.appendChild(div);
+            }
+        } catch (err) { console.warn(err); userTicketsCard.classList.add('hidden'); }
+    }
+
+    async function fetchPendingReward() {
+        if (!lottoContract || !userAddress) return;
+        const reward = await lottoContract.getPendingReward(currentRoundId, userAddress);
+        const formatted = formatUSDT(reward);
+        if (reward.gt(0)) {
+            claimCard.classList.remove('hidden');
+            pendingRewardSpan.textContent = formatted + ' USDT';
+        } else {
+            claimCard.classList.add('hidden');
+        }
+    }
+
+    // Historia (przykładowe dane, można pobrać z kontraktu)
+    let historyOffset = 0;
+    const mockHistory = [
+        { round: 5, numbers: [4,12,23,31,37,45], prize: 12450 },
+        { round: 4, numbers: [7,14,22,29,38,44], prize: 9820 },
+        { round: 3, numbers: [2,9,18,27,36,48], prize: 15300 },
+        { round: 2, numbers: [11,19,25,33,40,42], prize: 8750 },
+        { round: 1, numbers: [3,8,16,21,35,47], prize: 21000 },
+    ];
+    function renderHistory() {
+        const limit = 3;
+        const end = Math.min(historyOffset + limit, mockHistory.length);
+        const toShow = mockHistory.slice(0, end);
+        historyList.innerHTML = toShow.map(h => `
+            <div class="history-item p-3 rounded-lg bg-gray-800/40 flex justify-between items-center">
+                <div><span class="font-bold">Runda #${h.round}</span> 🎲 ${h.numbers.join(', ')}</div>
+                <div class="text-cyan-300">${h.prize} USDT</div>
+            </div>
+        `).join('');
+        if (end >= mockHistory.length) loadHistoryBtn.style.display = 'none';
+        else loadHistoryBtn.style.display = 'block';
+    }
+    function loadMoreHistory() {
+        historyOffset += 3;
+        renderHistory();
+    }
+
+    // Zakup losu
+    async function buyTicket() {
+        if (!isConnected || selectedNumbers.length !== 6) return;
+        try {
+            const price = await lottoContract.ticketPrice();
+            const allowance = await usdtContract.allowance(userAddress, CONTRACT_ADDRESS);
+            if (allowance.lt(price)) {
+                const approveTx = await usdtContract.approve(CONTRACT_ADDRESS, price);
+                await approveTx.wait();
+                showToast('Zatwierdzono transakcję USDT');
+            }
+            const tx = await lottoContract.buyTicket(selectedNumbers);
+            showToast('Transakcja wysłana, oczekuj na potwierdzenie...');
+            await tx.wait();
+            showToast('✅ Los zakupiony!');
+            // reset
+            selectedNumbers = [];
+            document.querySelectorAll('.number-btn').forEach(btn => btn.classList.remove('selected'));
+            selectedNumbersSpan.textContent = 'brak';
+            buyTicketBtn.disabled = true;
+            await refreshRoundInfo();
+            await fetchUserTickets();
+            await fetchPendingReward();
+            await fetchUsdtBalance();
+        } catch (err) {
+            console.error(err);
+            showToast('Błąd: ' + (err.message || 'transakcja odrzucona'), 'error');
+        }
+    }
+
+    async function claimPrize() {
+        if (!lottoContract) return;
+        try {
+            const tx = await lottoContract.claimPrize(currentRoundId);
+            showToast('Wysyłanie nagrody...');
+            await tx.wait();
+            showToast('🏆 Nagroda odebrana!');
+            await fetchPendingReward();
+            await fetchUsdtBalance();
+            await refreshRoundInfo();
+        } catch (err) {
+            showToast('Nie udało się odebrać: ' + err.message, 'error');
+        }
+    }
+
+    async function initContracts() {
+        if (!window.ethereum) {
+            showToast('Zainstaluj MetaMask!', 'error');
+            return false;
+        }
+        provider = new ethers.providers.Web3Provider(window.ethereum);
+        signer = provider.getSigner();
+        lottoContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+        const usdtAbi = [
+            "function approve(address spender, uint256 amount) public returns (bool)",
+            "function allowance(address owner, address spender) public view returns (uint256)",
+            "function balanceOf(address account) public view returns (uint256)"
+        ];
+        usdtContract = new ethers.Contract(USDT_ADDRESS, usdtAbi, signer);
+        return true;
+    }
+
+    async function connectWallet() {
+        if (!window.ethereum) { alert('Zainstaluj MetaMask'); return; }
+        try {
+            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+            userAddress = accounts[0];
+            isConnected = true;
+            connectBtn.classList.add('hidden');
+            walletSpan.classList.remove('hidden');
+            walletSpan.textContent = `${userAddress.slice(0,6)}...${userAddress.slice(-4)}`;
+            await initContracts();
+            if (!await checkNetwork()) {
+                showToast('Proszę przełącz sieć w portfelu', 'error');
+                return;
+            }
+            currentRoundId = await lottoContract.currentRoundId();
+            roundIdSpan.textContent = currentRoundId.toString();
+            await fetchTicketPrice();
+            await refreshRoundInfo();
+            await fetchUserTickets();
+            await fetchPendingReward();
+            await fetchUsdtBalance();
+
+            window.ethereum.on('accountsChanged', (acc) => {
+                if (acc.length === 0) location.reload();
+                else { userAddress = acc[0]; walletSpan.textContent = `${userAddress.slice(0,6)}...${userAddress.slice(-4)}`; refreshUserData(); }
+            });
+            window.ethereum.on('chainChanged', () => location.reload());
+        } catch (err) { console.error(err); showToast('Błąd połączenia', 'error'); }
+    }
+
+    async function refreshUserData() {
+        await fetchUserTickets();
+        await fetchPendingReward();
+        await fetchUsdtBalance();
+    }
+
+    // Eventy
+    connectBtn.addEventListener('click', connectWallet);
+    buyTicketBtn.addEventListener('click', buyTicket);
+    claimBtn.addEventListener('click', claimPrize);
+    quickPickBtn.addEventListener('click', quickPick);
+    loadHistoryBtn.addEventListener('click', loadMoreHistory);
+
+    buildNumberGrid();
+    renderHistory(); // pokaż przykładową historię
+    // Jeśli kontrakt nie jest dostępny, przycisk kupna jest zablokowany – użytkownik musi się połączyć.
+</script>
+</body>
+</html>
