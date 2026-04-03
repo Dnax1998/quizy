@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Porównywarka cen – prosty design</title>
+  <style>
+    /* ---------- RESET & BAZA – SUROWY, PŁASKI STYL JAK NA ZDJĘCIU ---------- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #ffffff;        /* czyste białe tło */
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      color: #000000;
+      line-height: 1.4;
+      padding: 2rem 1.5rem;
+    }
+
+    /* kontener – wąski, czytelny, bez cieni */
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    /* NAGŁÓWEK – dokładnie "PORÓWNYWARKA CEN" */
+    .header h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      color: #000000;
+      margin-bottom: 1.2rem;
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    /* POLE WYSZUKIWANIA – prosty input, brak ikon, brak zaokrągleń */
+    .search-wrapper {
+      margin-bottom: 2rem;
+    }
+
+    #searchInput {
+      width: 100%;
+      padding: 0.7rem 0.8rem;
+      font-size: 1rem;
+      font-family: inherit;
+      border: 1px solid #a0a0a0;
+      background: #ffffff;
+      color: #000000;
+      outline: none;
+      transition: none;
+      border-radius: 0px;          /* absolutnie proste krawędzie */
+    }
+
+    #searchInput:focus {
+      border-color: #000000;
+    }
+
+    /* KARTY PRODUKTÓW – brak tła, brak cienia, brak zaokrągleń */
+    .product-card {
+      margin-bottom: 2.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid #e0e0e0;   /* delikatna linia oddzielająca, jak na wzorze */
+    }
+
+    .product-card:last-child {
+      border-bottom: none;
+    }
+
+    /* nazwa produktu */
+    .product-title {
+      font-size: 1.6rem;
+      font-weight: 600;
+      margin-bottom: 0.2rem;
+      color: #000000;
+    }
+
+    /* specyfikacja (np. "128 GB, 5G") – zwykły tekst, bez tła */
+    .product-spec {
+      font-size: 0.9rem;
+      color: #3a3a3a;
+      margin-bottom: 1.2rem;
+      font-weight: 400;
+    }
+
+    /* lista sklepów – każdy w osobnym wierszu */
+    .shops-list {
+      margin: 0.5rem 0 0.8rem 0;
+    }
+
+    .shop-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 0.5rem 0;
+      font-size: 1rem;
+      border-top: none;
+      border-bottom: none;
+    }
+
+    .shop-name {
+      font-weight: 500;
+      color: #000000;
+    }
+
+    .shop-price {
+      font-weight: 600;
+      color: #000000;
+    }
+
+    /* obszar "Najtańszej" i przycisk – dokładnie jak na obrazku */
+    .cheapest-area {
+      margin-top: 0.8rem;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.6rem;
+    }
+
+    /* napis "Najtańszej" – zwykły tekst, brak kolorowego tła */
+    .cheapest-label {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #000000;
+      background: none;
+      padding: 0;
+      letter-spacing: normal;
+    }
+
+    /* PRZYCISK – prostokąt, czarne tło, biały tekst, brak efektów */
+    .shop-button {
+      background: #000000;
+      border: 1px solid #000000;
+      color: #ffffff;
+      font-weight: 500;
+      font-size: 0.9rem;
+      padding: 0.5rem 1.2rem;
+      cursor: pointer;
+      transition: none;
+      font-family: inherit;
+      border-radius: 0px;
+      text-align: center;
+      display: inline-block;
+      width: auto;
+    }
+
+    /* brak efektów hover – maksymalnie delikatna zmiana (tylko dla użyteczności, ale nie psuje surowego stylu) */
+    .shop-button:hover {
+      background: #2c2c2c;
+      border-color: #2c2c2c;
+    }
+
+    /* komunikat braku wyników */
+    .no-results {
+      text-align: center;
+      padding: 2rem 1rem;
+      font-size: 1rem;
+      color: #5a5a5a;
+      border: 1px solid #e0e0e0;
+      background: #ffffff;
+      margin-top: 1rem;
+    }
+
+    /* mała stopka – dyskretna */
+    .attribution {
+      margin-top: 2.5rem;
+      text-align: center;
+      font-size: 0.7rem;
+      color: #7a7a7a;
+      border-top: 1px solid #eaeaea;
+      padding-top: 1.2rem;
+    }
+
+    /* żadnych zaokrągleń, żadnych gradientów, żadnych cieni – wszystko płaskie */
+    a, button, input {
+      border-radius: 0px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>PORÓWNYWARKA CEN</h1>
+  </div>
+
+  <div class="search-wrapper">
+    <input type="text" id="searchInput" placeholder="Sukaj produktu..." autocomplete="off">
+  </div>
+
+  <div id="productsContainer">
+    <!-- produkty zostaną wstawione przez JS – design 1:1 z obrazkiem -->
+  </div>
+  <div class="attribution">
+    porównywarka cen • Media Expert • x-kom • Allegro
+  </div>
+</div>
+
+<script>
+  // ---------- DANE PRODUKTÓW (zgodne z wcześniejszymi zdjęciami, ale teraz design surowy) ----------
+  const productsData = [
+    {
+      id: 1,
+      name: "Samsung Galaxy A54",
+      spec: "128 GB, 5G",
+      shops: [
+        { name: "Media Expert", price: 1499, url: "https://www.mediaexpert.pl/", cheapest: true },
+        { name: "x-kom", price: 1549, url: "https://www.x-kom.pl/", cheapest: false },
+        { name: "Allegro", price: 1579, url: "https://allegro.pl/", cheapest: false }
+      ],
+      showCheapestText: true     // na obrazku dla Samsunga jest "Najtańszej"
+    },
+    {
+      id: 2,
+      name: "iPhone 14",
+      spec: "128 GB",
+      shops: [
+        { name: "x-kom", price: 3999, url: "https://www.x-kom.pl/", cheapest: true },
+        { name: "Media Expert", price: 4099, url: "https://www.mediaexpert.pl/", cheapest: false },
+        { name: "Allegro", price: 4149, url: "https://allegro.pl/", cheapest: false }
+      ],
+      showCheapestText: true     // iPhone również ma "Najtańszej" (zgodne z poprzednim obrazkiem, ale zachowujemy)
+    },
+    {
+      id: 3,
+      name: "Myszka Logitech G305",
+      spec: "Bezprzewodowa",
+      shops: [
+        { name: "Allegro", price: 149, url: "https://allegro.pl/", cheapest: true },
+        { name: "Media Expert", price: 159, url: "https://www.mediaexpert.pl/", cheapest: false },
+        { name: "x-kom", price: 165, url: "https://www.x-kom.pl/", cheapest: false }
+      ],
+      showCheapestText: false    // myszka – brak napisu "Najtańszej" (dokładnie jak na pierwszym obrazku)
+    }
+  ];
+
+  // pomocnicza – znajduje najtańszy sklep (potrzebne do linku przycisku)
+  function getCheapestShop(shops) {
+    return shops.reduce((min, shop) => (shop.price < min.price ? shop : min), shops[0]);
+  }
+
+  // funkcja tworząca element karty produktu – surowy, bez żadnych "nowoczesnych" dodatków
+  function createProductCard(product) {
+    const cheapest = getCheapestShop(product.shops);
+    
+    const cardDiv = document.createElement('div');
+    cardDiv.className = 'product-card';
+    cardDiv.setAttribute('data-product-name', product.name.toLowerCase());
+
+    // Tytuł produktu
+    const title = document.createElement('div');
+    title.className = 'product-title';
+    title.innerText = product.name;
+    
+    // Specyfikacja
+    const spec = document.createElement('div');
+    spec.className = 'product-spec';
+    spec.innerText = product.spec;
+    
+    // Lista sklepów (Media Expert, x-kom, Allegro w odpowiedniej kolejności)
+    const shopsContainer = document.createElement('div');
+    shopsContainer.className = 'shops-list';
+    
+    product.shops.forEach(shop => {
+      const row = document.createElement('div');
+      row.className = 'shop-item';
+      const shopNameSpan = document.createElement('span');
+      shopNameSpan.className = 'shop-name';
+      shopNameSpan.innerText = shop.name;
+      const priceSpan = document.createElement('span');
+      priceSpan.className = 'shop-price';
+      priceSpan.innerText = `${shop.price} zł`;
+      row.appendChild(shopNameSpan);
+      row.appendChild(priceSpan);
+      shopsContainer.appendChild(row);
+    });
+    
+    // obszar "Najtańszej" oraz przycisk
+    const cheapestArea = document.createElement('div');
+    cheapestArea.className = 'cheapest-area';
+    
+    // Napis "Najtańszej" – tylko jeśli produkt go wymaga (zgodnie z obrazkami)
+    if (product.showCheapestText) {
+      const cheapestLabel = document.createElement('div');
+      cheapestLabel.className = 'cheapest-label';
+      cheapestLabel.innerText = 'Najtańszej';
+      cheapestArea.appendChild(cheapestLabel);
+    }
+    
+    // Przycisk "Precjąż do sklepu" – dosłownie taka pisownia jak na zdjęciu
+    const button = document.createElement('button');
+    button.className = 'shop-button';
+    button.innerText = 'Precjąż do sklepu';
+    button.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.open(cheapest.url, '_blank');
+    });
+    cheapestArea.appendChild(button);
+    
+    // składamy kartę
+    cardDiv.appendChild(title);
+    cardDiv.appendChild(spec);
+    cardDiv.appendChild(shopsContainer);
+    cardDiv.appendChild(cheapestArea);
+    
+    return cardDiv;
+  }
+  
+  // ---------- FILTROWANIE (wyszukiwarka) ----------
+  let currentFilter = '';
+  const container = document.getElementById('productsContainer');
+  
+  function renderFilteredProducts() {
+    container.innerHTML = '';
+    const filterText = currentFilter.trim().toLowerCase();
+    
+    const filtered = productsData.filter(product => 
+      product.name.toLowerCase().includes(filterText)
+    );
+    
+    if (filtered.length === 0) {
+      const noResults = document.createElement('div');
+      noResults.className = 'no-results';
+      noResults.innerText = 'Brak produktów. Spróbuj "Samsung", "iPhone" lub "myszka".';
+      container.appendChild(noResults);
+      return;
+    }
+    
+    filtered.forEach(product => {
+      const card = createProductCard(product);
+      container.appendChild(card);
+    });
+  }
+  
+  // nasłuchiwanie na polu wyszukiwania
+  const searchInput = document.getElementById('searchInput');
+  searchInput.addEventListener('input', (e) => {
+    currentFilter = e.target.value;
+    renderFilteredProducts();
+  });
+  
+  // start – wyświetlenie wszystkich produktów
+  renderFilteredProducts();
+</script>
+</body>
+</html>
