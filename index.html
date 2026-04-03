@@ -1,497 +1,187 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cenomat – porównywarka cen</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Porównywarka Cen</title>
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background: #f8fafc;
-            color: #0f172a;
-            line-height: 1.5;
-        }
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #0b1c3a, #050d1f);
+    color: white;
+}
 
-        .container {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: 40px 24px 60px;
-        }
+/* HEADER */
+.header {
+    text-align: center;
+    padding: 40px 20px;
+}
 
-        /* header */
-        .header {
-            text-align: center;
-            margin-bottom: 48px;
-        }
+.search-box {
+    width: 60%;
+    padding: 18px;
+    border-radius: 15px;
+    border: none;
+    outline: none;
+    font-size: 18px;
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 0 15px rgba(0,150,255,0.6);
+    color: white;
+}
 
-        .logo {
-            font-size: 2.2rem;
-            font-weight: 700;
-            color: #0f172a;
-            letter-spacing: -0.02em;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-        }
+/* GRID */
+.container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+    padding: 40px;
+}
 
-        .logo i {
-            color: #3b82f6;
-            font-size: 2rem;
-        }
+/* CARD */
+.card {
+    background: rgba(255,255,255,0.08);
+    border-radius: 20px;
+    padding: 20px;
+    backdrop-filter: blur(15px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    transition: 0.3s;
+}
 
-        .sub {
-            color: #475569;
-            margin-top: 12px;
-            font-size: 1rem;
-            font-weight: 400;
-        }
+.card:hover {
+    transform: translateY(-5px);
+}
 
-        /* pasek wyszukiwania */
-        .search-card {
-            background: white;
-            border-radius: 20px;
-            padding: 8px 8px 8px 24px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.03);
-            border: 1px solid #e2e8f0;
-            transition: all 0.2s ease;
-            margin-bottom: 32px;
-        }
+.product-title {
+    font-size: 20px;
+    margin-bottom: 15px;
+}
 
-        .search-card:focus-within {
-            border-color: #3b82f6;
-            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.12);
-        }
+/* OFFER */
+.offer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0,0,0,0.4);
+    padding: 12px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+}
 
-        .search-card i {
-            color: #94a3b8;
-            font-size: 1.1rem;
-        }
+.price {
+    font-weight: bold;
+}
 
-        .search-card input {
-            flex: 1;
-            border: none;
-            font-size: 1rem;
-            padding: 14px 0;
-            background: transparent;
-            outline: none;
-            font-weight: 500;
-            color: #0f172a;
-        }
+.best {
+    color: #00ff88;
+    font-size: 12px;
+    margin-left: 8px;
+}
 
-        .search-card input::placeholder {
-            color: #cbd5e1;
-            font-weight: 400;
-        }
+/* BUTTON */
+button {
+    background: #0a84ff;
+    border: none;
+    padding: 10px 14px;
+    border-radius: 10px;
+    color: white;
+    cursor: pointer;
+    transition: 0.2s;
+}
 
-        .search-card button {
-            background: #3b82f6;
-            border: none;
-            padding: 10px 28px;
-            border-radius: 40px;
-            color: white;
-            font-weight: 600;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .search-card button:hover {
-            background: #2563eb;
-            transform: scale(0.96);
-        }
-
-        /* panel filtrów */
-        .filter-bar {
-            background: white;
-            border-radius: 60px;
-            padding: 8px 20px 8px 24px;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            align-items: center;
-            gap: 16px;
-            margin-bottom: 40px;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
-        }
-
-        .sort-group {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .sort-group label {
-            font-size: 0.85rem;
-            color: #475569;
-            font-weight: 500;
-        }
-
-        .custom-select {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 40px;
-            padding: 8px 20px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            color: #0f172a;
-            cursor: pointer;
-            outline: none;
-            font-family: 'Inter', sans-serif;
-        }
-
-        .custom-select:hover {
-            border-color: #cbd5e1;
-        }
-
-        .stats {
-            background: #f1f5f9;
-            padding: 6px 16px;
-            border-radius: 40px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            color: #1e293b;
-        }
-
-        /* karty produktów */
-        .products-list {
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-        }
-
-        .product-card {
-            background: white;
-            border-radius: 24px;
-            border: 1px solid #eef2ff;
-            overflow: hidden;
-            transition: all 0.25s ease;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
-        }
-
-        .product-card:hover {
-            border-color: #cbd5e1;
-            box-shadow: 0 12px 24px -12px rgba(0, 0, 0, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .product-header {
-            padding: 20px 28px;
-            background: #ffffff;
-            border-bottom: 1px solid #f1f5f9;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .product-header h2 {
-            font-size: 1.35rem;
-            font-weight: 600;
-            color: #0f172a;
-            letter-spacing: -0.2px;
-        }
-
-        .best-price-badge {
-            background: #ecfdf5;
-            padding: 6px 14px;
-            border-radius: 40px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: #059669;
-        }
-
-        /* oferty */
-        .offers {
-            padding: 8px 20px 20px;
-        }
-
-        .offer-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            padding: 16px 12px;
-            border-bottom: 1px solid #f1f5f9;
-            transition: background 0.15s;
-            border-radius: 16px;
-        }
-
-        .offer-row:hover {
-            background: #fafcff;
-        }
-
-        .shop-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            min-width: 170px;
-        }
-
-        .shop-icon {
-            width: 36px;
-            height: 36px;
-            background: #f1f5f9;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #3b82f6;
-            font-size: 1rem;
-        }
-
-        .shop-name {
-            font-weight: 600;
-            color: #1e293b;
-        }
-
-        .price-area {
-            text-align: right;
-            min-width: 150px;
-        }
-
-        .price {
-            font-size: 1.35rem;
-            font-weight: 700;
-            color: #0f172a;
-        }
-
-        .delivery {
-            font-size: 0.7rem;
-            color: #64748b;
-            margin-top: 4px;
-        }
-
-        .cheapest-badge {
-            background: #d1fae5;
-            color: #065f46;
-            font-size: 0.7rem;
-            font-weight: 700;
-            padding: 4px 10px;
-            border-radius: 40px;
-            margin-left: 12px;
-        }
-
-        .shop-link {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            padding: 8px 20px;
-            border-radius: 40px;
-            text-decoration: none;
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: #3b82f6;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .shop-link:hover {
-            background: #3b82f6;
-            border-color: #3b82f6;
-            color: white;
-        }
-
-        .no-results {
-            text-align: center;
-            padding: 70px 20px;
-            background: white;
-            border-radius: 32px;
-            border: 1px solid #eef2ff;
-        }
-
-        .no-results i {
-            font-size: 2.5rem;
-            color: #cbd5e1;
-            margin-bottom: 16px;
-        }
-
-        footer {
-            margin-top: 56px;
-            text-align: center;
-            padding: 24px 0 0;
-            border-top: 1px solid #e2e8f0;
-            font-size: 0.75rem;
-            color: #94a3b8;
-        }
-
-        @media (max-width: 750px) {
-            .offer-row {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 12px;
-            }
-            .price-area {
-                text-align: left;
-                width: 100%;
-            }
-            .product-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 12px;
-            }
-            .filter-bar {
-                border-radius: 28px;
-                padding: 12px 20px;
-            }
-        }
-    </style>
+button:hover {
+    background: #0066cc;
+}
+</style>
 </head>
+
 <body>
+
+<div class="header">
+    <h1>Porównywarka cen</h1>
+    <input class="search-box" placeholder="Szukaj produktu...">
+</div>
+
 <div class="container">
-    <div class="header">
-        <div class="logo">
-            <i class="fas fa-tag"></i> Cenomat
-        </div>
-        <div class="sub">Porównaj ceny w sklepach · Znajdź najlepszą ofertę · Oszczędzaj</div>
-    </div>
 
-    <div class="search-card">
-        <i class="fas fa-search"></i>
-        <input type="text" id="searchInput" placeholder="Szukaj produktu, np. Samsung A54, iPhone 14, słuchawki...">
-        <button id="searchBtn"><i class="fas fa-arrow-right"></i> Szukaj</button>
-    </div>
+    <!-- Samsung -->
+    <div class="card">
+        <div class="product-title">Samsung Galaxy A54</div>
 
-    <div class="filter-bar">
-        <div class="sort-group">
-            <label><i class="fas fa-sort"></i> Sortuj:</label>
-            <select id="sortSelect" class="custom-select">
-                <option value="default">Najlepsze oferty</option>
-                <option value="price_asc">Od najtańszego produktu</option>
-                <option value="name_asc">Nazwa A-Z</option>
-            </select>
+        <div class="offer">
+            <span>Media Expert</span>
+            <span class="price">1599 zł <span class="best">Najtaniej</span></span>
+            <button onclick="go('https://www.mediaexpert.pl')">Przejdź</button>
         </div>
-        <div class="stats" id="statsInfo">
-            <i class="fas fa-chart-simple"></i> <span>Wpisz nazwę produktu</span>
+
+        <div class="offer">
+            <span>x-kom</span>
+            <span class="price">1649 zł</span>
+            <button onclick="go('https://www.x-kom.pl')">Przejdź</button>
+        </div>
+
+        <div class="offer">
+            <span>Allegro</span>
+            <span class="price">1679 zł</span>
+            <button onclick="go('https://allegro.pl')">Przejdź</button>
         </div>
     </div>
 
-    <div id="resultsContainer" class="products-list"></div>
+    <!-- iPhone -->
+    <div class="card">
+        <div class="product-title">iPhone 14</div>
 
-    <footer>
-        <i class="fas fa-store"></i> Darmowa porównywarka · Dodaj własne linki afiliacyjne i zarabiaj
-    </footer>
+        <div class="offer">
+            <span>Media Expert</span>
+            <span class="price">4149 zł</span>
+            <button onclick="go('https://www.mediaexpert.pl')">Przejdź</button>
+        </div>
+
+        <div class="offer">
+            <span>x-kom</span>
+            <span class="price">4099 zł <span class="best">Najtaniej</span></span>
+            <button onclick="go('https://www.x-kom.pl')">Przejdź</button>
+        </div>
+
+        <div class="offer">
+            <span>Allegro</span>
+            <span class="price">4199 zł</span>
+            <button onclick="go('https://allegro.pl')">Przejdź</button>
+        </div>
+    </div>
+
+    <!-- Logitech -->
+    <div class="card">
+        <div class="product-title">Myszka Logitech</div>
+
+        <div class="offer">
+            <span>Media Expert</span>
+            <span class="price">159 zł</span>
+            <button onclick="go('https://www.mediaexpert.pl')">Przejdź</button>
+        </div>
+
+        <div class="offer">
+            <span>x-kom</span>
+            <span class="price">149 zł <span class="best">Najtaniej</span></span>
+            <button onclick="go('https://www.x-kom.pl')">Przejdź</button>
+        </div>
+
+        <div class="offer">
+            <span>Allegro</span>
+            <span class="price">165 zł</span>
+            <button onclick="go('https://allegro.pl')">Przejdź</button>
+        </div>
+    </div>
+
 </div>
 
 <script>
-    const productsData = [
-        { id: 1, name: "Samsung Galaxy A54 5G 128GB", offers: [{ shop: "Media Expert", price: 1299.99, delivery: "darmowa dostawa", url: "#" }, { shop: "x-kom", price: 1349.00, delivery: "odbiór osobisty", url: "#" }, { shop: "Allegro", price: 1250.00, delivery: "Smart! gratis", url: "#" }, { shop: "Euro RTV AGD", price: 1399.00, delivery: "wysyłka gratis", url: "#" }] },
-        { id: 2, name: "iPhone 14 128GB", offers: [{ shop: "Media Expert", price: 3999.00, delivery: "gratis", url: "#" }, { shop: "x-kom", price: 3899.00, delivery: "odbiór", url: "#" }, { shop: "Allegro", price: 3799.00, delivery: "0 zł Smart", url: "#" }] },
-        { id: 3, name: "Myszka Logitech MX Master 3S", offers: [{ shop: "Media Expert", price: 429.99, delivery: "darmowa", url: "#" }, { shop: "x-kom", price: 419.00, delivery: "odbiór", url: "#" }, { shop: "Allegro", price: 399.00, delivery: "+9 zł", url: "#" }, { shop: "Morele", price: 415.00, delivery: "kurier 0 zł", url: "#" }] },
-        { id: 4, name: "Słuchawki Sony WH-1000XM4", offers: [{ shop: "Media Expert", price: 1099.00, delivery: "darmowa", url: "#" }, { shop: "x-kom", price: 1049.00, delivery: "odbiór", url: "#" }, { shop: "Allegro", price: 999.00, delivery: "gratis", url: "#" }, { shop: "Euro RTV AGD", price: 1050.00, delivery: "+10 zł", url: "#" }] }
-    ];
-
-    function getMinPrice(offers) {
-        return Math.min(...offers.map(o => o.price));
-    }
-
-    function sortProducts(products, sortType) {
-        const copy = [...products];
-        if (sortType === "price_asc") copy.sort((a,b) => getMinPrice(a.offers) - getMinPrice(b.offers));
-        else if (sortType === "name_asc") copy.sort((a,b) => a.name.localeCompare(b.name));
-        else copy.sort((a,b) => getMinPrice(a.offers) - getMinPrice(b.offers));
-        return copy;
-    }
-
-    function filterProducts(products, query) {
-        if (!query.trim()) return products;
-        return products.filter(p => p.name.toLowerCase().includes(query.toLowerCase()));
-    }
-
-    function escapeHtml(str) {
-        if (!str) return '';
-        return str.replace(/[&<>]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
-        });
-    }
-
-    function render(productsToRender) {
-        const container = document.getElementById('resultsContainer');
-        const statsSpan = document.getElementById('statsInfo');
-
-        if (!productsToRender.length) {
-            container.innerHTML = `<div class="no-results"><i class="fas fa-box-open"></i><h3>Brak wyników</h3><p style="color:#64748b">Spróbuj innej nazwy :)</p></div>`;
-            statsSpan.innerHTML = `<i class="fas fa-search-minus"></i> Brak produktów`;
-            return;
-        }
-
-        let totalOffers = 0;
-        let html = '';
-
-        for (let product of productsToRender) {
-            const minPrice = getMinPrice(product.offers);
-            const sortedOffers = [...product.offers].sort((a,b) => a.price - b.price);
-            totalOffers += sortedOffers.length;
-
-            html += `<div class="product-card">
-                        <div class="product-header">
-                            <h2><i class="fas fa-box" style="margin-right: 10px; color:#3b82f6"></i>${escapeHtml(product.name)}</h2>
-                            <div class="best-price-badge"><i class="fas fa-gem"></i> Najniższa cena: ${minPrice.toFixed(2)} zł</div>
-                        </div>
-                        <div class="offers">`;
-
-            for (let offer of sortedOffers) {
-                const isCheapest = (offer.price === minPrice);
-                html += `<div class="offer-row">
-                            <div class="shop-info">
-                                <div class="shop-icon"><i class="fas fa-store"></i></div>
-                                <span class="shop-name">${escapeHtml(offer.shop)}</span>
-                                ${isCheapest ? '<span class="cheapest-badge"><i class="fas fa-check-circle"></i> Najtaniej</span>' : ''}
-                            </div>
-                            <div class="price-area">
-                                <div class="price">${offer.price.toFixed(2)} zł</div>
-                                <div class="delivery"><i class="fas fa-truck"></i> ${escapeHtml(offer.delivery)}</div>
-                            </div>
-                            <a href="${escapeHtml(offer.url)}" class="shop-link" target="_blank" rel="noopener"><i class="fas fa-chevron-right"></i> Przejdź do sklepu</a>
-                        </div>`;
-            }
-            html += `</div></div>`;
-        }
-        container.innerHTML = html;
-        statsSpan.innerHTML = `<i class="fas fa-chart-line"></i> ${productsToRender.length} produktów · ${totalOffers} ofert`;
-    }
-
-    let currentQuery = "";
-    let currentSort = "default";
-
-    function update() {
-        let filtered = filterProducts(productsData, currentQuery);
-        const sorted = sortProducts(filtered, currentSort);
-        render(sorted);
-    }
-
-    document.getElementById('searchBtn').addEventListener('click', () => {
-        currentQuery = document.getElementById('searchInput').value;
-        update();
-    });
-    document.getElementById('searchInput').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') document.getElementById('searchBtn').click();
-    });
-    document.getElementById('sortSelect').addEventListener('change', (e) => {
-        currentSort = e.target.value;
-        update();
-    });
-
-    window.addEventListener('DOMContentLoaded', () => update());
+function go(url) {
+    window.open(url, "_blank");
+}
 </script>
+
 </body>
 </html>
