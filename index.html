@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>PixelCanvas 100k – Kupuj pojedyncze lub zaznacz obszar (cały widoczny)</title>
+    <title>PixelCanvas 100k – Kupuj pojedyncze lub zaznacz obszar (widoczny w całości)</title>
     <style>
         * {
             box-sizing: border-box;
@@ -13,7 +13,7 @@
             background: #0a0f1e;
             font-family: 'Segoe UI', 'Inter', system-ui, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 10px;
             color: #eef2ff;
             display: flex;
             justify-content: center;
@@ -24,7 +24,7 @@
             max-width: 100%;
             background: #111827;
             border-radius: 28px;
-            padding: 20px;
+            padding: 15px;
             box-shadow: 0 25px 40px rgba(0,0,0,0.5);
             border: 1px solid #2d3a5e;
             width: fit-content;
@@ -35,43 +35,43 @@
             flex-wrap: wrap;
             justify-content: space-between;
             align-items: center;
-            gap: 15px;
-            margin-bottom: 20px;
+            gap: 12px;
+            margin-bottom: 15px;
             background: #0f172a;
-            padding: 12px 20px;
+            padding: 8px 16px;
             border-radius: 40px;
         }
         .stats {
             display: flex;
-            gap: 25px;
+            gap: 20px;
             background: #1e293b;
-            padding: 8px 20px;
+            padding: 5px 16px;
             border-radius: 40px;
         }
         .stat {
             font-weight: bold;
-            font-size: 1rem;
+            font-size: 0.9rem;
         }
         .stat span {
             color: #facc15;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
         }
         .user-area {
             display: flex;
-            gap: 15px;
+            gap: 12px;
             align-items: center;
             flex-wrap: wrap;
         }
         button {
             background: #3b4259;
             border: none;
-            padding: 8px 18px;
+            padding: 6px 14px;
             border-radius: 40px;
             font-weight: 600;
             color: white;
             cursor: pointer;
             transition: 0.2s;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
         button.primary {
@@ -113,40 +113,41 @@
             box-shadow: 0 0 0 2px #0f172a;
         }
         .info-panel {
-            margin-top: 20px;
+            margin-top: 15px;
             background: #0f172a;
             border-radius: 24px;
-            padding: 15px 20px;
+            padding: 10px 16px;
             display: flex;
             justify-content: space-between;
             flex-wrap: wrap;
-            gap: 12px;
+            gap: 10px;
             align-items: center;
         }
         .selected-info {
             background: #1e293b;
-            padding: 8px 18px;
+            padding: 5px 14px;
             border-radius: 40px;
             font-family: monospace;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
         }
         .credit-badge {
             background: #2a2f3f;
-            padding: 6px 16px;
+            padding: 5px 14px;
             border-radius: 60px;
             color: #facc15;
             font-weight: bold;
+            font-size: 0.9rem;
         }
         .tooltip-note {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: #9ca3af;
         }
         .selection-panel {
             background: #1e293b;
             border-radius: 28px;
-            padding: 10px 18px;
+            padding: 8px 16px;
             display: inline-flex;
-            gap: 15px;
+            gap: 12px;
             align-items: center;
             flex-wrap: wrap;
             margin-top: 10px;
@@ -166,14 +167,14 @@
             border-radius: 32px;
             max-width: 480px;
             width: 90%;
-            padding: 24px;
+            padding: 20px;
             border: 1px solid #3b82f6;
             box-shadow: 0 20px 35px black;
         }
         .modal-content input, .modal-content select, .modal-content textarea {
             width: 100%;
-            padding: 10px;
-            margin: 8px 0;
+            padding: 8px;
+            margin: 6px 0;
             background: #1e293b;
             border: 1px solid #4b5563;
             border-radius: 20px;
@@ -183,11 +184,12 @@
             display: flex;
             gap: 12px;
             justify-content: flex-end;
-            margin-top: 20px;
+            margin-top: 16px;
         }
         h3 {
             margin-top: 0;
             color: #facc15;
+            font-size: 1.2rem;
         }
         .image-preview {
             margin-top: 8px;
@@ -195,12 +197,12 @@
             gap: 12px;
             align-items: center;
             background: #0f172a;
-            padding: 8px;
+            padding: 6px;
             border-radius: 20px;
         }
         .preview-img {
-            width: 40px;
-            height: 40px;
+            width: 36px;
+            height: 36px;
             object-fit: cover;
             border-radius: 8px;
             border: 1px solid #facc15;
@@ -218,10 +220,10 @@
             border-radius: 8px;
             font-family: monospace;
         }
-        @media (max-width: 860px) {
-            .stats { gap: 10px; padding: 5px 12px; }
-            .stat { font-size: 0.75rem; }
-            button { padding: 5px 12px; font-size: 0.7rem; }
+        @media (max-width: 1300px) {
+            .canvas-wrapper { max-width: 100%; }
+            .stat { font-size: 0.7rem; }
+            button { padding: 4px 10px; font-size: 0.7rem; }
         }
     </style>
 </head>
@@ -284,10 +286,10 @@
 </div>
 
 <script>
-    // ===================== KONFIGURACJA: 400x250 pikseli, rozmiar komórki 2px = 800x500px (całe widoczne) =====================
+    // ========== KONFIGURACJA: 400x250, rozmiar komórki 3px = 1200x750 (całość widoczna w pionie) ==========
     const COLS = 400;
     const ROWS = 250;
-    const CELL_SIZE = 2;        // <--- ZMIANA: mniejszy rozmiar, aby canvas miał 800x500 i mieścił się na ekranie
+    const CELL_SIZE = 3;        // 3px – dobrze widoczne, plansza 1200x750, mieści się w pionie (750px)
     const TOTAL_PIXELS = COLS * ROWS;
 
     let pixels = Array(ROWS).fill().map(() => Array(COLS).fill().map(() => ({ owner: null, content: null })));
@@ -297,6 +299,7 @@
     let demoBalance = 1000;
     let userDisplayName = "Gość";
 
+    // Elementy DOM
     const canvas = document.getElementById('pixelCanvas');
     const ctx = canvas.getContext('2d');
     const boughtCountSpan = document.getElementById('boughtCount');
@@ -316,11 +319,146 @@
     canvas.style.width = `${canvas.width}px`;
     canvas.style.height = `${canvas.height}px`;
 
+    // ---------- ZAPIS / WCZYTANIE localStorage ----------
+    function savePixelsToLocal() {
+        const dataToStore = {
+            pixels: pixels.map(row => row.map(cell => ({
+                owner: cell.owner,
+                content: cell.content ? { ...cell.content } : null
+            })))
+        };
+        localStorage.setItem('pixelCanvas100k', JSON.stringify(dataToStore));
+    }
+
+    function loadPixelsFromLocal() {
+        const raw = localStorage.getItem('pixelCanvas100k');
+        if (!raw) return false;
+        try {
+            const saved = JSON.parse(raw);
+            if (saved.pixels && saved.pixels.length === ROWS) {
+                for (let y = 0; y < ROWS; y++) {
+                    for (let x = 0; x < COLS; x++) {
+                        if (saved.pixels[y] && saved.pixels[y][x]) {
+                            pixels[y][x].owner = saved.pixels[y][x].owner;
+                            pixels[y][x].content = saved.pixels[y][x].content ? { ...saved.pixels[y][x].content } : null;
+                        }
+                    }
+                }
+                return true;
+            }
+        } catch(e) { console.warn(e); }
+        return false;
+    }
+
+    function resetAllPixels() {
+        for (let y = 0; y < ROWS; y++) {
+            for (let x = 0; x < COLS; x++) {
+                pixels[y][x].owner = null;
+                pixels[y][x].content = null;
+            }
+        }
+        savePixelsToLocal();
+        drawCanvas();
+        updateStats();
+        showToast("🧹 Wszystkie piksele zostały zresetowane!", 1500);
+    }
+
+    // ---------- UŻYTKOWNIK I SALDO ----------
+    function initUser() {
+        let storedUserId = localStorage.getItem('pixelUser_DemoId');
+        if (!storedUserId) {
+            storedUserId = 'demo_' + Math.random().toString(36).substring(2, 10);
+            localStorage.setItem('pixelUser_DemoId', storedUserId);
+        }
+        currentUserId = storedUserId;
+        userDisplayName = "Demo:" + currentUserId.slice(-6);
+        updateOwnerStat();
+        let savedBalance = localStorage.getItem('demoBalance_usdt');
+        if (savedBalance !== null) {
+            demoBalance = parseInt(savedBalance);
+            if (isNaN(demoBalance)) demoBalance = 1000;
+        } else {
+            demoBalance = 1000;
+        }
+        updateCreditUI();
+    }
+
+    function updateCreditUI() {
+        creditDisplaySpan.innerText = `💰 DEMO USDT: ${demoBalance}`;
+        localStorage.setItem('demoBalance_usdt', demoBalance);
+    }
+
+    function addDemoCredits(amount) {
+        demoBalance += amount;
+        updateCreditUI();
+        showToast(`✨ Dodałeś ${amount} demo USDT! Teraz masz ${demoBalance}`, 1500);
+    }
+
+    // ---------- KUPNO POJEDYNCZEGO PIKSELA (NAPRAWIONE) ----------
+    function purchasePixel(x, y) {
+        const cell = pixels[y][x];
+        if (cell.owner !== null) {
+            showToast(`❌ Piksel (${x},${y}) jest już własnością innego użytkownika!`, 1500);
+            return false;
+        }
+        if (demoBalance < 1) {
+            showToast(`💸 Brak DEMO USDT! Doładuj (+50)`, 2000);
+            return false;
+        }
+        // Pobierz 1 USDT
+        demoBalance -= 1;
+        updateCreditUI();
+        
+        cell.owner = currentUserId;
+        // Domyślna treść – kolor losowy
+        cell.content = {
+            type: 'color',
+            value: `#${Math.floor(Math.random()*16777215).toString(16).padStart(6,'0')}`
+        };
+        savePixelsToLocal();
+        drawCanvas();
+        updateStats();
+        showToast(`✅ Sukces! Piksel (${x},${y}) jest TWÓJ za 1 USDT! Kliknij go, aby wgrać zdjęcie.`, 2500);
+        return true;
+    }
+
+    function updatePixelContent(x, y, newContent) {
+        const cell = pixels[y][x];
+        if (!cell.owner || cell.owner !== currentUserId) {
+            showToast(`⛔ Nie możesz edytować tego piksela - nie jesteś właścicielem!`, 1500);
+            return false;
+        }
+        cell.content = { ...newContent };
+        savePixelsToLocal();
+        drawCanvas();
+        showToast(`🎨 Piksel (${x},${y}) zaktualizowany!`, 1200);
+        return true;
+    }
+
     // ---------- ZAZNACZANIE OBSZARU (Shift + przeciąganie) ----------
     let isSelecting = false;
-    let selectionStart = null;   // { x, y } w kolumnach/wierszach
+    let selectionStart = null;
     let selectionEnd = null;
     let currentSelectionRect = { x1: 0, y1: 0, x2: 0, y2: 0 };
+    let shiftPressed = false;
+
+    window.addEventListener('keydown', (e) => { if (e.key === 'Shift') shiftPressed = true; });
+    window.addEventListener('keyup', (e) => { if (e.key === 'Shift') { shiftPressed = false; clearSelection(); } });
+
+    function getPixelCoordsFromMouse(e) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        let mouseX = (e.clientX - rect.left) * scaleX;
+        let mouseY = (e.clientY - rect.top) * scaleY;
+        if (mouseX < 0) mouseX = 0;
+        if (mouseY < 0) mouseY = 0;
+        if (mouseX >= canvas.width) mouseX = canvas.width - 1;
+        if (mouseY >= canvas.height) mouseY = canvas.height - 1;
+        const col = Math.floor(mouseX / CELL_SIZE);
+        const row = Math.floor(mouseY / CELL_SIZE);
+        return { x: Math.min(COLS-1, Math.max(0, col)), y: Math.min(ROWS-1, Math.max(0, row)) };
+    }
 
     function updateSelectionDisplay() {
         if (!selectionStart || !selectionEnd) {
@@ -350,11 +488,10 @@
         selectionRectDiv.style.width = rectWidth + 'px';
         selectionRectDiv.style.height = rectHeight + 'px';
         
-        // statystyki
         let freeCount = 0;
         for (let y = y1; y <= y2; y++) {
             for (let x = x1; x <= x2; x++) {
-                if (y >= 0 && y < ROWS && x >= 0 && x < COLS && pixels[y][x].owner === null) freeCount++;
+                if (pixels[y][x].owner === null) freeCount++;
             }
         }
         const totalInArea = (x2 - x1 + 1) * (y2 - y1 + 1);
@@ -372,7 +509,6 @@
         selectionStatusDiv.style.display = 'none';
     }
 
-    // Zakup wszystkich WOLNYCH pikseli w zaznaczonym obszarze
     function buySelection() {
         if (!currentSelectionRect) return;
         const { x1, y1, x2, y2 } = currentSelectionRect;
@@ -394,7 +530,6 @@
         }
         if (!confirm(`Czy na pewno chcesz kupić ${cost} wolnych pikseli za ${cost} USDT?`)) return;
         
-        // Wykonaj zakup wszystkich
         for (let [x, y] of freePixelsCoords) {
             if (pixels[y][x].owner !== null) continue;
             pixels[y][x].owner = currentUserId;
@@ -408,63 +543,13 @@
         savePixelsToLocal();
         drawCanvas();
         updateStats();
-        showToast(`✅ Zakupiono ${cost} pikseli za ${cost} USDT! Kliknij w nie, aby dodać własne zdjęcia.`, 3000);
+        showToast(`✅ Zakupiono ${cost} pikseli za ${cost} USDT! Kliknij w nie, aby dodać zdjęcia.`, 3000);
         clearSelection();
     }
 
-    // ---------- ZDARZENIA MYSZY DLA ZAZNACZANIA ----------
-    let shiftPressed = false;
-    window.addEventListener('keydown', (e) => { if (e.key === 'Shift') shiftPressed = true; });
-    window.addEventListener('keyup', (e) => { if (e.key === 'Shift') { shiftPressed = false; clearSelection(); } });
-    
-    function getPixelCoordsFromMouse(e) {
-        const rect = canvas.getBoundingClientRect();
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-        let mouseX = (e.clientX - rect.left) * scaleX;
-        let mouseY = (e.clientY - rect.top) * scaleY;
-        if (mouseX < 0) mouseX = 0;
-        if (mouseY < 0) mouseY = 0;
-        if (mouseX >= canvas.width) mouseX = canvas.width - 1;
-        if (mouseY >= canvas.height) mouseY = canvas.height - 1;
-        const col = Math.floor(mouseX / CELL_SIZE);
-        const row = Math.floor(mouseY / CELL_SIZE);
-        return { x: Math.min(COLS-1, Math.max(0, col)), y: Math.min(ROWS-1, Math.max(0, row)) };
-    }
-    
-    canvas.addEventListener('mousedown', (e) => {
-        if (shiftPressed) {
-            e.preventDefault();
-            const { x, y } = getPixelCoordsFromMouse(e);
-            isSelecting = true;
-            selectionStart = { x, y };
-            selectionEnd = { x, y };
-            updateSelectionDisplay();
-        }
-    });
-    
-    canvas.addEventListener('mousemove', (e) => {
-        if (isSelecting && shiftPressed && selectionStart) {
-            e.preventDefault();
-            const { x, y } = getPixelCoordsFromMouse(e);
-            selectionEnd = { x, y };
-            updateSelectionDisplay();
-        }
-    });
-    
-    canvas.addEventListener('mouseup', (e) => {
-        if (isSelecting && shiftPressed && selectionStart && selectionEnd) {
-            e.preventDefault();
-            updateSelectionDisplay();
-            isSelecting = false;
-        } else if (!shiftPressed) {
-            clearSelection();
-        }
-    });
-    
-    // ---------- KUPNO POJEDYNCZEGO PIKSELA POPRZEZ KLIKNIĘCIE (NAPRAWIONE) ----------
+    // ---------- OBSŁUGA KLIKNIĘCIA (KUPNO POJEDYNCZEGO) ----------
     function handleCanvasClick(e) {
-        // Jeśli wciśnięty Shift – to obsługuje zaznaczanie, nie kupujemy pojedynczego
+        // Jeśli wciśnięty Shift – nie kupujemy pojedynczego (zaznaczanie)
         if (shiftPressed) return;
         
         const rect = canvas.getBoundingClientRect();
@@ -482,153 +567,19 @@
             const isOwner = (cell.owner === currentUserId);
             
             if (cell.owner === null) {
-                // Wolny piksel – zapytaj o kupno
+                // Wolny piksel – pytanie o kupno
                 if (confirm(`✨ Piksel (${col},${row}) jest WOLNY. Kupujesz za 1 USDT?`)) {
                     purchasePixel(col, row);
                 }
             } else if (isOwner) {
-                // Należy do nas – edycja
                 openEditModal(col, row, cell.content);
             } else {
                 showToast(`🔒 Piksel należy do innego użytkownika. Nie możesz go kupić ani edytować.`, 1500);
             }
         }
     }
-    
-    // Funkcja kupna pojedynczego piksela (używana również w kliknięciu)
-    function purchasePixel(x, y) {
-        const cell = pixels[y][x];
-        if (cell.owner !== null) {
-            showToast(`❌ Piksel (${x},${y}) jest już własnością innego użytkownika!`, 1500);
-            return false;
-        }
-        if (demoBalance < 1) {
-            showToast(`💸 Brak DEMO USDT! Doładuj (+50)`, 2000);
-            return false;
-        }
-        // Pobierz 1 USDT
-        demoBalance -= 1;
-        updateCreditUI();
-        
-        cell.owner = currentUserId;
-        // Domyślna treść – kolor losowy (użytkownik może potem zmienić na zdjęcie)
-        cell.content = {
-            type: 'color',
-            value: `#${Math.floor(Math.random()*16777215).toString(16).padStart(6,'0')}`
-        };
-        savePixelsToLocal();
-        drawCanvas();
-        updateStats();
-        showToast(`✅ Sukces! Piksel (${x},${y}) jest TWÓJ za 1 USDT! Kliknij go, aby wgrać zdjęcie z komputera.`, 2500);
-        return true;
-    }
-    
-    function updatePixelContent(x, y, newContent) {
-        const cell = pixels[y][x];
-        if (!cell.owner || cell.owner !== currentUserId) {
-            showToast(`⛔ Nie możesz edytować tego piksela - nie jesteś właścicielem!`, 1500);
-            return false;
-        }
-        cell.content = { ...newContent };
-        savePixelsToLocal();
-        drawCanvas();
-        showToast(`🎨 Piksel (${x},${y}) zaktualizowany!`, 1200);
-        return true;
-    }
-    
-    // ---------- RESZTA KODU (zapis, ładowanie, rysowanie, UI) ----------
-    function showToast(msg, duration = 2000) {
-        const toast = document.createElement('div');
-        toast.innerText = msg;
-        toast.style.position = 'fixed';
-        toast.style.bottom = '20px';
-        toast.style.left = '50%';
-        toast.style.transform = 'translateX(-50%)';
-        toast.style.backgroundColor = '#1e293b';
-        toast.style.color = '#facc15';
-        toast.style.padding = '10px 20px';
-        toast.style.borderRadius = '40px';
-        toast.style.fontWeight = 'bold';
-        toast.style.zIndex = '9999';
-        toast.style.border = '1px solid #facc15';
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), duration);
-    }
-    
-    function savePixelsToLocal() {
-        const dataToStore = {
-            pixels: pixels.map(row => row.map(cell => ({
-                owner: cell.owner,
-                content: cell.content ? { ...cell.content } : null
-            })))
-        };
-        localStorage.setItem('pixelCanvas100k', JSON.stringify(dataToStore));
-    }
-    
-    function loadPixelsFromLocal() {
-        const raw = localStorage.getItem('pixelCanvas100k');
-        if (!raw) return false;
-        try {
-            const saved = JSON.parse(raw);
-            if (saved.pixels && saved.pixels.length === ROWS) {
-                for (let y = 0; y < ROWS; y++) {
-                    for (let x = 0; x < COLS; x++) {
-                        if (saved.pixels[y] && saved.pixels[y][x]) {
-                            pixels[y][x].owner = saved.pixels[y][x].owner;
-                            pixels[y][x].content = saved.pixels[y][x].content ? { ...saved.pixels[y][x].content } : null;
-                        }
-                    }
-                }
-                return true;
-            }
-        } catch(e) { console.warn(e); }
-        return false;
-    }
-    
-    function resetAllPixels() {
-        for (let y = 0; y < ROWS; y++) {
-            for (let x = 0; x < COLS; x++) {
-                pixels[y][x].owner = null;
-                pixels[y][x].content = null;
-            }
-        }
-        savePixelsToLocal();
-        drawCanvas();
-        updateStats();
-        showToast("🧹 Wszystkie piksele zostały zresetowane!", 1500);
-    }
-    
-    function initUser() {
-        let storedUserId = localStorage.getItem('pixelUser_DemoId');
-        if (!storedUserId) {
-            storedUserId = 'demo_' + Math.random().toString(36).substring(2, 10);
-            localStorage.setItem('pixelUser_DemoId', storedUserId);
-        }
-        currentUserId = storedUserId;
-        userDisplayName = "Demo:" + currentUserId.slice(-6);
-        updateOwnerStat();
-        let savedBalance = localStorage.getItem('demoBalance_usdt');
-        if (savedBalance !== null) {
-            demoBalance = parseInt(savedBalance);
-            if (isNaN(demoBalance)) demoBalance = 1000;
-        } else {
-            demoBalance = 1000;
-        }
-        updateCreditUI();
-    }
-    
-    function updateCreditUI() {
-        creditDisplaySpan.innerText = `💰 DEMO USDT: ${demoBalance}`;
-        localStorage.setItem('demoBalance_usdt', demoBalance);
-    }
-    
-    function addDemoCredits(amount) {
-        demoBalance += amount;
-        updateCreditUI();
-        showToast(`✨ Dodałeś ${amount} demo USDT! Teraz masz ${demoBalance}`, 1500);
-    }
-    
-    // RYSOWANIE KANWASU z obsługą obrazków (także małych komórek)
+
+    // ---------- RYSOWANIE KANWASU (bez siatki dla czytelności przy małych komórkach) ----------
     const imageCache = new Map();
     function drawCanvas() {
         if (!ctx) return;
@@ -650,7 +601,7 @@
                     ctx.fillStyle = "#1e293b";
                     ctx.fillRect(px, py, CELL_SIZE, CELL_SIZE);
                     ctx.fillStyle = "#f1f5f9";
-                    ctx.font = `${Math.min(CELL_SIZE * 0.8, 10)}px "Segoe UI Emoji"`;
+                    ctx.font = `${Math.min(CELL_SIZE * 0.8, 8)}px "Segoe UI Emoji"`;
                     ctx.textAlign = "center";
                     ctx.textBaseline = "middle";
                     let shortText = content.value.length > 2 ? content.value.slice(0,2) : content.value;
@@ -666,7 +617,7 @@
                                 ctx.drawImage(img, px, py, CELL_SIZE, CELL_SIZE);
                             } else {
                                 ctx.fillStyle = "#facc15";
-                                ctx.fillText("🖼️", px+1, py+CELL_SIZE-2);
+                                ctx.fillText("🖼️", px+1, py+CELL_SIZE-1);
                             }
                         } else {
                             const img = new Image();
@@ -678,13 +629,14 @@
                             ctx.fillStyle = "#334155";
                             ctx.fillRect(px, py, CELL_SIZE, CELL_SIZE);
                             ctx.fillStyle = "#94a3b8";
-                            ctx.fillText("📷", px+1, py+CELL_SIZE-2);
+                            ctx.fillText("📷", px+1, py+CELL_SIZE-1);
                         }
                     }
                 }
             }
         }
-        // Siatka (opcjonalna, dla 2px może być gęsta, ale dodaje charakteru)
+        // Opcjonalna siatka – wyłączona dla większej czytelności przy małych komórkach (można włączyć odkomentowując)
+        /*
         ctx.beginPath();
         ctx.strokeStyle = "#334155";
         ctx.lineWidth = 0.3;
@@ -698,8 +650,9 @@
             ctx.lineTo(canvas.width, i * CELL_SIZE);
             ctx.stroke();
         }
+        */
     }
-    
+
     function updateStats() {
         let ownedCount = 0;
         for (let y = 0; y < ROWS; y++) {
@@ -710,11 +663,25 @@
         boughtCountSpan.innerText = ownedCount;
         document.getElementById('totalPixels').innerText = TOTAL_PIXELS.toLocaleString();
     }
-    
-    function updateOwnerStat() {
-        ownerStatSpan.innerText = userDisplayName;
+    function updateOwnerStat() { ownerStatSpan.innerText = userDisplayName; }
+    function showToast(msg, duration = 2000) {
+        const toast = document.createElement('div');
+        toast.innerText = msg;
+        toast.style.position = 'fixed';
+        toast.style.bottom = '20px';
+        toast.style.left = '50%';
+        toast.style.transform = 'translateX(-50%)';
+        toast.style.backgroundColor = '#1e293b';
+        toast.style.color = '#facc15';
+        toast.style.padding = '8px 18px';
+        toast.style.borderRadius = '40px';
+        toast.style.fontWeight = 'bold';
+        toast.style.zIndex = '9999';
+        toast.style.border = '1px solid #facc15';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), duration);
     }
-    
+
     // ---------- MODAL EDYCJI (z przesyłaniem plików) ----------
     let currentEditX = null, currentEditY = null;
     const modal = document.getElementById('editModal');
@@ -790,8 +757,38 @@
     });
     closeModalBtn.addEventListener('click', () => { modal.style.display = 'none'; });
     window.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
-    
-    // ---------- PODPIĘCIE PRZYCISKÓW ----------
+
+    // ---------- ZDARZENIA MYSZY DLA ZAZNACZANIA (bez ingerencji w kliknięcie) ----------
+    canvas.addEventListener('mousedown', (e) => {
+        if (shiftPressed) {
+            e.preventDefault();
+            const { x, y } = getPixelCoordsFromMouse(e);
+            isSelecting = true;
+            selectionStart = { x, y };
+            selectionEnd = { x, y };
+            updateSelectionDisplay();
+        }
+    });
+    canvas.addEventListener('mousemove', (e) => {
+        if (isSelecting && shiftPressed && selectionStart) {
+            e.preventDefault();
+            const { x, y } = getPixelCoordsFromMouse(e);
+            selectionEnd = { x, y };
+            updateSelectionDisplay();
+        }
+    });
+    canvas.addEventListener('mouseup', (e) => {
+        if (isSelecting && shiftPressed && selectionStart && selectionEnd) {
+            e.preventDefault();
+            updateSelectionDisplay();
+            isSelecting = false;
+        } else if (!shiftPressed) {
+            clearSelection();
+        }
+    });
+    canvas.addEventListener('click', handleCanvasClick);
+
+    // ---------- PRZYCISKI ----------
     document.getElementById('resetDataBtn').addEventListener('click', resetAllPixels);
     document.getElementById('connectWalletBtn').addEventListener('click', () => {
         if (confirm("Nowa tożsamość – stracisz dostęp do swoich pikseli?")) {
@@ -807,15 +804,13 @@
     document.getElementById('demoAddCredits').addEventListener('click', () => addDemoCredits(50));
     confirmSelectionBtn.addEventListener('click', buySelection);
     cancelSelectionBtn.addEventListener('click', clearSelection);
-    canvas.addEventListener('click', handleCanvasClick);
-    
+
     // ---------- INICJALIZACJA ----------
     function init() {
         initUser();
         if (!loadPixelsFromLocal()) resetAllPixels();
         drawCanvas();
         updateStats();
-        // Automatyczne przewijanie do środka (opcjonalne)
         const wrapper = document.getElementById('canvasWrapper');
         if (wrapper) {
             wrapper.scrollLeft = (canvas.width - wrapper.clientWidth) / 2;
