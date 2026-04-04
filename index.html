@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>PixelCanvas 100k – Kup wiele pikseli naraz (zaznaczanie obszarem)</title>
+    <title>PixelCanvas 100k – Kupuj pojedyncze lub zaznacz obszar (cały widoczny)</title>
     <style>
         * {
             box-sizing: border-box;
@@ -15,6 +15,10 @@
             margin: 0;
             padding: 20px;
             color: #eef2ff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
         }
         .container {
             max-width: 100%;
@@ -23,6 +27,8 @@
             padding: 20px;
             box-shadow: 0 25px 40px rgba(0,0,0,0.5);
             border: 1px solid #2d3a5e;
+            width: fit-content;
+            margin: 0 auto;
         }
         .top-bar {
             display: flex;
@@ -96,6 +102,9 @@
             background: #1e293b;
             box-shadow: inset 0 0 0 1px #0f172a, 0 10px 20px rgba(0,0,0,0.3);
             position: relative;
+            max-width: 100%;
+            max-height: 80vh;
+            display: inline-block;
         }
         canvas {
             display: block;
@@ -203,7 +212,13 @@
             pointer-events: none;
             z-index: 10;
         }
-        @media (max-width: 700px) {
+        kbd {
+            background: #000;
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-family: monospace;
+        }
+        @media (max-width: 860px) {
             .stats { gap: 10px; padding: 5px 12px; }
             .stat { font-size: 0.75rem; }
             button { padding: 5px 12px; font-size: 0.7rem; }
@@ -232,17 +247,17 @@
 
     <div class="info-panel">
         <div class="selected-info">
-            🖱️ Kliknij pojedynczy piksel → kupno / edycja <br>
-            🟩 <strong>Zaznacz obszar:</strong> naciśnij i przytrzymaj <kbd style="background:#000;padding:2px 6px;">Shift</kbd> + przeciągnij myszką
+            🖱️ <strong>Kupno pojedynczego piksela:</strong> kliknij w wolny piksel<br>
+            🟩 <strong>Zaznacz obszar:</strong> przytrzymaj <kbd>Shift</kbd> + przeciągnij myszką
         </div>
         <div class="tooltip-note">
-            ✅ 1 piksel = 1 USDT · Kupiony → tylko Ty edytujesz (tekst/zdjęcie z komputera)
+            ✅ 1 piksel = 1 USDT · Po zakupie kliknij w swój piksel → wgraj zdjęcie z komputera
         </div>
         <button id="demoAddCredits" style="background:#2dd4bf;">✨ +50 demo USDT</button>
     </div>
     <div id="selectionStatus" class="selection-panel" style="display: none;">
         <span>📐 Zaznaczono: <strong id="selectedAreaInfo">-</strong></span>
-        <span>🆓 Wolne piksele: <strong id="freeInSelection">0</strong></span>
+        <span>🆓 Wolne: <strong id="freeInSelection">0</strong></span>
         <span>💰 Koszt: <strong id="costSelection">0</strong> USDT</span>
         <button id="confirmSelectionBuy" class="success">✅ Kup wszystkie wolne</button>
         <button id="cancelSelection" class="danger">❌ Anuluj</button>
@@ -269,10 +284,10 @@
 </div>
 
 <script>
-    // ===================== KONFIGURACJA 400x250 = 100 000 =====================
+    // ===================== KONFIGURACJA: 400x250 pikseli, rozmiar komórki 2px = 800x500px (całe widoczne) =====================
     const COLS = 400;
     const ROWS = 250;
-    const CELL_SIZE = 10;
+    const CELL_SIZE = 2;        // <--- ZMIANA: mniejszy rozmiar, aby canvas miał 800x500 i mieścił się na ekranie
     const TOTAL_PIXELS = COLS * ROWS;
 
     let pixels = Array(ROWS).fill().map(() => Array(COLS).fill().map(() => ({ owner: null, content: null })));
@@ -303,7 +318,7 @@
 
     // ---------- ZAZNACZANIE OBSZARU (Shift + przeciąganie) ----------
     let isSelecting = false;
-    let selectionStart = null;   // { x, y } w pikselach canvas (kolumna, wiersz)
+    let selectionStart = null;   // { x, y } w kolumnach/wierszach
     let selectionEnd = null;
     let currentSelectionRect = { x1: 0, y1: 0, x2: 0, y2: 0 };
 
@@ -358,7 +373,7 @@
     }
 
     // Zakup wszystkich WOLNYCH pikseli w zaznaczonym obszarze
-    async function buySelection() {
+    function buySelection() {
         if (!currentSelectionRect) return;
         const { x1, y1, x2, y2 } = currentSelectionRect;
         let freePixelsCoords = [];
@@ -447,34 +462,81 @@
         }
     });
     
-    // ---------- OBSŁUGA KLIKNIĘCIA (pojedynczy piksel) ----------
+    // ---------- KUPNO POJEDYNCZEGO PIKSELA POPRZEZ KLIKNIĘCIE (NAPRAWIONE) ----------
     function handleCanvasClick(e) {
-        if (shiftPressed) return; // zaznaczanie, nie kupno pojedynczego
+        // Jeśli wciśnięty Shift – to obsługuje zaznaczanie, nie kupujemy pojedynczego
+        if (shiftPressed) return;
+        
         const rect = canvas.getBoundingClientRect();
         const scaleX = canvas.width / rect.width;
         const scaleY = canvas.height / rect.height;
         const mouseX = (e.clientX - rect.left) * scaleX;
         const mouseY = (e.clientY - rect.top) * scaleY;
         if (mouseX < 0 || mouseY < 0 || mouseX >= canvas.width || mouseY >= canvas.height) return;
+        
         const col = Math.floor(mouseX / CELL_SIZE);
         const row = Math.floor(mouseY / CELL_SIZE);
         if (col >= 0 && col < COLS && row >= 0 && row < ROWS) {
             coordInfoSpan.innerText = `(${col}, ${row})`;
             const cell = pixels[row][col];
             const isOwner = (cell.owner === currentUserId);
+            
             if (cell.owner === null) {
+                // Wolny piksel – zapytaj o kupno
                 if (confirm(`✨ Piksel (${col},${row}) jest WOLNY. Kupujesz za 1 USDT?`)) {
                     purchasePixel(col, row);
                 }
             } else if (isOwner) {
+                // Należy do nas – edycja
                 openEditModal(col, row, cell.content);
             } else {
-                showToast(`🔒 Piksel należy do innego użytkownika.`, 1500);
+                showToast(`🔒 Piksel należy do innego użytkownika. Nie możesz go kupić ani edytować.`, 1500);
             }
         }
     }
     
-    // ---------- RESZTA KODU (zachowanie poprzedniej funkcjonalności) ----------
+    // Funkcja kupna pojedynczego piksela (używana również w kliknięciu)
+    function purchasePixel(x, y) {
+        const cell = pixels[y][x];
+        if (cell.owner !== null) {
+            showToast(`❌ Piksel (${x},${y}) jest już własnością innego użytkownika!`, 1500);
+            return false;
+        }
+        if (demoBalance < 1) {
+            showToast(`💸 Brak DEMO USDT! Doładuj (+50)`, 2000);
+            return false;
+        }
+        // Pobierz 1 USDT
+        demoBalance -= 1;
+        updateCreditUI();
+        
+        cell.owner = currentUserId;
+        // Domyślna treść – kolor losowy (użytkownik może potem zmienić na zdjęcie)
+        cell.content = {
+            type: 'color',
+            value: `#${Math.floor(Math.random()*16777215).toString(16).padStart(6,'0')}`
+        };
+        savePixelsToLocal();
+        drawCanvas();
+        updateStats();
+        showToast(`✅ Sukces! Piksel (${x},${y}) jest TWÓJ za 1 USDT! Kliknij go, aby wgrać zdjęcie z komputera.`, 2500);
+        return true;
+    }
+    
+    function updatePixelContent(x, y, newContent) {
+        const cell = pixels[y][x];
+        if (!cell.owner || cell.owner !== currentUserId) {
+            showToast(`⛔ Nie możesz edytować tego piksela - nie jesteś właścicielem!`, 1500);
+            return false;
+        }
+        cell.content = { ...newContent };
+        savePixelsToLocal();
+        drawCanvas();
+        showToast(`🎨 Piksel (${x},${y}) zaktualizowany!`, 1200);
+        return true;
+    }
+    
+    // ---------- RESZTA KODU (zapis, ładowanie, rysowanie, UI) ----------
     function showToast(msg, duration = 2000) {
         const toast = document.createElement('div');
         toast.innerText = msg;
@@ -494,7 +556,12 @@
     }
     
     function savePixelsToLocal() {
-        const dataToStore = { pixels: pixels.map(row => row.map(cell => ({ owner: cell.owner, content: cell.content ? { ...cell.content } : null }))) };
+        const dataToStore = {
+            pixels: pixels.map(row => row.map(cell => ({
+                owner: cell.owner,
+                content: cell.content ? { ...cell.content } : null
+            })))
+        };
         localStorage.setItem('pixelCanvas100k', JSON.stringify(dataToStore));
     }
     
@@ -504,26 +571,31 @@
         try {
             const saved = JSON.parse(raw);
             if (saved.pixels && saved.pixels.length === ROWS) {
-                for (let y = 0; y < ROWS; y++)
-                    for (let x = 0; x < COLS; x++)
+                for (let y = 0; y < ROWS; y++) {
+                    for (let x = 0; x < COLS; x++) {
                         if (saved.pixels[y] && saved.pixels[y][x]) {
                             pixels[y][x].owner = saved.pixels[y][x].owner;
                             pixels[y][x].content = saved.pixels[y][x].content ? { ...saved.pixels[y][x].content } : null;
                         }
+                    }
+                }
                 return true;
             }
-        } catch(e) {}
+        } catch(e) { console.warn(e); }
         return false;
     }
     
     function resetAllPixels() {
-        for (let y = 0; y < ROWS; y++)
-            for (let x = 0; x < COLS; x++)
-                pixels[y][x] = { owner: null, content: null };
+        for (let y = 0; y < ROWS; y++) {
+            for (let x = 0; x < COLS; x++) {
+                pixels[y][x].owner = null;
+                pixels[y][x].content = null;
+            }
+        }
         savePixelsToLocal();
         drawCanvas();
         updateStats();
-        showToast("Wszystkie piksele zresetowane", 1500);
+        showToast("🧹 Wszystkie piksele zostały zresetowane!", 1500);
     }
     
     function initUser() {
@@ -536,8 +608,12 @@
         userDisplayName = "Demo:" + currentUserId.slice(-6);
         updateOwnerStat();
         let savedBalance = localStorage.getItem('demoBalance_usdt');
-        if (savedBalance !== null) demoBalance = parseInt(savedBalance) || 1000;
-        else demoBalance = 1000;
+        if (savedBalance !== null) {
+            demoBalance = parseInt(savedBalance);
+            if (isNaN(demoBalance)) demoBalance = 1000;
+        } else {
+            demoBalance = 1000;
+        }
         updateCreditUI();
     }
     
@@ -549,46 +625,18 @@
     function addDemoCredits(amount) {
         demoBalance += amount;
         updateCreditUI();
-        showToast(`+${amount} USDT, teraz masz ${demoBalance}`, 1500);
+        showToast(`✨ Dodałeś ${amount} demo USDT! Teraz masz ${demoBalance}`, 1500);
     }
     
-    function canAffordPurchase() { return demoBalance >= 1; }
-    function deductCost() {
-        if (demoBalance >= 1) { demoBalance--; updateCreditUI(); return true; }
-        return false;
-    }
-    
-    function purchasePixel(x, y) {
-        const cell = pixels[y][x];
-        if (cell.owner !== null) { showToast(`Piksel zajęty`, 1000); return false; }
-        if (!canAffordPurchase()) { showToast(`Brak USDT`, 1500); return false; }
-        if (!deductCost()) return false;
-        cell.owner = currentUserId;
-        cell.content = { type: 'color', value: `#${Math.floor(Math.random()*16777215).toString(16).padStart(6,'0')}` };
-        savePixelsToLocal();
-        drawCanvas();
-        updateStats();
-        showToast(`Kupiłeś piksel (${x},${y})! Kliknij, by dodać zdjęcie`, 2000);
-        return true;
-    }
-    
-    function updatePixelContent(x, y, newContent) {
-        const cell = pixels[y][x];
-        if (!cell.owner || cell.owner !== currentUserId) { showToast(`Nie jesteś właścicielem`, 1500); return false; }
-        cell.content = { ...newContent };
-        savePixelsToLocal();
-        drawCanvas();
-        showToast(`Zaktualizowano piksel`, 1000);
-        return true;
-    }
-    
-    // RYSOWANIE
+    // RYSOWANIE KANWASU z obsługą obrazków (także małych komórek)
     const imageCache = new Map();
     function drawCanvas() {
+        if (!ctx) return;
         for (let y = 0; y < ROWS; y++) {
             for (let x = 0; x < COLS; x++) {
                 const cell = pixels[y][x];
-                const px = x * CELL_SIZE, py = y * CELL_SIZE;
+                const px = x * CELL_SIZE;
+                const py = y * CELL_SIZE;
                 if (!cell.owner) {
                     ctx.fillStyle = "#2d3748";
                     ctx.fillRect(px, py, CELL_SIZE, CELL_SIZE);
@@ -602,10 +650,10 @@
                     ctx.fillStyle = "#1e293b";
                     ctx.fillRect(px, py, CELL_SIZE, CELL_SIZE);
                     ctx.fillStyle = "#f1f5f9";
-                    ctx.font = `bold ${Math.floor(CELL_SIZE * 0.7)}px "Segoe UI Emoji"`;
+                    ctx.font = `${Math.min(CELL_SIZE * 0.8, 10)}px "Segoe UI Emoji"`;
                     ctx.textAlign = "center";
                     ctx.textBaseline = "middle";
-                    let shortText = content.value.length > 3 ? content.value.slice(0,2)+".." : content.value;
+                    let shortText = content.value.length > 2 ? content.value.slice(0,2) : content.value;
                     ctx.fillText(shortText, px + CELL_SIZE/2, py + CELL_SIZE/2);
                 } else if (content.type === 'image') {
                     ctx.fillStyle = "#1e1e2f";
@@ -614,8 +662,12 @@
                     if (src) {
                         if (imageCache.has(src)) {
                             const img = imageCache.get(src);
-                            if (img && img.complete && img.naturalWidth) ctx.drawImage(img, px, py, CELL_SIZE, CELL_SIZE);
-                            else { ctx.fillStyle = "#facc15"; ctx.fillText("🖼️", px+2, py+8); }
+                            if (img && img.complete && img.naturalWidth) {
+                                ctx.drawImage(img, px, py, CELL_SIZE, CELL_SIZE);
+                            } else {
+                                ctx.fillStyle = "#facc15";
+                                ctx.fillText("🖼️", px+1, py+CELL_SIZE-2);
+                            }
                         } else {
                             const img = new Image();
                             img.crossOrigin = "Anonymous";
@@ -626,28 +678,44 @@
                             ctx.fillStyle = "#334155";
                             ctx.fillRect(px, py, CELL_SIZE, CELL_SIZE);
                             ctx.fillStyle = "#94a3b8";
-                            ctx.fillText("📷", px+2, py+8);
+                            ctx.fillText("📷", px+1, py+CELL_SIZE-2);
                         }
                     }
                 }
             }
         }
+        // Siatka (opcjonalna, dla 2px może być gęsta, ale dodaje charakteru)
         ctx.beginPath();
         ctx.strokeStyle = "#334155";
-        ctx.lineWidth = 0.6;
-        for (let i = 0; i <= COLS; i++) { ctx.moveTo(i*CELL_SIZE,0); ctx.lineTo(i*CELL_SIZE,canvas.height); ctx.stroke(); }
-        for (let i = 0; i <= ROWS; i++) { ctx.moveTo(0,i*CELL_SIZE); ctx.lineTo(canvas.width,i*CELL_SIZE); ctx.stroke(); }
+        ctx.lineWidth = 0.3;
+        for (let i = 0; i <= COLS; i++) {
+            ctx.moveTo(i * CELL_SIZE, 0);
+            ctx.lineTo(i * CELL_SIZE, canvas.height);
+            ctx.stroke();
+        }
+        for (let i = 0; i <= ROWS; i++) {
+            ctx.moveTo(0, i * CELL_SIZE);
+            ctx.lineTo(canvas.width, i * CELL_SIZE);
+            ctx.stroke();
+        }
     }
     
     function updateStats() {
         let ownedCount = 0;
-        for (let y=0; y<ROWS; y++) for (let x=0; x<COLS; x++) if (pixels[y][x].owner !== null) ownedCount++;
+        for (let y = 0; y < ROWS; y++) {
+            for (let x = 0; x < COLS; x++) {
+                if (pixels[y][x].owner !== null) ownedCount++;
+            }
+        }
         boughtCountSpan.innerText = ownedCount;
         document.getElementById('totalPixels').innerText = TOTAL_PIXELS.toLocaleString();
     }
-    function updateOwnerStat() { ownerStatSpan.innerText = userDisplayName; }
     
-    // MODAL EDYCJI (z przesyłaniem plików)
+    function updateOwnerStat() {
+        ownerStatSpan.innerText = userDisplayName;
+    }
+    
+    // ---------- MODAL EDYCJI (z przesyłaniem plików) ----------
     let currentEditX = null, currentEditY = null;
     const modal = document.getElementById('editModal');
     const modalCoordSpan = document.getElementById('modalCoord');
@@ -723,7 +791,7 @@
     closeModalBtn.addEventListener('click', () => { modal.style.display = 'none'; });
     window.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
     
-    // Przyciski globalne
+    // ---------- PODPIĘCIE PRZYCISKÓW ----------
     document.getElementById('resetDataBtn').addEventListener('click', resetAllPixels);
     document.getElementById('connectWalletBtn').addEventListener('click', () => {
         if (confirm("Nowa tożsamość – stracisz dostęp do swoich pikseli?")) {
@@ -741,14 +809,18 @@
     cancelSelectionBtn.addEventListener('click', clearSelection);
     canvas.addEventListener('click', handleCanvasClick);
     
+    // ---------- INICJALIZACJA ----------
     function init() {
         initUser();
         if (!loadPixelsFromLocal()) resetAllPixels();
         drawCanvas();
         updateStats();
+        // Automatyczne przewijanie do środka (opcjonalne)
         const wrapper = document.getElementById('canvasWrapper');
-        wrapper.scrollLeft = canvas.width / 3;
-        wrapper.scrollTop = canvas.height / 3;
+        if (wrapper) {
+            wrapper.scrollLeft = (canvas.width - wrapper.clientWidth) / 2;
+            wrapper.scrollTop = (canvas.height - wrapper.clientHeight) / 2;
+        }
     }
     init();
 </script>
