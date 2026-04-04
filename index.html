@@ -1,348 +1,790 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Porównywarka cen – prosty design</title>
-  <style>
-    /* ---------- RESET & BAZA – SUROWY, PŁASKI STYL JAK NA ZDJĘCIU ---------- */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      background: #ffffff;        /* czyste białe tło */
-      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-      color: #000000;
-      line-height: 1.4;
-      padding: 2rem 1.5rem;
-    }
-
-    /* kontener – wąski, czytelny, bez cieni */
-    .container {
-      max-width: 720px;
-      margin: 0 auto;
-    }
-
-    /* NAGŁÓWEK – dokładnie "PORÓWNYWARKA CEN" */
-    .header h1 {
-      font-size: 2.2rem;
-      font-weight: 700;
-      letter-spacing: -0.3px;
-      color: #000000;
-      margin-bottom: 1.2rem;
-      border-bottom: none;
-      padding-bottom: 0;
-    }
-
-    /* POLE WYSZUKIWANIA – prosty input, brak ikon, brak zaokrągleń */
-    .search-wrapper {
-      margin-bottom: 2rem;
-    }
-
-    #searchInput {
-      width: 100%;
-      padding: 0.7rem 0.8rem;
-      font-size: 1rem;
-      font-family: inherit;
-      border: 1px solid #a0a0a0;
-      background: #ffffff;
-      color: #000000;
-      outline: none;
-      transition: none;
-      border-radius: 0px;          /* absolutnie proste krawędzie */
-    }
-
-    #searchInput:focus {
-      border-color: #000000;
-    }
-
-    /* KARTY PRODUKTÓW – brak tła, brak cienia, brak zaokrągleń */
-    .product-card {
-      margin-bottom: 2.5rem;
-      padding-bottom: 1.5rem;
-      border-bottom: 1px solid #e0e0e0;   /* delikatna linia oddzielająca, jak na wzorze */
-    }
-
-    .product-card:last-child {
-      border-bottom: none;
-    }
-
-    /* nazwa produktu */
-    .product-title {
-      font-size: 1.6rem;
-      font-weight: 600;
-      margin-bottom: 0.2rem;
-      color: #000000;
-    }
-
-    /* specyfikacja (np. "128 GB, 5G") – zwykły tekst, bez tła */
-    .product-spec {
-      font-size: 0.9rem;
-      color: #3a3a3a;
-      margin-bottom: 1.2rem;
-      font-weight: 400;
-    }
-
-    /* lista sklepów – każdy w osobnym wierszu */
-    .shops-list {
-      margin: 0.5rem 0 0.8rem 0;
-    }
-
-    .shop-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      padding: 0.5rem 0;
-      font-size: 1rem;
-      border-top: none;
-      border-bottom: none;
-    }
-
-    .shop-name {
-      font-weight: 500;
-      color: #000000;
-    }
-
-    .shop-price {
-      font-weight: 600;
-      color: #000000;
-    }
-
-    /* obszar "Najtańszej" i przycisk – dokładnie jak na obrazku */
-    .cheapest-area {
-      margin-top: 0.8rem;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.6rem;
-    }
-
-    /* napis "Najtańszej" – zwykły tekst, brak kolorowego tła */
-    .cheapest-label {
-      font-size: 0.85rem;
-      font-weight: 500;
-      color: #000000;
-      background: none;
-      padding: 0;
-      letter-spacing: normal;
-    }
-
-    /* PRZYCISK – prostokąt, czarne tło, biały tekst, brak efektów */
-    .shop-button {
-      background: #000000;
-      border: 1px solid #000000;
-      color: #ffffff;
-      font-weight: 500;
-      font-size: 0.9rem;
-      padding: 0.5rem 1.2rem;
-      cursor: pointer;
-      transition: none;
-      font-family: inherit;
-      border-radius: 0px;
-      text-align: center;
-      display: inline-block;
-      width: auto;
-    }
-
-    /* brak efektów hover – maksymalnie delikatna zmiana (tylko dla użyteczności, ale nie psuje surowego stylu) */
-    .shop-button:hover {
-      background: #2c2c2c;
-      border-color: #2c2c2c;
-    }
-
-    /* komunikat braku wyników */
-    .no-results {
-      text-align: center;
-      padding: 2rem 1rem;
-      font-size: 1rem;
-      color: #5a5a5a;
-      border: 1px solid #e0e0e0;
-      background: #ffffff;
-      margin-top: 1rem;
-    }
-
-    /* mała stopka – dyskretna */
-    .attribution {
-      margin-top: 2.5rem;
-      text-align: center;
-      font-size: 0.7rem;
-      color: #7a7a7a;
-      border-top: 1px solid #eaeaea;
-      padding-top: 1.2rem;
-    }
-
-    /* żadnych zaokrągleń, żadnych gradientów, żadnych cieni – wszystko płaskie */
-    a, button, input {
-      border-radius: 0px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>PixelCanvas 100k – Kup piksel i wgraj własne ZDJĘCIE z komputera</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+        body {
+            background: #0a0f1e;
+            font-family: 'Segoe UI', 'Inter', system-ui, sans-serif;
+            margin: 0;
+            padding: 20px;
+            color: #eef2ff;
+        }
+        .container {
+            max-width: 100%;
+            background: #111827;
+            border-radius: 28px;
+            padding: 20px;
+            box-shadow: 0 25px 40px rgba(0,0,0,0.5);
+            border: 1px solid #2d3a5e;
+        }
+        .top-bar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            background: #0f172a;
+            padding: 12px 20px;
+            border-radius: 40px;
+        }
+        .stats {
+            display: flex;
+            gap: 25px;
+            background: #1e293b;
+            padding: 8px 20px;
+            border-radius: 40px;
+        }
+        .stat {
+            font-weight: bold;
+            font-size: 1rem;
+        }
+        .stat span {
+            color: #facc15;
+            font-size: 1.2rem;
+        }
+        .user-area {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        button {
+            background: #3b4259;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.85rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        button.primary {
+            background: #3b82f6;
+            box-shadow: 0 4px 12px rgba(59,130,246,0.3);
+        }
+        button.primary:hover {
+            background: #2563eb;
+            transform: scale(0.98);
+        }
+        button.warning {
+            background: #f97316;
+        }
+        button.danger {
+            background: #dc2626;
+        }
+        button:hover {
+            filter: brightness(1.05);
+            transform: translateY(-1px);
+        }
+        .canvas-wrapper {
+            overflow: auto;
+            border-radius: 20px;
+            border: 2px solid #2d3a5e;
+            background: #1e293b;
+            box-shadow: inset 0 0 0 1px #0f172a, 0 10px 20px rgba(0,0,0,0.3);
+        }
+        canvas {
+            display: block;
+            margin: 0 auto;
+            cursor: crosshair;
+            box-shadow: 0 0 0 2px #0f172a;
+        }
+        .info-panel {
+            margin-top: 20px;
+            background: #0f172a;
+            border-radius: 24px;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+        }
+        .selected-info {
+            background: #1e293b;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+        .credit-badge {
+            background: #2a2f3f;
+            padding: 6px 16px;
+            border-radius: 60px;
+            color: #facc15;
+            font-weight: bold;
+        }
+        .tooltip-note {
+            font-size: 0.75rem;
+            color: #9ca3af;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: #111827;
+            border-radius: 32px;
+            max-width: 480px;
+            width: 90%;
+            padding: 24px;
+            border: 1px solid #3b82f6;
+            box-shadow: 0 20px 35px black;
+        }
+        .modal-content input, .modal-content select, .modal-content textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            background: #1e293b;
+            border: 1px solid #4b5563;
+            border-radius: 20px;
+            color: white;
+        }
+        .flex-btns {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+        h3 {
+            margin-top: 0;
+            color: #facc15;
+        }
+        hr {
+            border-color: #2d3a5e;
+        }
+        .image-preview {
+            margin-top: 8px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            background: #0f172a;
+            padding: 8px;
+            border-radius: 20px;
+        }
+        .preview-img {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #facc15;
+            background: #000;
+        }
+        .file-info {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+        @media (max-width: 700px) {
+            .stats { gap: 10px; padding: 5px 12px; }
+            .stat { font-size: 0.75rem; }
+            button { padding: 5px 12px; font-size: 0.7rem; }
+        }
+    </style>
 </head>
 <body>
 <div class="container">
-  <div class="header">
-    <h1>PORÓWNYWARKA CEN</h1>
-  </div>
+    <div class="top-bar">
+        <div class="stats">
+            <div class="stat">📦 PIKSELE: <span id="totalPixels">100 000</span></div>
+            <div class="stat">💎 KUPIONE: <span id="boughtCount">0</span></div>
+            <div class="stat">👤 WŁAŚCICIEL: <span id="ownerStat">-</span></div>
+        </div>
+        <div class="user-area">
+            <div class="credit-badge" id="creditDisplay">💰 DEMO USDT: 1000</div>
+            <button id="connectWalletBtn" class="primary">🔌 Połącz Portfel (demo)</button>
+            <button id="resetDataBtn" class="warning">🗑️ Reset wszystkich pikseli</button>
+        </div>
+    </div>
 
-  <div class="search-wrapper">
-    <input type="text" id="searchInput" placeholder="Sukaj produktu..." autocomplete="off">
-  </div>
+    <div class="canvas-wrapper" id="canvasWrapper">
+        <canvas id="pixelCanvas"></canvas>
+    </div>
 
-  <div id="productsContainer">
-    <!-- produkty zostaną wstawione przez JS – design 1:1 z obrazkiem -->
-  </div>
-  <div class="attribution">
-    porównywarka cen • Media Expert • x-kom • Allegro
-  </div>
+    <div class="info-panel">
+        <div class="selected-info">
+            🖱️ Kliknij na piksel → <span id="coordInfo">brak</span>
+        </div>
+        <div class="tooltip-note">
+            ✅ 1 piksel = <strong>1 USDT (demo)</strong> · Kupiony → tylko Ty możesz edytować!<br>
+            🖼️ Po zakupie kliknij w swój piksel → <strong style="color:#facc15">wgraj zdjęcie z komputera</strong> lub tekst/kolor
+        </div>
+        <button id="demoAddCredits" style="background:#2dd4bf;">✨ +50 demo USDT</button>
+    </div>
+</div>
+
+<!-- Modal edycji zawartości piksela – z obsługą przesyłania plików -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <h3>✏️ Personalizuj swój piksel</h3>
+        <p style="font-size:13px">Koordynaty: <strong id="modalCoord"></strong></p>
+        <label>Rodzaj treści:</label>
+        <select id="contentType">
+            <option value="color">🌈 Kolor jednolity</option>
+            <option value="text">📝 Tekst / Emoji</option>
+            <option value="image">🖼️ OBRAZEK (wgraj z komputera lub URL)</option>
+        </select>
+        <div id="dynamicInput"></div>
+        <div class="flex-btns">
+            <button id="saveContentBtn" class="primary">Zapisz w pikselu</button>
+            <button id="closeModalBtn">Anuluj</button>
+        </div>
+    </div>
 </div>
 
 <script>
-  // ---------- DANE PRODUKTÓW (zgodne z wcześniejszymi zdjęciami, ale teraz design surowy) ----------
-  const productsData = [
-    {
-      id: 1,
-      name: "Samsung Galaxy A54",
-      spec: "128 GB, 5G",
-      shops: [
-        { name: "Media Expert", price: 1499, url: "https://www.mediaexpert.pl/", cheapest: true },
-        { name: "x-kom", price: 1549, url: "https://www.x-kom.pl/", cheapest: false },
-        { name: "Allegro", price: 1579, url: "https://allegro.pl/", cheapest: false }
-      ],
-      showCheapestText: true     // na obrazku dla Samsunga jest "Najtańszej"
-    },
-    {
-      id: 2,
-      name: "iPhone 14",
-      spec: "128 GB",
-      shops: [
-        { name: "x-kom", price: 3999, url: "https://www.x-kom.pl/", cheapest: true },
-        { name: "Media Expert", price: 4099, url: "https://www.mediaexpert.pl/", cheapest: false },
-        { name: "Allegro", price: 4149, url: "https://allegro.pl/", cheapest: false }
-      ],
-      showCheapestText: true     // iPhone również ma "Najtańszej" (zgodne z poprzednim obrazkiem, ale zachowujemy)
-    },
-    {
-      id: 3,
-      name: "Myszka Logitech G305",
-      spec: "Bezprzewodowa",
-      shops: [
-        { name: "Allegro", price: 149, url: "https://allegro.pl/", cheapest: true },
-        { name: "Media Expert", price: 159, url: "https://www.mediaexpert.pl/", cheapest: false },
-        { name: "x-kom", price: 165, url: "https://www.x-kom.pl/", cheapest: false }
-      ],
-      showCheapestText: false    // myszka – brak napisu "Najtańszej" (dokładnie jak na pierwszym obrazku)
-    }
-  ];
+    // ===================== KONFIGURACJA SIATKI 400x250 = 100 000 =====================
+    const COLS = 400;
+    const ROWS = 250;
+    const CELL_SIZE = 10;
+    const TOTAL_PIXELS = COLS * ROWS;
 
-  // pomocnicza – znajduje najtańszy sklep (potrzebne do linku przycisku)
-  function getCheapestShop(shops) {
-    return shops.reduce((min, shop) => (shop.price < min.price ? shop : min), shops[0]);
-  }
+    // Główna struktura danych: pixels[y][x] = { owner, content }
+    let pixels = Array(ROWS).fill().map(() => Array(COLS).fill().map(() => ({ owner: null, content: null })));
 
-  // funkcja tworząca element karty produktu – surowy, bez żadnych "nowoczesnych" dodatków
-  function createProductCard(product) {
-    const cheapest = getCheapestShop(product.shops);
-    
-    const cardDiv = document.createElement('div');
-    cardDiv.className = 'product-card';
-    cardDiv.setAttribute('data-product-name', product.name.toLowerCase());
+    // System demo
+    let currentUserId = null;
+    let demoBalance = 1000;
+    let userDisplayName = "Gość";
 
-    // Tytuł produktu
-    const title = document.createElement('div');
-    title.className = 'product-title';
-    title.innerText = product.name;
-    
-    // Specyfikacja
-    const spec = document.createElement('div');
-    spec.className = 'product-spec';
-    spec.innerText = product.spec;
-    
-    // Lista sklepów (Media Expert, x-kom, Allegro w odpowiedniej kolejności)
-    const shopsContainer = document.createElement('div');
-    shopsContainer.className = 'shops-list';
-    
-    product.shops.forEach(shop => {
-      const row = document.createElement('div');
-      row.className = 'shop-item';
-      const shopNameSpan = document.createElement('span');
-      shopNameSpan.className = 'shop-name';
-      shopNameSpan.innerText = shop.name;
-      const priceSpan = document.createElement('span');
-      priceSpan.className = 'shop-price';
-      priceSpan.innerText = `${shop.price} zł`;
-      row.appendChild(shopNameSpan);
-      row.appendChild(priceSpan);
-      shopsContainer.appendChild(row);
+    const canvas = document.getElementById('pixelCanvas');
+    const ctx = canvas.getContext('2d');
+    const boughtCountSpan = document.getElementById('boughtCount');
+    const creditDisplaySpan = document.getElementById('creditDisplay');
+    const coordInfoSpan = document.getElementById('coordInfo');
+    const ownerStatSpan = document.getElementById('ownerStat');
+
+    canvas.width = COLS * CELL_SIZE;
+    canvas.height = ROWS * CELL_SIZE;
+    canvas.style.width = `${canvas.width}px`;
+    canvas.style.height = `${canvas.height}px`;
+
+    // ---------- POMOCNICZE ----------
+    function showToast(msg, duration = 2000) {
+        const toast = document.createElement('div');
+        toast.innerText = msg;
+        toast.style.position = 'fixed';
+        toast.style.bottom = '20px';
+        toast.style.left = '50%';
+        toast.style.transform = 'translateX(-50%)';
+        toast.style.backgroundColor = '#1e293b';
+        toast.style.color = '#facc15';
+        toast.style.padding = '10px 20px';
+        toast.style.borderRadius = '40px';
+        toast.style.fontWeight = 'bold';
+        toast.style.zIndex = '9999';
+        toast.style.border = '1px solid #facc15';
+        toast.style.boxShadow = '0 5px 15px black';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), duration);
+    }
+
+    // ---------- ZAPIS / WCZYTANIE localStorage ----------
+    function savePixelsToLocal() {
+        const dataToStore = {
+            pixels: pixels.map(row => row.map(cell => ({
+                owner: cell.owner,
+                content: cell.content ? { ...cell.content } : null
+            }))),
+            version: 3
+        };
+        localStorage.setItem('pixelCanvas100k', JSON.stringify(dataToStore));
+    }
+
+    function loadPixelsFromLocal() {
+        const raw = localStorage.getItem('pixelCanvas100k');
+        if (!raw) return false;
+        try {
+            const saved = JSON.parse(raw);
+            if (saved.pixels && saved.pixels.length === ROWS) {
+                for (let y = 0; y < ROWS; y++) {
+                    for (let x = 0; x < COLS; x++) {
+                        if (saved.pixels[y] && saved.pixels[y][x]) {
+                            pixels[y][x].owner = saved.pixels[y][x].owner;
+                            pixels[y][x].content = saved.pixels[y][x].content ? { ...saved.pixels[y][x].content } : null;
+                        }
+                    }
+                }
+                return true;
+            }
+        } catch(e) { console.warn(e); }
+        return false;
+    }
+
+    function resetAllPixels() {
+        for (let y = 0; y < ROWS; y++) {
+            for (let x = 0; x < COLS; x++) {
+                pixels[y][x].owner = null;
+                pixels[y][x].content = null;
+            }
+        }
+        savePixelsToLocal();
+        drawCanvas();
+        updateStats();
+        showToast("🧹 Wszystkie piksele zostały zresetowane!", 1500);
+    }
+
+    // ---------- UŻYTKOWNIK I SALDO ----------
+    function initUser() {
+        let storedUserId = localStorage.getItem('pixelUser_DemoId');
+        if (!storedUserId) {
+            storedUserId = 'demo_' + Math.random().toString(36).substring(2, 10);
+            localStorage.setItem('pixelUser_DemoId', storedUserId);
+        }
+        currentUserId = storedUserId;
+        userDisplayName = "Demo:" + currentUserId.slice(-6);
+        updateOwnerStat();
+        let savedBalance = localStorage.getItem('demoBalance_usdt');
+        if (savedBalance !== null) {
+            demoBalance = parseInt(savedBalance);
+            if (isNaN(demoBalance)) demoBalance = 1000;
+        } else {
+            demoBalance = 1000;
+        }
+        updateCreditUI();
+    }
+
+    function updateCreditUI() {
+        creditDisplaySpan.innerText = `💰 DEMO USDT: ${demoBalance}`;
+        localStorage.setItem('demoBalance_usdt', demoBalance);
+    }
+
+    function addDemoCredits(amount) {
+        demoBalance += amount;
+        updateCreditUI();
+        showToast(`✨ Dodałeś ${amount} demo USDT! Teraz masz ${demoBalance}`, 1500);
+    }
+
+    function canAffordPurchase() {
+        return demoBalance >= 1;
+    }
+
+    function deductCost() {
+        if (demoBalance >= 1) {
+            demoBalance -= 1;
+            updateCreditUI();
+            return true;
+        }
+        return false;
+    }
+
+    // ---------- KUPNO PIKSELA ----------
+    function purchasePixel(x, y) {
+        const cell = pixels[y][x];
+        if (cell.owner !== null) {
+            showToast(`❌ Piksel (${x},${y}) jest już własnością innego użytkownika!`, 1500);
+            return false;
+        }
+        if (!canAffordPurchase()) {
+            showToast(`💸 Brak DEMO USDT! Doładuj (+50)`, 2000);
+            return false;
+        }
+        if (!deductCost()) return false;
+
+        cell.owner = currentUserId;
+        // Domyślna treść po kupnie – kolor (użytkownik zaraz może edytować i wgrać zdjęcie)
+        cell.content = {
+            type: 'color',
+            value: `#${Math.floor(Math.random()*16777215).toString(16).padStart(6,'0')}`
+        };
+        savePixelsToLocal();
+        drawCanvas();
+        updateStats();
+        showToast(`✅ Sukces! Piksel (${x},${y}) jest TWÓJ za 1 USDT! Kliknij go, aby wgrać zdjęcie z komputera.`, 2500);
+        return true;
+    }
+
+    function updatePixelContent(x, y, newContent) {
+        const cell = pixels[y][x];
+        if (!cell.owner || cell.owner !== currentUserId) {
+            showToast(`⛔ Nie możesz edytować tego piksela - nie jesteś właścicielem!`, 1500);
+            return false;
+        }
+        cell.content = { ...newContent };
+        savePixelsToLocal();
+        drawCanvas();
+        showToast(`🎨 Piksel (${x},${y}) zaktualizowany!`, 1200);
+        return true;
+    }
+
+    // ---------- RYSOWANIE KANWASU (w tym obrazy base64) ----------
+    const imageCache = new Map();
+
+    function drawCanvas() {
+        if (!ctx) return;
+        for (let y = 0; y < ROWS; y++) {
+            for (let x = 0; x < COLS; x++) {
+                const cell = pixels[y][x];
+                const isOwned = cell.owner !== null;
+                const px = x * CELL_SIZE;
+                const py = y * CELL_SIZE;
+
+                if (!isOwned) {
+                    ctx.fillStyle = "#2d3748";
+                    ctx.fillRect(px, py, CELL_SIZE, CELL_SIZE);
+                    continue;
+                }
+
+                const content = cell.content;
+                if (!content) {
+                    ctx.fillStyle = "#4b5563";
+                    ctx.fillRect(px, py, CELL_SIZE, CELL_SIZE);
+                } else if (content.type === 'color') {
+                    ctx.fillStyle = content.value;
+                    ctx.fillRect(px, py, CELL_SIZE, CELL_SIZE);
+                } else if (content.type === 'text') {
+                    ctx.fillStyle = "#1e293b";
+                    ctx.fillRect(px, py, CELL_SIZE, CELL_SIZE);
+                    ctx.fillStyle = "#f1f5f9";
+                    ctx.font = `bold ${Math.floor(CELL_SIZE * 0.7)}px "Segoe UI Emoji", system-ui`;
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    let shortText = content.value.length > 3 ? content.value.slice(0,2)+".." : content.value;
+                    ctx.fillText(shortText, px + CELL_SIZE/2, py + CELL_SIZE/2);
+                } else if (content.type === 'image') {
+                    // tło awaryjne
+                    ctx.fillStyle = "#1e1e2f";
+                    ctx.fillRect(px, py, CELL_SIZE, CELL_SIZE);
+                    if (content.value && content.value.trim() !== "") {
+                        const imgSrc = content.value;
+                        if (imageCache.has(imgSrc)) {
+                            const img = imageCache.get(imgSrc);
+                            if (img && img.complete && img.naturalWidth > 0) {
+                                try {
+                                    ctx.drawImage(img, px, py, CELL_SIZE, CELL_SIZE);
+                                } catch(e) { /* ignoruj */ }
+                            } else {
+                                ctx.fillStyle = "#facc15";
+                                ctx.font = `bold 8px monospace`;
+                                ctx.fillText("🖼️", px+2, py+8);
+                            }
+                        } else {
+                            const img = new Image();
+                            img.crossOrigin = "Anonymous";
+                            img.src = imgSrc;
+                            img.onload = () => {
+                                imageCache.set(imgSrc, img);
+                                drawCanvas();
+                            };
+                            img.onerror = () => {
+                                imageCache.set(imgSrc, null);
+                                drawCanvas();
+                            };
+                            imageCache.set(imgSrc, img);
+                            ctx.fillStyle = "#334155";
+                            ctx.fillRect(px, py, CELL_SIZE, CELL_SIZE);
+                            ctx.fillStyle = "#94a3b8";
+                            ctx.font = "8px monospace";
+                            ctx.fillText("📷", px+2, py+8);
+                        }
+                    } else {
+                        ctx.fillStyle = "#475569";
+                        ctx.fillRect(px, py, CELL_SIZE, CELL_SIZE);
+                    }
+                } else {
+                    ctx.fillStyle = "#6b7280";
+                    ctx.fillRect(px, py, CELL_SIZE, CELL_SIZE);
+                }
+            }
+        }
+
+        // Siatka
+        ctx.beginPath();
+        ctx.strokeStyle = "#334155";
+        ctx.lineWidth = 0.6;
+        for (let i = 0; i <= COLS; i++) {
+            ctx.moveTo(i * CELL_SIZE, 0);
+            ctx.lineTo(i * CELL_SIZE, canvas.height);
+            ctx.stroke();
+        }
+        for (let i = 0; i <= ROWS; i++) {
+            ctx.moveTo(0, i * CELL_SIZE);
+            ctx.lineTo(canvas.width, i * CELL_SIZE);
+            ctx.stroke();
+        }
+    }
+
+    function updateStats() {
+        let ownedCount = 0;
+        for (let y = 0; y < ROWS; y++) {
+            for (let x = 0; x < COLS; x++) {
+                if (pixels[y][x].owner !== null) ownedCount++;
+            }
+        }
+        boughtCountSpan.innerText = ownedCount;
+        document.getElementById('totalPixels').innerText = TOTAL_PIXELS.toLocaleString();
+    }
+
+    function updateOwnerStat() {
+        ownerStatSpan.innerText = userDisplayName;
+    }
+
+    // ---------- MODAL Z OBSŁUGĄ PRZESYŁANIA ZDJĘĆ Z KOMPUTERA ----------
+    let currentEditX = null, currentEditY = null;
+    const modal = document.getElementById('editModal');
+    const modalCoordSpan = document.getElementById('modalCoord');
+    const contentTypeSelect = document.getElementById('contentType');
+    const dynamicInputDiv = document.getElementById('dynamicInput');
+    const saveBtn = document.getElementById('saveContentBtn');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+
+    // Funkcja generująca pola dla danego typu
+    function renderDynamicInput(type, currentVal = '') {
+        dynamicInputDiv.innerHTML = '';
+        if (type === 'color') {
+            const label = document.createElement('label');
+            label.innerText = 'Wybierz kolor:';
+            const input = document.createElement('input');
+            input.type = 'color';
+            input.id = 'dynamicColor';
+            input.value = currentVal || '#ffaa44';
+            dynamicInputDiv.appendChild(label);
+            dynamicInputDiv.appendChild(input);
+        } 
+        else if (type === 'text') {
+            const label = document.createElement('label');
+            label.innerText = 'Tekst / Emoji (max 6 znaków):';
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.id = 'dynamicText';
+            input.maxLength = 6;
+            input.placeholder = '😀, ❤️, XD, 🚀';
+            input.value = currentVal || '';
+            dynamicInputDiv.appendChild(label);
+            dynamicInputDiv.appendChild(input);
+        } 
+        else if (type === 'image') {
+            // Obsługa przesyłania plików z komputera + URL
+            const labelUrl = document.createElement('label');
+            labelUrl.innerText = '🔗 Lub wpisz URL obrazka:';
+            const urlInput = document.createElement('input');
+            urlInput.type = 'url';
+            urlInput.id = 'imageUrlInput';
+            urlInput.placeholder = 'https://...';
+            urlInput.value = (currentVal && !currentVal.startsWith('data:image')) ? currentVal : '';
+            
+            const fileLabel = document.createElement('label');
+            fileLabel.innerText = '📁 Wgraj zdjęcie z komputera (PNG, JPG, GIF):';
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.id = 'imageFileInput';
+            fileInput.accept = 'image/png, image/jpeg, image/jpg, image/gif, image/webp';
+            
+            const previewDiv = document.createElement('div');
+            previewDiv.className = 'image-preview';
+            previewDiv.id = 'imagePreviewArea';
+            const previewImg = document.createElement('img');
+            previewImg.className = 'preview-img';
+            previewImg.id = 'previewImg';
+            previewImg.style.display = 'none';
+            const previewText = document.createElement('span');
+            previewText.className = 'file-info';
+            previewText.innerText = 'brak podglądu';
+            previewDiv.appendChild(previewImg);
+            previewDiv.appendChild(previewText);
+            
+            dynamicInputDiv.appendChild(fileLabel);
+            dynamicInputDiv.appendChild(fileInput);
+            dynamicInputDiv.appendChild(labelUrl);
+            dynamicInputDiv.appendChild(urlInput);
+            dynamicInputDiv.appendChild(previewDiv);
+            
+            // Obsługa wyboru pliku – konwersja na Base64 i wstawienie do pola URL
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                if (!file.type.startsWith('image/')) {
+                    showToast('❌ Wybierz plik graficzny!', 1500);
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const base64 = ev.target.result;
+                    urlInput.value = base64;   // zapisujemy Base64 w polu URL
+                    // Podgląd
+                    previewImg.src = base64;
+                    previewImg.style.display = 'block';
+                    previewText.innerText = `✅ wczytano: ${file.name} (${(file.size/1024).toFixed(1)} KB)`;
+                    showToast('Zdjęcie wczytane – kliknij Zapisz, aby umieścić w pikselu', 1500);
+                };
+                reader.readAsDataURL(file);
+            });
+            
+            // Jeśli istnieje już wartość (Base64 lub URL) pokaż podgląd
+            if (currentVal) {
+                urlInput.value = currentVal;
+                if (currentVal.startsWith('data:image')) {
+                    previewImg.src = currentVal;
+                    previewImg.style.display = 'block';
+                    previewText.innerText = '✅ obraz Base64 (zapisany)';
+                } else if (currentVal.match(/\.(jpg|jpeg|png|gif|webp)/i)) {
+                    previewImg.src = currentVal;
+                    previewImg.style.display = 'block';
+                    previewText.innerText = '🔗 obraz z URL';
+                }
+            }
+        }
+    }
+
+    function openEditModal(x, y, existingContent) {
+        currentEditX = x;
+        currentEditY = y;
+        modalCoordSpan.innerText = `(${x}, ${y})`;
+        if (existingContent) {
+            if (existingContent.type === 'color') {
+                contentTypeSelect.value = 'color';
+                renderDynamicInput('color', existingContent.value);
+            } else if (existingContent.type === 'text') {
+                contentTypeSelect.value = 'text';
+                renderDynamicInput('text', existingContent.value);
+            } else if (existingContent.type === 'image') {
+                contentTypeSelect.value = 'image';
+                renderDynamicInput('image', existingContent.value);
+            } else {
+                contentTypeSelect.value = 'color';
+                renderDynamicInput('color', '#ffaa44');
+            }
+        } else {
+            contentTypeSelect.value = 'color';
+            renderDynamicInput('color', '#ffaa44');
+        }
+        modal.style.display = 'flex';
+    }
+
+    // Zmiana typu – odświeżenie pól
+    contentTypeSelect.addEventListener('change', (e) => {
+        renderDynamicInput(e.target.value, '');
     });
-    
-    // obszar "Najtańszej" oraz przycisk
-    const cheapestArea = document.createElement('div');
-    cheapestArea.className = 'cheapest-area';
-    
-    // Napis "Najtańszej" – tylko jeśli produkt go wymaga (zgodnie z obrazkami)
-    if (product.showCheapestText) {
-      const cheapestLabel = document.createElement('div');
-      cheapestLabel.className = 'cheapest-label';
-      cheapestLabel.innerText = 'Najtańszej';
-      cheapestArea.appendChild(cheapestLabel);
+
+    saveBtn.addEventListener('click', () => {
+        if (currentEditX === null || currentEditY === null) return;
+        const type = contentTypeSelect.value;
+        let value = '';
+        
+        if (type === 'color') {
+            const colorPicker = document.getElementById('dynamicColor');
+            value = colorPicker ? colorPicker.value : '#ffffff';
+        } 
+        else if (type === 'text') {
+            const textInput = document.getElementById('dynamicText');
+            value = textInput ? textInput.value.slice(0,6) : '✨';
+            if (value === '') value = '✨';
+        } 
+        else if (type === 'image') {
+            const urlInput = document.getElementById('imageUrlInput');
+            value = urlInput ? urlInput.value.trim() : '';
+            if (value === '') {
+                showToast('Wybierz zdjęcie lub podaj URL obrazka', 1500);
+                return;
+            }
+            // sprawdź czy to poprawny URL lub base64
+            if (!value.startsWith('data:image') && !value.match(/^https?:\/\//i)) {
+                showToast('Nieprawidłowy obrazek – wgraj plik lub użyj poprawnego URL', 2000);
+                return;
+            }
+        }
+        
+        const newContent = { type, value };
+        updatePixelContent(currentEditX, currentEditY, newContent);
+        modal.style.display = 'none';
+        currentEditX = null;
+    });
+
+    closeModalBtn.addEventListener('click', () => {
+        modal.style.display = 'none';
+        currentEditX = null;
+    });
+    window.addEventListener('click', (e) => {
+        if (e.target === modal) modal.style.display = 'none';
+    });
+
+    // ---------- OBSŁUGA KLIKNIĘCIA NA KANWAS ----------
+    function handleCanvasClick(e) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const mouseX = (e.clientX - rect.left) * scaleX;
+        const mouseY = (e.clientY - rect.top) * scaleY;
+        if (mouseX < 0 || mouseY < 0 || mouseX >= canvas.width || mouseY >= canvas.height) return;
+        const col = Math.floor(mouseX / CELL_SIZE);
+        const row = Math.floor(mouseY / CELL_SIZE);
+        if (col >= 0 && col < COLS && row >= 0 && row < ROWS) {
+            coordInfoSpan.innerText = `(${col}, ${row})`;
+            const cell = pixels[row][col];
+            const isOwner = (cell.owner === currentUserId);
+            if (cell.owner === null) {
+                if (confirm(`✨ Piksel (${col},${row}) jest WOLNY. Kupujesz za 1 USDT? Pobierze z Twojego DEMO salda.`)) {
+                    purchasePixel(col, row);
+                }
+            } else if (isOwner) {
+                openEditModal(col, row, cell.content);
+            } else {
+                showToast(`🔒 Piksel należy do innego użytkownika. Nie możesz go edytować.`, 1500);
+            }
+        }
+    }
+
+    // ---------- RESET I DEMO WALLET ----------
+    function resetData() {
+        if (confirm("UWAGA! Usuniesz wszystkie piksele (w tym obrazki). Kontynuować?")) {
+            resetAllPixels();
+            demoBalance = 1000;
+            updateCreditUI();
+            drawCanvas();
+            updateStats();
+        }
+    }
+
+    function connectDemoWallet() {
+        if (confirm("🔗 'Połącz portfel' tworzy nową tożsamość. Twoje obecne piksele zostaną przypisane do starego ID – nie będziesz już mógł ich edytować. Kontynuować?")) {
+            const newId = 'demo_' + Math.random().toString(36).substring(2, 12);
+            localStorage.setItem('pixelUser_DemoId', newId);
+            currentUserId = newId;
+            userDisplayName = "Demo:" + newId.slice(-6);
+            updateOwnerStat();
+            showToast(`👤 Nowa tożsamość: ${userDisplayName}. Twoje poprzednie piksele nie należą już do Ciebie.`, 2500);
+            drawCanvas();
+        }
+    }
+
+    // ---------- INICJALIZACJA ----------
+    function init() {
+        initUser();
+        const loaded = loadPixelsFromLocal();
+        if (!loaded) {
+            resetAllPixels();
+        } else {
+            drawCanvas();
+            updateStats();
+        }
+        drawCanvas();
+        updateStats();
+        canvas.addEventListener('click', handleCanvasClick);
+        document.getElementById('resetDataBtn').addEventListener('click', resetData);
+        document.getElementById('connectWalletBtn').addEventListener('click', connectDemoWallet);
+        document.getElementById('demoAddCredits').addEventListener('click', () => addDemoCredits(50));
+        
+        const wrapper = document.getElementById('canvasWrapper');
+        wrapper.scrollLeft = canvas.width / 3;
+        wrapper.scrollTop = canvas.height / 3;
     }
     
-    // Przycisk "Precjąż do sklepu" – dosłownie taka pisownia jak na zdjęciu
-    const button = document.createElement('button');
-    button.className = 'shop-button';
-    button.innerText = 'Precjąż do sklepu';
-    button.addEventListener('click', (e) => {
-      e.preventDefault();
-      window.open(cheapest.url, '_blank');
-    });
-    cheapestArea.appendChild(button);
-    
-    // składamy kartę
-    cardDiv.appendChild(title);
-    cardDiv.appendChild(spec);
-    cardDiv.appendChild(shopsContainer);
-    cardDiv.appendChild(cheapestArea);
-    
-    return cardDiv;
-  }
-  
-  // ---------- FILTROWANIE (wyszukiwarka) ----------
-  let currentFilter = '';
-  const container = document.getElementById('productsContainer');
-  
-  function renderFilteredProducts() {
-    container.innerHTML = '';
-    const filterText = currentFilter.trim().toLowerCase();
-    
-    const filtered = productsData.filter(product => 
-      product.name.toLowerCase().includes(filterText)
-    );
-    
-    if (filtered.length === 0) {
-      const noResults = document.createElement('div');
-      noResults.className = 'no-results';
-      noResults.innerText = 'Brak produktów. Spróbuj "Samsung", "iPhone" lub "myszka".';
-      container.appendChild(noResults);
-      return;
-    }
-    
-    filtered.forEach(product => {
-      const card = createProductCard(product);
-      container.appendChild(card);
-    });
-  }
-  
-  // nasłuchiwanie na polu wyszukiwania
-  const searchInput = document.getElementById('searchInput');
-  searchInput.addEventListener('input', (e) => {
-    currentFilter = e.target.value;
-    renderFilteredProducts();
-  });
-  
-  // start – wyświetlenie wszystkich produktów
-  renderFilteredProducts();
+    init();
 </script>
 </body>
 </html>
