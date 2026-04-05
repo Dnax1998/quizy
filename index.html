@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>FOMO Fighters – Miasto i Wojna</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+        body {
+            background: linear-gradient(145deg, #0a2f1a 0%, #051a0a 100%);
+            font-family: 'Segoe UI', 'Roboto', sans-serif;
+            margin: 0;
+            padding: 15px;
+            color: #f7ecc7;
+        }
+        .game-container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: rgba(0,0,0,0.55);
+            border-radius: 48px;
+            backdrop-filter: blur(4px);
+            padding: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+        }
+        /* pasek zasobów - duże liczby */
+        .resources {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            background: #1f2a0e;
+            border-radius: 60px;
+            padding: 12px 18px;
+            margin-bottom: 20px;
+            border: 1px solid #e5b874;
+            gap: 8px;
+            font-weight: bold;
+        }
+        .resource {
+            background: #2c2416;
+            padding: 5px 12px;
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.2rem;
+        }
+        .resource i { font-size: 1.3rem; width: 28px; text-align: center; }
+        /* zakładki */
+        .tabs {
+            display: flex;
+            justify-content: space-around;
+            background: #2c2b1f;
+            border-radius: 60px;
+            margin-bottom: 20px;
+            padding: 5px;
+        }
+        .tab-btn {
+            background: transparent;
+            border: none;
+            padding: 10px 0;
+            flex: 1;
+            border-radius: 50px;
+            color: #ffecb3;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .tab-btn.active {
+            background: #d4a373;
+            color: #1f2a0a;
+            box-shadow: 0 0 6px gold;
+        }
+        .tab-content {
+            display: none;
+            background: rgba(20, 15, 8, 0.85);
+            border-radius: 36px;
+            padding: 18px;
+            margin-top: 8px;
+            animation: fade 0.2s;
+        }
+        .tab-content.active { display: block; }
+        @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+        /* LISTA BUDYNKÓW (jak na zdjęciu) */
+        .buildings-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .building-row {
+            background: #2b231b;
+            border-radius: 28px;
+            padding: 12px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            border-left: 6px solid #e5b874;
+        }
+        .building-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            min-width: 130px;
+        }
+        .building-level {
+            background: #00000066;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 1rem;
+        }
+        .building-timer {
+            font-family: monospace;
+            font-size: 1rem;
+            background: #1a120a;
+            padding: 4px 12px;
+            border-radius: 30px;
+            color: #ffbb77;
+        }
+        .upgrade-btn {
+            background: #b87c4a;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin: 20px 0 10px;
+            justify-content: center;
+        }
+        .big-btn {
+            background: #4a6a3b;
+            padding: 12px 18px;
+            border-radius: 60px;
+            font-weight: bold;
+            font-size: 1rem;
+            border: none;
+            cursor: pointer;
+            flex: 1;
+            text-align: center;
+        }
+        .clan-donate {
+            background: #aa6f3c;
+        }
+        .fight-log {
+            background: #1a130c;
+            padding: 12px;
+            border-radius: 20px;
+            font-family: monospace;
+            height: 140px;
+            overflow-y: auto;
+            font-size: 0.8rem;
+        }
+        .queue-item {
+            background: #2a241e;
+            margin: 5px 0;
+            padding: 6px;
+            border-radius: 30px;
+            display: flex;
+            justify-content: space-between;
+        }
+        button { cursor: pointer; }
+        hr { border-color: #c9a87b; }
+        .timer-text { font-family: monospace; }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <!-- pasek zasobów w dużym formacie (M, K) -->
+    <div class="resources" id="resourcesPanel"></div>
+
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="city">🏠 Miasto</button>
+        <button class="tab-btn" data-tab="army">⚔️ Armia</button>
+        <button class="tab-btn" data-tab="battle">⚡ Starcia</button>
+        <button class="tab-btn" data-tab="clan">👥 Klan</button>
+        <button class="tab-btn" data-tab="research">🔬 Badania</button>
+        <button class="tab-btn" data-tab="quests">📜 Zadania</button>
+    </div>
+
+    <!-- EKRAN MIASTA (dokładnie jak na screenie) -->
+    <div id="city" class="tab-content active">
+        <div class="action-buttons">
+            <button id="earnBtnCity" class="big-btn">🎮 Graj, aby zarobić</button>
+            <button id="donateGemsCityBtn" class="big-btn clan-donate">💎 Przekaż do klanu 800 Gemów</button>
+        </div>
+        <div class="buildings-list" id="cityBuildingsList"></div>
+        <div style="margin-top: 20px; text-align: center; font-size: 0.8rem;">
+            <i class="fas fa-clock"></i> Globalne timery:
+            <span id="globalTimer1">23:28:01</span> &nbsp;|&nbsp;
+            <span id="globalTimer2">13:56:34</span>
+        </div>
+    </div>
+
+    <!-- ARMIA (z czasami szkolenia) -->
+    <div id="army" class="tab-content">
+        <h3>Twoje oddziały</h3>
+        <div id="armyStats"></div>
+        <div id="unitsTrainContainer"></div>
+        <div id="trainingQueue" style="margin-top: 15px;"></div>
+        <button id="upgradeCampBtn" style="margin-top: 15px;">⬆️ Ulepsz Obóz Wojskowy (+5 miejsca, czas 20s)</button>
+    </div>
+
+    <!-- STARCIE (atak) -->
+    <div id="battle" class="tab-content">
+        <h3>⚔️ Najazd na wroga</h3>
+        <div>
+            <label>Użyj % armii: <input type="range" id="armyPercent" min="10" max="100" step="10" value="100"> <span id="percentVal">100</span>%</label>
+            <button id="attackBtn">ATAKUJ!</button>
+        </div>
+        <div class="fight-log" id="battleLog"></div>
+        <button id="earnBtnBattle" style="margin-top: 12px;">🎮 Graj, aby zarobić (+200 złota, cooldown 30s)</button>
+    </div>
+
+    <!-- KLAN -->
+    <div id="clan" class="tab-content">
+        <h3>👥 Klan</h3>
+        <div id="clanPanel"></div>
+        <input type="text" id="clanNameInput" placeholder="Nazwa klanu">
+        <button id="createClanBtn">Załóż klan (20 gemów)</button>
+        <input type="text" id="joinClanInput" placeholder="Dołącz do klanu">
+        <button id="joinClanBtn">Dołącz</button>
+        <div style="margin: 15px 0;"><button id="donateGemsClanBtn">💎 Przekaż 800 Gemów (+500 monet klanowych)</button></div>
+        <div id="donateSection"></div>
+        <button id="clanWarBtn">⚔️ Wojna klanowa</button>
+        <div id="clanWarResult"></div>
+    </div>
+
+    <!-- BADANIA (wielopoziomowe) -->
+    <div id="research" class="tab-content">
+        <h3>Uniwersytet – badania (poziomy 1-5)</h3>
+        <div id="techTree"></div>
+    </div>
+
+    <!-- ZADANIA -->
+    <div id="quests" class="tab-content">
+        <h3>Zadania i osiągnięcia</h3>
+        <div id="questList"></div>
+        <div id="achievementsList"></div>
+        <div id="rankingStats" style="margin-top: 20px;"></div>
+    </div>
+</div>
+
+<script>
+    // --------------------------------------------------------------
+    // STAN GRY ZGODNY ZE SCREENEM (wysokie poziomy, timery ulepszeń)
+    // --------------------------------------------------------------
+    let gameState = {
+        resources: { wood: 33_000_000, stone: 5_200_000, gold: 115_000_000, food: 29_000, gems: 38, clanCoins: 2_400_000 },
+        buildings: {
+            // poziomy zgodne ze zdjęciem
+            lumberMill: 30,    // Tartak
+            quarry: 32,        // Kamieniotor
+            watchtower: 27,    // Obóz zwiadowców (nazwa z screena)
+            warehouse: 33,     // Magazyn
+            farm: 2,           // Farma
+            happyCity: 1,      // Wesołe miasto
+            market: 8          // Rynek
+        },
+        // dodatkowe budynki dla mechanik
+        armyCamp: 5,
+        barracks: 5,
+        stable: 3,
+        forge: 2,
+        townHall: 12,
+        university: 4,
+        // timery ulepszeń (timestamp zakończenia lub null)
+        upgradeTimers: {
+            lumberMill: null,
+            quarry: null,
+            watchtower: null,
+            warehouse: null,
+            farm: null,
+            happyCity: null,
+            market: null
+        },
+        units: { warrior: 1250, archer: 840, cavalry: 320, catapult: 45, dragon: 6 },
+        trainingQueue: [],
+        research: {
+            attackPower: { level: 3, max: 5, active: false, remainingTime: 0, name: "Moc ataku", effectPerLevel: 2 },
+            trainingSpeed: { level: 2, max: 5, active: false, remainingTime: 0, name: "Szybkie szkolenie", effectPerLevel: 5 },
+            lootBonus: { level: 1, max: 5, active: false, remainingTime: 0, name: "Zwiększony łup", effectPerLevel: 3 }
+        },
+        clan: { name: "Wataha Wilków", members: ["Ty", "Wiking", "Zwiadowca"], coins: 12400 },
+        stats: { wins: 287, losses: 53, totalStolen: 4_280_000, totalTrained: 15420 },
+        dailyQuests: [
+            { desc: "Wygraj 3 bitwy", progress: 2, target: 3, reward: 800, completed: false, type: "wins" },
+            { desc: "Wyszkol 50 jednostek", progress: 32, target: 50, reward: 600, completed: false, type: "train" },
+            { desc: "Przekaż 20 jednostek do klanu", progress: 8, target: 20, reward: 500, completed: false, type: "donate" }
+        ],
+        achievements: [
+            { name: "Mistrz armii", achieved: false, condition: "totalTrained>=10000" },
+            { name: "Milarder", achieved: false, condition: "resources.gold>=100000000" },
+            { name: "Wojownik klanu", achieved: false, condition: "clan.coins>=5000" }
+        ],
+        lastTick: Date.now(),
+        earnCooldown: 0,
+        globalTimer1End: Date.now() + 23*3600*1000 + 28*60*1000 + 1000, // 23:28:01
+        globalTimer2End: Date.now() + 13*3600*1000 + 56*60*1000 + 34000
+    };
+
+    // zapis i odczyt
+    function saveGame() { localStorage.setItem("fightersRealmSave", JSON.stringify(gameState)); }
+    function loadGame() {
+        const saved = localStorage.getItem("fightersRealmSave");
+        if(saved) {
+            try {
+                let loaded = JSON.parse(saved);
+                Object.assign(gameState, loaded);
+                if(!gameState.upgradeTimers) gameState.upgradeTimers = {};
+                if(!gameState.trainingQueue) gameState.trainingQueue = [];
+            } catch(e) {}
+        }
+    }
+
+    // pomocnicze formatowanie
+    function formatNumber(num) {
+        if(num >= 1e6) return (num/1e6).toFixed(1) + "M";
+        if(num >= 1e3) return (num/1e3).toFixed(0) + "K";
+        return num.toString();
+    }
+    function formatTime(seconds) {
+        let h = Math.floor(seconds / 3600);
+        let m = Math.floor((seconds % 3600) / 60);
+        let s = seconds % 60;
+        return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+    }
+
+    // produkcja surowców na podstawie poziomów budynków
+    function getProductionPerSecond() {
+        let wood = gameState.buildings.lumberMill * 35;
+        let stone = gameState.buildings.quarry * 28;
+        let gold = gameState.buildings.market * 45 + gameState.buildings.happyCity * 200;
+        let food = gameState.buildings.farm * 18;
+        return { wood, stone, gold, food };
+    }
+
+    // proces produkcji w tle
+    setInterval(() => {
+        const now = Date.now();
+        let diff = Math.min(5, (now - (gameState.lastTick||now)) / 1000);
+        if(diff > 0.2) {
+            let prod = getProductionPerSecond();
+            gameState.resources.wood += Math.floor(prod.wood * diff);
+            gameState.resources.stone += Math.floor(prod.stone * diff);
+            gameState.resources.gold += Math.floor(prod.gold * diff);
+            gameState.resources.food += Math.floor(prod.food * diff);
+            // magazyn (pojemność zależna od poziomu warehouse)
+            let cap = 50000 + gameState.buildings.warehouse * 15000;
+            for(let r of ['wood','stone','gold','food']) {
+                if(gameState.resources[r] > cap) gameState.resources[r] = cap;
+            }
+            gameState.lastTick = now;
+            saveGame();
+            refreshUI();
+        }
+        // odświeżanie timerów ulepszeń budynków
+        processUpgradeTimers();
+        processTrainingQueue();
+        processResearchTimers();
+        refreshUI();
+    }, 1000);
+
+    // ulepszanie budynków z czasem
+    function startBuildingUpgrade(buildingId, newLevel, costWood, costStone, timeSec) {
+        if(gameState.upgradeTimers[buildingId]) { alert("Już trwa ulepszanie tego budynku!"); return false; }
+        if(gameState.resources.wood >= costWood && gameState.resources.stone >= costStone) {
+            gameState.resources.wood -= costWood;
+            gameState.resources.stone -= costStone;
+            gameState.upgradeTimers[buildingId] = Date.now() + timeSec * 1000;
+            saveGame();
+            refreshUI();
+            return true;
+        } else { alert("Brak drewna lub kamienia!"); return false; }
+    }
+    function processUpgradeTimers() {
+        let now = Date.now();
+        let changed = false;
+        for(let [bid, endTime] of Object.entries(gameState.upgradeTimers)) {
+            if(endTime && now >= endTime) {
+                gameState.buildings[bid] = (gameState.buildings[bid] || 1) + 1;
+                gameState.upgradeTimers[bid] = null;
+                changed = true;
+            }
+        }
+        if(changed) { saveGame(); refreshUI(); }
+    }
+    function getRemainingUpgradeTime(bid) {
+        let end = gameState.upgradeTimers[bid];
+        if(!end) return null;
+        let remaining = Math.max(0, Math.floor((end - Date.now())/1000));
+        return remaining;
+    }
+
+    // kolejka szkolenia (z czasem)
+    function addToTrainingQueue(unitType, costWood, costFood, costGold, baseTimeSec) {
+        let cap = getArmyCapacity();
+        let current = getCurrentArmyCount() + gameState.trainingQueue.length;
+        if(current >= cap) { alert("Za mało miejsca w obozie! Ulepsz go."); return false; }
+        if(gameState.resources.wood >= costWood && gameState.resources.food >= costFood && gameState.resources.gold >= costGold) {
+            gameState.resources.wood -= costWood;
+            gameState.resources.food -= costFood;
+            gameState.resources.gold -= costGold;
+            let trainingBonus = 1 - (gameState.research.trainingSpeed.level * 0.05);
+            let finalTime = Math.max(2, Math.floor(baseTimeSec * trainingBonus));
+            gameState.trainingQueue.push({ unitType, remainingSec: finalTime, totalSec: finalTime });
+            saveGame();
+            refreshUI();
+            return true;
+        } else { alert("Brak surowców!"); return false; }
+    }
+    function processTrainingQueue() {
+        let changed = false;
+        for(let i=0; i<gameState.trainingQueue.length; i++) {
+            let item = gameState.trainingQueue[i];
+            if(item.remainingSec <= 0) {
+                gameState.units[item.unitType] = (gameState.units[item.unitType]||0) + 1;
+                gameState.stats.totalTrained++;
+                updateQuestProgress("train",1);
+                gameState.trainingQueue.splice(i,1);
+                i--;
+                changed = true;
+            } else {
+                item.remainingSec -= 1;
+            }
+        }
+        if(changed) { saveGame(); refreshUI(); }
+    }
+
+    function getArmyCapacity() { return 200 + gameState.buildings.armyCamp * 20; }
+    function getCurrentArmyCount() {
+        let u = gameState.units;
+        return (u.warrior||0)+(u.archer||0)+(u.cavalry||0)+(u.catapult||0)+(u.dragon||0);
+    }
+    function calculateArmyStrength(units) {
+        let str = (units.warrior||0)*12 + (units.archer||0)*16 + (units.cavalry||0)*28 + (units.catapult||0)*55 + (units.dragon||0)*110;
+        str *= (1 + gameState.research.attackPower.level * 0.02);
+        return Math.floor(str);
+    }
+    function attackEnemy(percent) {
+        let myUnits = JSON.parse(JSON.stringify(gameState.units));
+        let totalCount = getCurrentArmyCount();
+        let usedCount = Math.floor(totalCount * percent/100);
+        if(usedCount===0) { addLog("Brak armii do ataku!"); return; }
+        let factor = usedCount / totalCount;
+        for(let u in myUnits) myUnits[u] = Math.floor(myUnits[u] * factor);
+        let myStr = calculateArmyStrength(myUnits);
+        let enemyStr = myStr * (0.5 + Math.random()*0.9);
+        let win = myStr > enemyStr;
+        let lootBonus = 1 + (gameState.research.lootBonus.level * 0.03);
+        if(win) {
+            let lootWood = Math.floor(gameState.resources.wood * 0.08 * lootBonus);
+            let lootGold = Math.floor(gameState.resources.gold * 0.08 * lootBonus);
+            let lootStone = Math.floor(gameState.resources.stone * 0.08 * lootBonus);
+            gameState.resources.wood += lootWood;
+            gameState.resources.gold += lootGold;
+            gameState.resources.stone += lootStone;
+            gameState.stats.wins++;
+            gameState.stats.totalStolen += (lootWood+lootGold+lootStone);
+            addLog(`🏆 ZWYCIĘSTWO! Zdobycz: 🪵${formatNumber(lootWood)} 🪨${formatNumber(lootStone)} 🪙${formatNumber(lootGold)}`);
+            updateQuestProgress("wins",1);
+            for(let u in myUnits) gameState.units[u] = Math.max(0, (gameState.units[u]||0) - Math.floor(myUnits[u]*0.2));
+        } else {
+            addLog(`💀 PORAŻKA! Stracono większość oddziałów.`);
+            for(let u in myUnits) gameState.units[u] = Math.max(0, (gameState.units[u]||0) - Math.floor(myUnits[u]*0.6));
+            gameState.stats.losses++;
+        }
+        saveGame();
+        refreshUI();
+    }
+    function updateQuestProgress(type, inc) {
+        gameState.dailyQuests.forEach(q => {
+            if(!q.completed && q.type === type) {
+                q.progress += inc;
+                if(q.progress >= q.target) q.progress = q.target;
+            }
+        });
+        saveGame();
+    }
+    function addLog(msg) {
+        let logDiv = document.getElementById("battleLog");
+        if(logDiv) logDiv.innerHTML += `> ${msg}<br>`;
+        logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    // badania
+    function startResearch(researchId) {
+        let r = gameState.research[researchId];
+        if(r.active) { alert("Badanie już trwa"); return; }
+        if(r.level >= r.max) { alert("Maksymalny poziom"); return; }
+        let cost = 800 + r.level * 500;
+        let time = 25 + r.level * 12;
+        if(gameState.resources.gold >= cost) {
+            gameState.resources.gold -= cost;
+            r.active = true;
+            r.remainingTime = time;
+            saveGame();
+            refreshUI();
+        } else alert("Brak złota");
+    }
+    function processResearchTimers() {
+        let changed = false;
+        for(let r of Object.values(gameState.research)) {
+            if(r.active && r.remainingTime > 0) {
+                r.remainingTime -= 1;
+                if(r.remainingTime <= 0) {
+                    r.active = false;
+                    r.level++;
+                    changed = true;
+                }
+            }
+        }
+        if(changed) { saveGame(); refreshUI(); }
+    }
+
+    // odświeżanie całego UI (szczególnie miasta)
+    function refreshUI() {
+        // zasoby formatowane
+        document.getElementById("resourcesPanel").innerHTML = `
+            <div class="resource"><i class="fas fa-tree"></i> ${formatNumber(gameState.resources.wood)}</div>
+            <div class="resource"><i class="fas fa-mountain"></i> ${formatNumber(gameState.resources.stone)}</div>
+            <div class="resource"><i class="fas fa-coins"></i> ${formatNumber(gameState.resources.gold)}</div>
+            <div class="resource"><i class="fas fa-drumstick-bite"></i> ${formatNumber(gameState.resources.food)}</div>
+            <div class="resource"><i class="fas fa-gem"></i> ${gameState.resources.gems}</div>
+            <div class="resource"><i class="fas fa-flag"></i> ${formatNumber(gameState.clan.coins)}</div>
+        `;
+
+        // LISTA BUDYNKÓW (jak na zdjęciu)
+        const buildingsData = [
+            { id: "lumberMill", name: "🌲 Tartak", levelKey: "lumberMill" },
+            { id: "quarry", name: "⛰️ Kamieniotor", levelKey: "quarry" },
+            { id: "watchtower", name: "👁️ Obóz zwiadowców", levelKey: "watchtower" },
+            { id: "warehouse", name: "📦 Magazyn", levelKey: "warehouse" },
+            { id: "farm", name: "🌾 Farma", levelKey: "farm" },
+            { id: "happyCity", name: "🎡 Wesołe miasto", levelKey: "happyCity" },
+            { id: "market", name: "🏪 Rynek", levelKey: "market" }
+        ];
+        let buildingsHtml = "";
+        for(let b of buildingsData) {
+            let level = gameState.buildings[b.levelKey] || 1;
+            let remaining = getRemainingUpgradeTime(b.id);
+            let timerDisplay = "";
+            if(remaining !== null && remaining > 0) {
+                timerDisplay = `<span class="building-timer"><i class="fas fa-hourglass-half"></i> ${formatTime(remaining)}</span>`;
+            } else {
+                timerDisplay = `<span class="building-timer">⚡ gotowy</span>`;
+            }
+            let costWood = 500 + level * 180;
+            let costStone = 300 + level * 120;
+            let upgradeTime = 30 + level * 4;
+            buildingsHtml += `
+                <div class="building-row">
+                    <div class="building-name">${b.name}</div>
+                    <div class="building-level">Poziom ${level}</div>
+                    ${timerDisplay}
+                    <button class="upgrade-btn" onclick="tryUpgradeBuilding('${b.id}', ${level}, ${costWood}, ${costStone}, ${upgradeTime})">⬆️ Ulepsz (${formatNumber(costWood)} 🪵 ${formatNumber(costStone)} 🪨)</button>
+                </div>
+            `;
+        }
+        document.getElementById("cityBuildingsList").innerHTML = buildingsHtml;
+
+        // globalne timery (symulacja)
+        let remaining1 = Math.max(0, Math.floor((gameState.globalTimer1End - Date.now())/1000));
+        let remaining2 = Math.max(0, Math.floor((gameState.globalTimer2End - Date.now())/1000));
+        document.getElementById("globalTimer1").innerText = formatTime(remaining1);
+        document.getElementById("globalTimer2").innerText = formatTime(remaining2);
+
+        // armia
+        let cap = getArmyCapacity();
+        let curr = getCurrentArmyCount();
+        let queueCount = gameState.trainingQueue.length;
+        document.getElementById("armyStats").innerHTML = `💪 Siła: ${calculateArmyStrength(gameState.units)} &nbsp;| 👥 ${curr}/${cap} (+${queueCount} w kolejce)`;
+        let unitsList = [
+            {type:"warrior", name:"Wojownik", cost:{wood:30,food:25,gold:0}, time:6},
+            {type:"archer", name:"Łucznik", cost:{wood:45,food:30,gold:0}, time:9},
+            {type:"cavalry", name:"Kawaleria", cost:{wood:70,food:50,gold:20}, time:14},
+            {type:"catapult", name:"Katapulta", cost:{wood:140,food:70,gold:50}, time:25},
+            {type:"dragon", name:"Smok", cost:{wood:350,food:220,gold:180}, time:55}
+        ];
+        let trainHtml = "";
+        unitsList.forEach(u=>{
+            trainHtml += `<div class="queue-item"><span><b>${u.name}</b> 🪵${u.cost.wood} 🍗${u.cost.food} 🪙${u.cost.gold} (czas ${u.time}s)</span>
+            <button onclick="addToTrainingQueue('${u.type}',${u.cost.wood},${u.cost.food},${u.cost.gold},${u.time})">Dodaj</button></div>`;
+        });
+        document.getElementById("unitsTrainContainer").innerHTML = trainHtml;
+        let queueHtml = "<h4>⏳ Kolejka:</h4>";
+        gameState.trainingQueue.forEach(q=>{
+            queueHtml += `<div class="queue-item">${q.unitType} - pozostało ${q.remainingSec}s <progress value="${q.remainingSec}" max="${q.totalSec}"></progress></div>`;
+        });
+        document.getElementById("trainingQueue").innerHTML = queueHtml || "Brak";
+
+        // klan
+        document.getElementById("clanPanel").innerHTML = `<div>🏰 ${gameState.clan.name} | 🪙 ${formatNumber(gameState.clan.coins)}<br>👥 ${gameState.clan.members.join(", ")}</div>`;
+        document.getElementById("donateSection").innerHTML = `<button onclick="donateUnit()">🎁 Przekaż 1 wojownika (+15 monet klan.)</button>`;
+        // badania
+        let techHtml = "";
+        for(let [id, r] of Object.entries(gameState.research)) {
+            let status = r.active ? ` (trwa: ${r.remainingTime}s)` : (r.level>=r.max ? " MAX" : ` lvl ${r.level}/${r.max}`);
+            let btn = "";
+            if(!r.active && r.level < r.max) {
+                let cost = 800 + r.level * 500;
+                btn = `<button onclick="startResearch('${id}')">Badaj (${cost}🪙, ${25+r.level*12}s)</button>`;
+            }
+            techHtml += `<div><b>${r.name}</b> +${r.level * r.effectPerLevel}%${status} ${btn}</div>`;
+        }
+        document.getElementById("techTree").innerHTML = techHtml;
+        // zadania
+        let questHtml = "";
+        gameState.dailyQuests.forEach((q,idx)=>{
+            questHtml += `<div>📌 ${q.desc} (${q.progress}/${q.target}) ${q.completed?"✔️":`<button onclick="claimQuest(${idx})">Odbierz (${q.reward}🪙)</button>`}</div>`;
+        });
+        document.getElementById("questList").innerHTML = questHtml;
+        let achHtml = "";
+        gameState.achievements.forEach((a,i)=>{
+            let cond = eval(a.condition);
+            if(cond && !a.achieved) { gameState.achievements[i].achieved=true; saveGame();}
+            achHtml += `<div>🏅 ${a.name} ${a.achieved?"✅":"❌"}</div>`;
+        });
+        document.getElementById("achievementsList").innerHTML = achHtml;
+        document.getElementById("rankingStats").innerHTML = `🏆 Zwycięstwa: ${gameState.stats.wins} | Porażki: ${gameState.stats.losses}<br>💰 Skradziono: ${formatNumber(gameState.stats.totalStolen)} | ⚔️ Wyszkolone: ${gameState.stats.totalTrained}`;
+        document.getElementById("percentVal").innerText = document.getElementById("armyPercent")?.value || 100;
+    }
+
+    // funkcje globalne
+    window.tryUpgradeBuilding = function(bid, currentLevel, costWood, costStone, timeSec) {
+        startBuildingUpgrade(bid, currentLevel+1, costWood, costStone, timeSec);
+    };
+    window.addToTrainingQueue = addToTrainingQueue;
+    window.startResearch = startResearch;
+    window.donateUnit = function() {
+        if(gameState.units.warrior >= 1) {
+            gameState.units.warrior--;
+            gameState.clan.coins += 15;
+            updateQuestProgress("donate",1);
+            saveGame(); refreshUI();
+            addLog("Przekazano wojownika do klanu!");
+        } else alert("Brak wojowników");
+    };
+    window.claimQuest = function(idx) {
+        let q = gameState.dailyQuests[idx];
+        if(!q.completed && q.progress >= q.target) {
+            q.completed = true;
+            gameState.resources.gold += q.reward;
+            saveGame(); refreshUI();
+        } else alert("Nieukończone");
+    };
+    // eventy
+    document.getElementById("earnBtnCity")?.addEventListener("click", ()=>earnGold());
+    document.getElementById("earnBtnBattle")?.addEventListener("click", ()=>earnGold());
+    function earnGold() {
+        let now = Date.now();
+        if(now - (gameState.earnCooldown||0) > 30000) {
+            gameState.resources.gold += 200;
+            gameState.earnCooldown = now;
+            saveGame(); refreshUI();
+            addLog("+200 złota za grę!");
+        } else alert("Cooldown 30s");
+    }
+    document.getElementById("donateGemsCityBtn")?.addEventListener("click", ()=>donateGems());
+    document.getElementById("donateGemsClanBtn")?.addEventListener("click", ()=>donateGems());
+    function donateGems() {
+        if(gameState.resources.gems >= 800) {
+            gameState.resources.gems -= 800;
+            gameState.clan.coins += 500;
+            saveGame(); refreshUI();
+            addLog("Przekazano 800 gemów do klanu! +500 monet");
+        } else alert("Nie masz 800 gemów");
+    }
+    document.getElementById("attackBtn")?.addEventListener("click",()=>{
+        let percent = parseInt(document.getElementById("armyPercent").value);
+        attackEnemy(percent);
+    });
+    document.getElementById("armyPercent")?.addEventListener("input",(e)=>document.getElementById("percentVal").innerText=e.target.value);
+    document.getElementById("upgradeCampBtn")?.addEventListener("click",()=>{
+        let lvl = gameState.buildings.armyCamp || 1;
+        let cost = 800 + lvl*200;
+        if(gameState.resources.wood>=cost && gameState.resources.stone>=cost/2) {
+            gameState.resources.wood -= cost;
+            gameState.resources.stone -= cost/2;
+            gameState.buildings.armyCamp++;
+            saveGame(); refreshUI();
+        } else alert("Brak surowców");
+    });
+    document.getElementById("createClanBtn")?.addEventListener("click",()=>{
+        let name = document.getElementById("clanNameInput").value.trim();
+        if(name && gameState.resources.gems>=20) {
+            gameState.resources.gems-=20;
+            gameState.clan = { name: name, members: ["Ty"], coins: 0 };
+            saveGame(); refreshUI();
+        } else alert("Brak gemów");
+    });
+    document.getElementById("joinClanBtn")?.addEventListener("click",()=>{
+        let name = document.getElementById("joinClanInput").value.trim();
+        if(name) { gameState.clan.name = name; if(!gameState.clan.members.includes("Ty")) gameState.clan.members.push("Ty"); saveGame(); refreshUI(); }
+    });
+    document.getElementById("clanWarBtn")?.addEventListener("click",()=>{
+        let win = Math.random() < 0.6;
+        if(win) { let reward = 800; gameState.clan.coins += reward; document.getElementById("clanWarResult").innerHTML = "🏆 Wygrana! +"+reward+" monet"; }
+        else document.getElementById("clanWarResult").innerHTML = "💔 Przegrana...";
+        saveGame(); refreshUI();
+    });
+    // zakładki
+    document.querySelectorAll(".tab-btn").forEach(btn=>{
+        btn.addEventListener("click",()=>{
+            document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+            btn.classList.add("active");
+            let tab = btn.getAttribute("data-tab");
+            document.querySelectorAll(".tab-content").forEach(t=>t.classList.remove("active"));
+            document.getElementById(tab).classList.add("active");
+        });
+    });
+
+    loadGame();
+    refreshUI();
+    setInterval(()=>refreshUI(), 1000);
+</script>
+</body>
+</html>
