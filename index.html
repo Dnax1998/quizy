@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>CryptoRewards | Zarabiaj kryptowaluty oglądając reklamy</title>
+    <!-- Google Fonts & Font Awesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(145deg, #0a0f1e 0%, #0c1222 100%);
+            min-height: 100vh;
+            padding: 2rem 1.5rem;
+            color: #eef2ff;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        /* header */
+        .header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2.5rem;
+            gap: 1rem;
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(12px);
+            padding: 1rem 2rem;
+            border-radius: 2rem;
+            border: 1px solid rgba(71, 85, 105, 0.5);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+
+        .logo h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #F0B90B, #3b82f6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .logo p {
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+
+        .balance-card {
+            background: #111827;
+            padding: 0.7rem 1.5rem;
+            border-radius: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: 0 0 10px rgba(59,130,246,0.2);
+            border: 1px solid #1f2a3e;
+        }
+
+        .balance-card i {
+            font-size: 1.8rem;
+            color: #F0B90B;
+        }
+
+        .balance-info h3 {
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #9ca3af;
+        }
+
+        .balance-info .amount {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #facc15;
+            line-height: 1;
+        }
+
+        .balance-info .currency {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #cbd5e1;
+        }
+
+        /* grid */
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 1.8rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 800px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            body {
+                padding: 1rem;
+            }
+        }
+
+        .card {
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(8px);
+            border-radius: 1.5rem;
+            padding: 1.6rem;
+            border: 1px solid #1e293b;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        .card:hover {
+            border-color: #3b82f680;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.4);
+        }
+
+        .card-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            border-left: 4px solid #facc15;
+            padding-left: 0.8rem;
+        }
+
+        .watch-btn {
+            background: linear-gradient(95deg, #facc15, #eab308);
+            border: none;
+            width: 100%;
+            padding: 1rem;
+            font-size: 1.2rem;
+            font-weight: 700;
+            border-radius: 1.2rem;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 6px 0 #b45309;
+        }
+
+        .watch-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 3px 0 #b45309;
+        }
+
+        .watch-btn:disabled {
+            opacity: 0.6;
+            transform: translateY(0);
+            cursor: not-allowed;
+            filter: grayscale(0.1);
+        }
+
+        .reward-info {
+            background: #0f172a;
+            padding: 0.8rem;
+            border-radius: 1rem;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #cbd5e6;
+        }
+
+        .reward-info span {
+            color: #facc15;
+            font-weight: bold;
+        }
+
+        /* formularz wypłaty */
+        .withdraw-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .input-group label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #9ca3af;
+        }
+
+        .input-group input {
+            background: #0a0f1a;
+            border: 1px solid #2d3a5e;
+            padding: 0.8rem 1rem;
+            border-radius: 1rem;
+            color: white;
+            font-size: 0.95rem;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        .input-group input:focus {
+            border-color: #facc15;
+            box-shadow: 0 0 0 2px rgba(250,204,21,0.2);
+        }
+
+        .withdraw-actions {
+            display: flex;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+        }
+
+        .btn-primary {
+            background: #1e293b;
+            border: 1px solid #475569;
+            padding: 0.7rem 1rem;
+            border-radius: 1rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            cursor: pointer;
+            transition: 0.2s;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary:hover {
+            background: #2d3a5e;
+            border-color: #facc15;
+        }
+
+        .btn-danger {
+            background: #2d1a2c;
+            border-color: #7f1a1a;
+            color: #fca5a5;
+        }
+
+        .btn-danger:hover {
+            background: #4c1d1d;
+        }
+
+        .history-list {
+            max-height: 320px;
+            overflow-y: auto;
+            padding-right: 0.3rem;
+        }
+
+        .history-item {
+            background: #0f172a;
+            margin-bottom: 0.7rem;
+            padding: 0.8rem;
+            border-radius: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 3px solid #3b82f6;
+            font-size: 0.85rem;
+        }
+
+        .history-item.earn {
+            border-left-color: #facc15;
+        }
+
+        .history-item.withdraw {
+            border-left-color: #ef4444;
+        }
+
+        .history-detail {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+
+        .history-amount {
+            font-weight: 700;
+        }
+
+        .history-date {
+            font-size: 0.7rem;
+            color: #6c7a91;
+        }
+
+        .reset-btn {
+            margin-top: 1rem;
+            background: none;
+            border: 1px solid #334155;
+            padding: 0.5rem;
+            width: 100%;
+            border-radius: 1rem;
+            color: #94a3b8;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .reset-btn:hover {
+            background: #1e293b;
+            color: #facc15;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 0.75rem;
+            color: #5b6e8c;
+        }
+
+        /* MODAL */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            transition: all 0.2s ease;
+        }
+
+        .modal-overlay.active {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .modal-container {
+            background: #0f172ad9;
+            background: linear-gradient(145deg, #111827, #0a0f1c);
+            border-radius: 2rem;
+            max-width: 480px;
+            width: 90%;
+            border: 1px solid #facc1566;
+            box-shadow: 0 25px 40px rgba(0,0,0,0.5);
+            overflow: hidden;
+            transform: scale(0.95);
+            transition: transform 0.2s;
+        }
+
+        .modal-overlay.active .modal-container {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            padding: 1.2rem 1.5rem;
+            background: #00000040;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #2d3a5e;
+        }
+
+        .modal-header h3 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #facc15;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 1.6rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .close-modal:hover {
+            color: #ef4444;
+        }
+
+        .ad-content {
+            padding: 1.8rem;
+            text-align: center;
+        }
+
+        .ad-image {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .ad-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        .ad-description {
+            color: #cbd5e6;
+            margin-bottom: 1.5rem;
+        }
+
+        .timer-box {
+            background: #00000050;
+            border-radius: 2rem;
+            padding: 0.6rem;
+            margin: 1rem 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+            font-family: monospace;
+            letter-spacing: 2px;
+            color: #facc15;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 0.8rem;
+            margin-top: 1rem;
+        }
+
+        .btn-claim {
+            background: #facc15;
+            border: none;
+            padding: 0.7rem;
+            border-radius: 1rem;
+            font-weight: bold;
+            color: #0f172a;
+            flex: 1;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-claim:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-cancel {
+            background: #1e293b;
+            border: 1px solid #475569;
+            flex: 1;
+            border-radius: 1rem;
+            color: white;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="logo">
+            <h1><i class="fas fa-coins"></i> CryptoRewards</h1>
+            <p>Zarabiaj VWC oglądając reklamy → natychmiastowe wypłaty</p>
+        </div>
+        <div class="balance-card">
+            <i class="fab fa-bitcoin"></i>
+            <div class="balance-info">
+                <h3>Twoje saldo</h3>
+                <div><span class="amount" id="balanceAmount">0.0000</span> <span class="currency">VWC</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard">
+        <!-- lewa kolumna: reklamy + zarabianie -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fas fa-tv"></i> Oglądaj i zarabiaj
+            </div>
+            <button class="watch-btn" id="watchAdBtn">
+                <i class="fas fa-play-circle"></i> Oglądaj reklamę (0.01 VWC)
+            </button>
+            <div class="reward-info">
+                <i class="fas fa-clock"></i> Każda reklama to <span>+0.01 VWC</span> po odczekaniu 5 sekund. <br>
+                Bez limitów! Uczciwe nagrody.
+            </div>
+        </div>
+
+        <!-- prawa kolumna: wypłata i historia -->
+        <div class="card">
+            <div class="card-title">
+                <i class="fas fa-paper-plane"></i> Wypłać kryptowalutę
+            </div>
+            <div class="withdraw-form">
+                <div class="input-group">
+                    <label><i class="fas fa-wallet"></i> Adres portfela (VWC / dowolny)</label>
+                    <input type="text" id="walletAddress" placeholder="0x... lub adres VWC" autocomplete="off">
+                </div>
+                <div class="input-group">
+                    <label><i class="fas fa-coins"></i> Kwota do wypłaty (VWC)</label>
+                    <input type="number" id="withdrawAmount" step="0.001" min="0.01" placeholder="min. 0.01 VWC">
+                </div>
+                <div class="withdraw-actions">
+                    <button class="btn-primary" id="withdrawBtn"><i class="fas fa-arrow-up"></i> Wypłać</button>
+                    <button class="btn-primary" id="withdrawAllBtn"><i class="fas fa-bolt"></i> Wypłać wszystko</button>
+                </div>
+            </div>
+            <div class="card-title" style="margin-top: 1.2rem;">
+                <i class="fas fa-history"></i> Historia transakcji
+            </div>
+            <div class="history-list" id="historyContainer">
+                <!-- dynamiczne wpisy -->
+                <div style="text-align:center; color:#5b6e8c;">Brak aktywności</div>
+            </div>
+            <button class="reset-btn" id="resetDataBtn"><i class="fas fa-trash-alt"></i> Resetuj wszystkie dane (demo)</button>
+        </div>
+    </div>
+    <footer>
+        <i class="fas fa-shield-alt"></i> Symulacja kryptowaluty ViewCoin (VWC) • Nagrody za prawdziwe oglądanie • Wypłaty demo
+    </footer>
+</div>
+
+<!-- MODAL REKLAMOWY -->
+<div id="adModal" class="modal-overlay">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3><i class="fas fa-ad"></i> Reklama wideo</h3>
+            <button class="close-modal" id="closeModalBtn">&times;</button>
+        </div>
+        <div class="ad-content" id="adContentDynamic">
+            <!-- dynamiczna treść reklamy -->
+            <div class="ad-image">📺🎬</div>
+            <div class="ad-title" id="adTitle">Ładowanie reklamy...</div>
+            <div class="ad-description" id="adDesc">Oglądaj przez 5 sekund i odbierz nagrodę</div>
+            <div class="timer-box" id="timerDisplay">5s</div>
+            <div class="modal-actions">
+                <button class="btn-cancel" id="cancelAdBtn">Anuluj</button>
+                <button class="btn-claim" id="claimRewardBtn" disabled>Odbierz nagrodę (0.01 VWC)</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ---------- KONFIGURACJA ----------
+    const REWARD_AMOUNT = 0.01;      // 0.01 VWC za reklamę
+    const MIN_WITHDRAW = 0.01;
+    const STORAGE_KEY = 'cryptoRewardsApp';
+
+    // Przykładowe reklamy (losowe, żeby było ciekawiej)
+    const ADS_LIST = [
+        { title: "🚀 Token XRPump", desc: "Nowa moneta przyszłości! Inwestuj już teraz z bonusem 20%", icon: "🚀✨" },
+        { title: "🏦 Giełda CryptoX", desc: "Bezpieczny handel, niskie opłaty. Dołącz i handluj VWC!", icon: "📈💰" },
+        { title: "🎮 MetaVerse World", desc: "Gra P2E - Zdobądź ziemię w wirtualnym świecie", icon: "🕹️🌍" },
+        { title: "⚡ DeFi Stake", desc: "Stakuj VWC i uzyskaj 15% APY. Nie przegap!", icon: "⚡🔥" },
+        { title: "🔐 Portfel SafeVault", desc: "Twoje kryptowaluty w pełni bezpieczne", icon: "🔒🛡️" }
+    ];
+
+    // Globalny stan aplikacji
+    let appState = {
+        balance: 0.0,
+        transactions: []   // każdy wpis: { id, type, amount, timestamp, details }
+    };
+
+    // Zmienne dla modala / reklamy
+    let isAdPlaying = false;
+    let countdownInterval = null;
+    let remainingSeconds = 5;
+    let claimEnabled = false;
+    let currentAdData = null;
+
+    // DOM elementy
+    const balanceSpan = document.getElementById('balanceAmount');
+    const historyContainer = document.getElementById('historyContainer');
+    const watchBtn = document.getElementById('watchAdBtn');
+    const modalOverlay = document.getElementById('adModal');
+    const claimBtn = document.getElementById('claimRewardBtn');
+    const cancelAdBtn = document.getElementById('cancelAdBtn');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const timerDisplaySpan = document.getElementById('timerDisplay');
+    const adTitleSpan = document.getElementById('adTitle');
+    const adDescSpan = document.getElementById('adDesc');
+    const adImageDiv = document.querySelector('#adContentDynamic .ad-image');
+
+    // Wypłata
+    const withdrawBtn = document.getElementById('withdrawBtn');
+    const withdrawAllBtn = document.getElementById('withdrawAllBtn');
+    const walletAddressInput = document.getElementById('walletAddress');
+    const withdrawAmountInput = document.getElementById('withdrawAmount');
+    const resetBtn = document.getElementById('resetDataBtn');
+
+    // ========== FUNKCJE POMOCNICZE ==========
+    function saveToLocalStorage() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+            balance: appState.balance,
+            transactions: appState.transactions
+        }));
+    }
+
+    function loadFromLocalStorage() {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            try {
+                const data = JSON.parse(saved);
+                appState.balance = typeof data.balance === 'number' ? data.balance : 0;
+                appState.transactions = Array.isArray(data.transactions) ? data.transactions : [];
+                // naprawa zaokrągleń
+                appState.balance = parseFloat(appState.balance.toFixed(6));
+            } catch(e) { resetAppData(); }
+        } else {
+            resetAppData();
+        }
+        updateUI();
+    }
+
+    function resetAppData() {
+        appState.balance = 0;
+        appState.transactions = [];
+        addTransactionSystem("system", "reset", 0, "Reset danych demonstracyjnych");
+        saveToLocalStorage();
+        updateUI();
+    }
+
+    // Dodanie transakcji (type: 'earn' lub 'withdraw')
+    function addTransaction(type, amount, detailText) {
+        const newId = Date.now() + Math.random() * 10000;
+        const now = new Date();
+        const timestamp = now.toLocaleString();
+        const transaction = {
+            id: newId,
+            type: type,      // 'earn' lub 'withdraw'
+            amount: parseFloat(amount.toFixed(6)),
+            timestamp: timestamp,
+            details: detailText
+        };
+        appState.transactions.unshift(transaction); // najnowsze na górze
+        // Zachowaj max 50 wpisów dla wydajności
+        if (appState.transactions.length > 50) appState.transactions.pop();
+        saveToLocalStorage();
+        updateUI();
+    }
+
+    // specjalna dla systemu (reset)
+    function addTransactionSystem(type, subtype, amount, desc) {
+        const newId = Date.now();
+        const transaction = {
+            id: newId,
+            type: subtype,
+            amount: amount,
+            timestamp: new Date().toLocaleString(),
+            details: desc
+        };
+        appState.transactions.unshift(transaction);
+        if (appState.transactions.length > 50) appState.transactions.pop();
+        saveToLocalStorage();
+        updateUI();
+    }
+
+    // Dodanie nagrody za reklamę
+    function addEarnReward() {
+        const reward = REWARD_AMOUNT;
+        appState.balance = parseFloat((appState.balance + reward).toFixed(6));
+        addTransaction('earn', reward, `Nagroda za obejrzenie reklamy (${currentAdData?.title || 'standard'})`);
+        saveToLocalStorage();
+        updateUI();
+    }
+
+    // Wypłata
+    function withdraw(amountToWithdraw, address) {
+        if (!address || address.trim().length < 3) {
+            alert("❌ Podaj poprawny adres portfela (min. 3 znaki)");
+            return false;
+        }
+        if (isNaN(amountToWithdraw) || amountToWithdraw <= 0) {
+            alert("❌ Kwota musi być większa od 0");
+            return false;
+        }
+        if (amountToWithdraw < MIN_WITHDRAW) {
+            alert(`⚠️ Minimalna kwota wypłaty to ${MIN_WITHDRAW} VWC`);
+            return false;
+        }
+        if (amountToWithdraw > appState.balance) {
+            alert("❌ Niewystarczające saldo!");
+            return false;
+        }
+        // Wykonaj wypłatę
+        appState.balance = parseFloat((appState.balance - amountToWithdraw).toFixed(6));
+        const detail = `Wypłata ${amountToWithdraw.toFixed(4)} VWC na adres ${address.trim()}`;
+        addTransaction('withdraw', -amountToWithdraw, detail);
+        saveToLocalStorage();
+        updateUI();
+        alert(`✅ Wypłata symulowana! Wysłano ${amountToWithdraw.toFixed(4)} VWC na ${address.trim()}. (Demo)`);
+        return true;
+    }
+
+    // Odświeżenie UI (saldo, historia)
+    function updateUI() {
+        // wyświetl saldo
+        balanceSpan.innerText = appState.balance.toFixed(5);
+        // wyczyść historię i wypełnij
+        historyContainer.innerHTML = '';
+        if (appState.transactions.length === 0) {
+            historyContainer.innerHTML = '<div style="text-align:center; color:#5b6e8c;">Brak aktywności</div>';
+            return;
+        }
+        appState.transactions.forEach(tx => {
+            const div = document.createElement('div');
+            div.className = `history-item ${tx.type === 'earn' ? 'earn' : (tx.type === 'withdraw' ? 'withdraw' : '')}`;
+            let sign = '';
+            let amountColor = '#facc15';
+            if (tx.type === 'earn') {
+                sign = `+ ${tx.amount.toFixed(5)} VWC`;
+                amountColor = '#4ade80';
+            } else if (tx.type === 'withdraw') {
+                sign = `${tx.amount.toFixed(5)} VWC`; // amount ujemne
+                amountColor = '#f87171';
+            } else {
+                sign = `⚙️ ${tx.details}`;
+                amountColor = '#94a3b8';
+            }
+
+            div.innerHTML = `
+                <div class="history-detail">
+                    <strong>${tx.details.substring(0, 45)}</strong>
+                    <span class="history-date">${tx.timestamp}</span>
+                </div>
+                <div class="history-amount" style="color:${amountColor};">${tx.type === 'earn' ? '+' : ''} ${tx.type === 'withdraw' ? tx.amount.toFixed(5) : (tx.type === 'earn' ? tx.amount.toFixed(5) : '')} ${tx.type === 'earn' ? 'VWC' : (tx.type === 'withdraw' ? 'VWC' : '')}</div>
+            `;
+            if (tx.type === 'withdraw') {
+                div.querySelector('.history-amount').innerHTML = `${tx.amount.toFixed(5)} VWC`;
+            }
+            if (tx.type !== 'earn' && tx.type !== 'withdraw') {
+                div.querySelector('.history-amount').innerHTML = '';
+            }
+            historyContainer.appendChild(div);
+        });
+    }
+
+    // ---------- LOGIKA MODALA REKLAMOWEGO ----------
+    function stopAndClearTimer() {
+        if (countdownInterval) {
+            clearInterval(countdownInterval);
+            countdownInterval = null;
+        }
+        claimEnabled = false;
+        claimBtn.disabled = true;
+    }
+
+    function closeModal(wasClaimed = false) {
+        if (!modalOverlay.classList.contains('active')) return;
+        stopAndClearTimer();
+        modalOverlay.classList.remove('active');
+        isAdPlaying = false;
+        watchBtn.disabled = false;
+        if (!wasClaimed) {
+            // nic nie dodajemy, po prostu anulowano
+        }
+    }
+
+    function openRandomAd() {
+        // losowa reklama
+        const randomIndex = Math.floor(Math.random() * ADS_LIST.length);
+        currentAdData = ADS_LIST[randomIndex];
+        adTitleSpan.innerText = currentAdData.title;
+        adDescSpan.innerText = currentAdData.desc;
+        adImageDiv.innerHTML = `<div style="font-size: 3.5rem;">${currentAdData.icon}</div>`;
+        // reset timera
+        remainingSeconds = 5;
+        timerDisplaySpan.innerText = `${remainingSeconds}s`;
+        claimEnabled = false;
+        claimBtn.disabled = true;
+        stopAndClearTimer();
+
+        // start odliczania
+        countdownInterval = setInterval(() => {
+            if (remainingSeconds <= 1) {
+                // koniec odliczania
+                if (countdownInterval) clearInterval(countdownInterval);
+                countdownInterval = null;
+                timerDisplaySpan.innerText = `0s - gotowe!`;
+                claimEnabled = true;
+                claimBtn.disabled = false;
+                claimBtn.style.opacity = '1';
+            } else {
+                remainingSeconds--;
+                timerDisplaySpan.innerText = `${remainingSeconds}s`;
+            }
+        }, 1000);
+    }
+
+    function showAdModal() {
+        if (isAdPlaying) return;
+        isAdPlaying = true;
+        watchBtn.disabled = true;
+        openRandomAd();
+        modalOverlay.classList.add('active');
+    }
+
+    function claimReward() {
+        if (!claimEnabled) {
+            alert("Proszę odczekać do końca reklamy (5 sekund)");
+            return;
+        }
+        if (!isAdPlaying) return;
+        // dodaj nagrodę
+        addEarnReward();
+        // zamknij modal z sukcesem
+        closeModal(true);
+        // krótki komunikat wizualny
+        const notif = document.createElement('div');
+        notif.innerText = `🎉 +${REWARD_AMOUNT} VWC!`;
+        notif.style.position = 'fixed';
+        notif.style.bottom = '20px';
+        notif.style.right = '20px';
+        notif.style.background = '#2ecc71';
+        notif.style.padding = '0.8rem 1.2rem';
+        notif.style.borderRadius = '2rem';
+        notif.style.color = 'white';
+        notif.style.fontWeight = 'bold';
+        notif.style.zIndex = '9999';
+        notif.style.boxShadow = '0 4px 12px black';
+        document.body.appendChild(notif);
+        setTimeout(() => notif.remove(), 2500);
+    }
+
+    // ---------- EVENTY ----------
+    watchBtn.addEventListener('click', showAdModal);
+    claimBtn.addEventListener('click', claimReward);
+    function cancelModalHandler() {
+        if (isAdPlaying) {
+            closeModal(false);
+        }
+    }
+    cancelAdBtn.addEventListener('click', cancelModalHandler);
+    closeModalBtn.addEventListener('click', cancelModalHandler);
+    // kliknięcie w tło overlay nie zamyka aby nie przerywać reklamy (jedynie przyciski)
+
+    // Wypłaty
+    withdrawBtn.addEventListener('click', () => {
+        let amountRaw = withdrawAmountInput.value;
+        let amount = parseFloat(amountRaw);
+        const address = walletAddressInput.value;
+        if (isNaN(amount)) amount = 0;
+        withdraw(amount, address);
+        withdrawAmountInput.value = '';
+    });
+
+    withdrawAllBtn.addEventListener('click', () => {
+        const address = walletAddressInput.value;
+        if (appState.balance <= 0) {
+            alert("Brak środków do wypłaty");
+            return;
+        }
+        if (!address || address.trim().length < 3) {
+            alert("Podaj adres portfela przed wypłatą całego salda");
+            return;
+        }
+        withdraw(appState.balance, address);
+        walletAddressInput.value = ''; 
+    });
+
+    resetBtn.addEventListener('click', () => {
+        if (confirm("Czy na pewno chcesz zresetować wszystkie dane? Saldo i historia zostaną usunięte.")) {
+            resetAppData();
+            alert("Dane zostały zresetowane. Możesz zacząć od nowa!");
+        }
+    });
+
+    // Inicjalizacja
+    loadFromLocalStorage();
+    // dodatkowa walidacja przy starcie
+    if (!appState.balance && appState.balance !== 0) appState.balance = 0;
+    updateUI();
+</script>
+</body>
+</html>
