@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Fighters Realm - Strategia bez obrony</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background: linear-gradient(145deg, #1a472a 0%, #0e2a1a 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            color: #f0e6a0;
+        }
+
+        /* Główny kontener */
+        .game-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(0,0,0,0.4);
+            border-radius: 40px;
+            backdrop-filter: blur(2px);
+            padding: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+
+        /* Pasek surowców i nagłówek */
+        .resources {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            background: #2c1a0e;
+            border-radius: 60px;
+            padding: 12px 20px;
+            margin-bottom: 20px;
+            border: 1px solid #d4a373;
+            gap: 15px;
+        }
+
+        .resource {
+            background: #1f1408;
+            padding: 8px 16px;
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.5), 0 2px 3px rgba(255,215,0,0.3);
+        }
+
+        .resource i { font-size: 1.4rem; width: 30px; text-align: center; }
+        .wood i { color: #b97f44; }
+        .stone i { color: #8c8c8c; }
+        .gold i { color: #ffd966; }
+        .food i { color: #6b8e23; }
+        .gems i { color: #00bfff; }
+
+        /* zakładki */
+        .tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #c9a87b;
+            padding-bottom: 8px;
+        }
+
+        .tab-btn {
+            background: #3e2a1f;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 30px;
+            color: #ffecb3;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 1rem;
+        }
+
+        .tab-btn.active {
+            background: #d4a373;
+            color: #1e2a1a;
+            box-shadow: 0 0 8px gold;
+        }
+
+        .tab-content {
+            display: none;
+            background: rgba(30,20,12,0.7);
+            border-radius: 30px;
+            padding: 20px;
+            margin-top: 10px;
+            animation: fade 0.3s;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+        /* siatka budynków */
+        .buildings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+        }
+
+        .building-card {
+            background: #2b2118;
+            border-radius: 20px;
+            padding: 12px;
+            border-left: 5px solid #e3b87c;
+            transition: 0.1s;
+        }
+
+        .building-card h3 { margin: 0 0 6px 0; font-size: 1.2rem; }
+        .building-card .level { color: #ffd966; font-size: 0.9rem; }
+        .building-card button {
+            background: #5c3e1f;
+            border: none;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 40px;
+            margin-top: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .building-card button:active { transform: scale(0.97); }
+
+        /* jednostki */
+        .units-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .unit-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #2a241e;
+            padding: 10px;
+            border-radius: 30px;
+            flex-wrap: wrap;
+        }
+        .train-btn {
+            background: #3c7a3e;
+            border: none;
+            padding: 6px 15px;
+            border-radius: 30px;
+            color: white;
+            cursor: pointer;
+        }
+        .attack-panel {
+            background: #2c1e12;
+            padding: 20px;
+            border-radius: 30px;
+            margin-top: 20px;
+        }
+        .fight-log {
+            background: #1a130c;
+            padding: 12px;
+            border-radius: 20px;
+            font-family: monospace;
+            height: 150px;
+            overflow-y: auto;
+        }
+        .clan-info {
+            background: #1e2a1a;
+            padding: 12px;
+            border-radius: 20px;
+        }
+        button {
+            background: #b87c4a;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        hr { border-color: #c9a87b; }
+        i { margin-right: 5px; }
+        .badge { background: gold; color: black; border-radius: 30px; padding: 2px 8px; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <div class="resources" id="resourcesPanel"></div>
+
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="city">🏠 Miasto</button>
+        <button class="tab-btn" data-tab="army">⚔️ Armia</button>
+        <button class="tab-btn" data-tab="battle">⚡ Atak</button>
+        <button class="tab-btn" data-tab="clan">👥 Klan</button>
+        <button class="tab-btn" data-tab="research">🔬 Badania</button>
+        <button class="tab-btn" data-tab="quests">📜 Zadania</button>
+        <button class="tab-btn" data-tab="stats">🏆 Ranking</button>
+    </div>
+
+    <!-- Miasto (budynki) -->
+    <div id="city" class="tab-content active">
+        <h2>Twoja osada <i class="fas fa-chess-board"></i></h2>
+        <div class="buildings-grid" id="buildingsContainer"></div>
+        <p style="margin-top:15px"><i class="fas fa-info-circle"></i> Brak wież i murów – obronę stanowi twoja armia!</p>
+    </div>
+
+    <!-- Armia -->
+    <div id="army" class="tab-content">
+        <h2>Twoje oddziały <i class="fas fa-users"></i></h2>
+        <div id="armyStats"></div>
+        <div class="units-list" id="unitsTrainContainer"></div>
+        <div class="attack-panel">
+            <h3>Obóz wojskowy</h3>
+            <div id="campCapacity"></div>
+            <button id="upgradeCampBtn">⬆️ Ulepsz obóz (+5 pojemności)</button>
+        </div>
+    </div>
+
+    <!-- Atak (PvE) -->
+    <div id="battle" class="tab-content">
+        <h2>Najazd na wroga <i class="fas fa-skull-crossbones"></i></h2>
+        <div id="enemyPreview"></div>
+        <div>
+            <label>Użyj % armii: <input type="range" id="armyPercent" min="10" max="100" step="10" value="100"> <span id="percentVal">100</span>%</label>
+            <button id="attackBtn">⚔️ ATAKUJ!</button>
+        </div>
+        <div class="fight-log" id="battleLog"></div>
+    </div>
+
+    <!-- Klan -->
+    <div id="clan" class="tab-content">
+        <h2><i class="fas fa-flag-checkered"></i> Klan</h2>
+        <div id="clanPanel"></div>
+        <div><input type="text" id="clanNameInput" placeholder="Nazwa klanu"><button id="createClanBtn">Załóż klan</button>
+        <input type="text" id="joinClanInput" placeholder="Dołącz do klanu"><button id="joinClanBtn">Dołącz</button></div>
+        <div id="donateSection" style="margin-top:15px"></div>
+        <button id="clanWarBtn">⚔️ Wojna klanowa (symulacja)</button>
+        <div id="clanWarResult"></div>
+    </div>
+
+    <!-- Badania -->
+    <div id="research" class="tab-content">
+        <h2>Uniwersytet</h2>
+        <div id="techTree"></div>
+    </div>
+
+    <!-- Zadania -->
+    <div id="quests" class="tab-content">
+        <h2>Dzienne zadania i osiągnięcia</h2>
+        <div id="questList"></div>
+        <div id="achievementsList"></div>
+    </div>
+
+    <!-- Statystyki -->
+    <div id="stats" class="tab-content">
+        <h2>Ranking i statystyki</h2>
+        <div id="rankingStats"></div>
+    </div>
+</div>
+
+<script>
+    // ---------- INICJALIZACJA STANU GRY (localStorage) ----------
+    let gameState = {
+        resources: { wood: 1500, stone: 1200, gold: 2000, food: 1800, gems: 50 },
+        buildings: {
+            // podstawowe: poziom
+            lumberMill: 1, quarry: 1, goldMine: 1, farm: 1, warehouse: 1, treasury: 1,
+            barracks: 1, stable: 1, forge: 1, workshop: 1,
+            townHall: 1, university: 1, market: 1, allianceSanctuary: 1,
+            clanFortress: 1, clanMine: 1, clanShop: 1,
+            armyCamp: 1  // pojemność = 10 + level*5
+        },
+        units: {
+            warrior: 12,    // piechota
+            archer: 8,
+            cavalry: 4,
+            catapult: 1,
+            dragon: 0
+        },
+        research: {
+            // drzewko: 0 = nieodblokowane, 1 = odblokowane
+            military1: 1, military2: 0, economy1: 1, economy2: 0, stealing: 0, clanBonus: 0,
+            unit_archer:1, unit_cavalry:1, unit_catapult:0, unit_dragon:0
+        },
+        clan: { name: "Wolni Wojownicy", members: ["Ty", "Bot1", "Bot2"], coins: 320 },
+        stats: { wins: 5, losses: 2, totalStolen: 4500, totalTrained: 125 },
+        dailyQuests: [
+            { desc: "Wygraj 3 bitwy", progress: 0, target: 3, reward: 200, completed: false, type: "wins" },
+            { desc: "Wyszkol 20 jednostek", progress: 0, target: 20, reward: 100, completed: false, type: "train" },
+            { desc: "Przekaż 10 jednostek do klanu", progress: 0, target: 10, reward: 150, completed: false, type: "donate" }
+        ],
+        achievements: [
+            { name: "Pierwsze zwycięstwo", achieved: false, condition: "wins>=1" },
+            { name: "Mistrz armii", achieved: false, condition: "totalTrained>=100" },
+            { name: "Złoty skarbiec", achieved: false, condition: "resources.gold>=5000" }
+        ],
+        lastTick: Date.now()
+    };
+
+    function loadGame() {
+        const saved = localStorage.getItem("fightersRealmSave");
+        if(saved) {
+            try{
+                let loaded = JSON.parse(saved);
+                // aktualizacja, żeby nie nadpisać nowych pól
+                Object.assign(gameState, loaded);
+                // upewnij się, że każdy budynek istnieje
+                const defaultBuildings = {
+                    lumberMill:1, quarry:1, goldMine:1, farm:1, warehouse:1, treasury:1,
+                    barracks:1, stable:1, forge:1, workshop:1, townHall:1, university:1, market:1,
+                    allianceSanctuary:1, clanFortress:1, clanMine:1, clanShop:1, armyCamp:1
+                };
+                for(let b in defaultBuildings) if(!gameState.buildings[b]) gameState.buildings[b]=1;
+            }catch(e){}
+        }
+    }
+    function saveGame() { localStorage.setItem("fightersRealmSave", JSON.stringify(gameState)); }
+
+    // pomocnicze
+    function getBuildingLevel(name) { return gameState.buildings[name] || 1; }
+    function getResourceProduction() {
+        let prod = { wood: 5, stone: 4, gold: 6, food: 5 };
+        prod.wood *= getBuildingLevel("lumberMill");
+        prod.stone *= getBuildingLevel("quarry");
+        prod.gold *= getBuildingLevel("goldMine");
+        prod.food *= getBuildingLevel("farm");
+        if(gameState.research.economy2) { prod.wood*=1.5; prod.stone*=1.5; prod.gold*=1.5; prod.food*=1.5; }
+        return prod;
+    }
+
+    // tick produkcji
+    setInterval(() => {
+        const now = Date.now();
+        let diff = Math.min(300, (now - (gameState.lastTick||now)) / 1000);
+        if(diff>0.2){
+            let prod = getResourceProduction();
+            gameState.resources.wood += Math.floor(prod.wood * diff);
+            gameState.resources.stone += Math.floor(prod.stone * diff);
+            gameState.resources.gold += Math.floor(prod.gold * diff);
+            gameState.resources.food += Math.floor(prod.food * diff);
+            // ograniczenia magazynu
+            let maxCap = 2000 + getBuildingLevel("warehouse")*300;
+            for(let r of ['wood','stone','gold','food']) if(gameState.resources[r] > maxCap) gameState.resources[r]=maxCap;
+            gameState.lastTick = now;
+            saveGame();
+            refreshUI();
+        }
+    }, 1000);
+
+    // max pojemność armii
+    function getArmyCapacity() {
+        return 10 + getBuildingLevel("armyCamp") * 5;
+    }
+    function getCurrentArmyCount() {
+        let u = gameState.units;
+        return (u.warrior||0)+(u.archer||0)+(u.cavalry||0)+(u.catapult||0)+(u.dragon||0);
+    }
+    // szkolenie jednostek
+    function trainUnit(unitType, costWood, costFood, costGold, powerIncrease) {
+        let cap = getArmyCapacity();
+        let current = getCurrentArmyCount();
+        if(current >= cap) { alert("Przekroczono pojemność obozu! Ulepsz obóz."); return false; }
+        if(gameState.resources.wood >= costWood && gameState.resources.food >= costFood && gameState.resources.gold >= costGold) {
+            gameState.resources.wood -= costWood;
+            gameState.resources.food -= costFood;
+            gameState.resources.gold -= costGold;
+            gameState.units[unitType] = (gameState.units[unitType]||0) + 1;
+            gameState.stats.totalTrained++;
+            updateQuestProgress("train",1);
+            saveGame();
+            refreshUI();
+            return true;
+        } else { alert("Brak surowców!"); return false; }
+    }
+
+    // walka (PvE) – starcie armii
+    function calculateArmyStrength(units) {
+        let strength = 0;
+        strength += (units.warrior||0)*10;
+        strength += (units.archer||0)*14;
+        strength += (units.cavalry||0)*22;
+        strength += (units.catapult||0)*40;
+        strength += (units.dragon||0)*80;
+        if(gameState.research.military2) strength *= 1.25;
+        return strength;
+    }
+
+    function attackEnemy(percent) {
+        let myUnits = JSON.parse(JSON.stringify(gameState.units));
+        let totalCount = getCurrentArmyCount();
+        let usedCount = Math.floor(totalCount * percent/100);
+        if(usedCount===0) { addLog("Nie możesz atakować bez armii!"); return; }
+        // proporcjonalne zmniejszenie
+        let factor = usedCount / totalCount;
+        for(let u in myUnits) myUnits[u] = Math.floor(myUnits[u] * factor);
+        let myStr = calculateArmyStrength(myUnits);
+        // losowy wróg (siła 50%-150% naszej)
+        let enemyStrBase = myStr * (0.7 + Math.random()*1.2);
+        let enemyUnits = { warrior: Math.floor(enemyStrBase/12), archer: Math.floor(enemyStrBase/16), cavalry: Math.floor(enemyStrBase/25) };
+        let enemyStrength = calculateArmyStrength(enemyUnits);
+        addLog(`⚔️ Atakujesz z siłą ${Math.floor(myStr)} vs wróg ${Math.floor(enemyStrength)} (${usedCount} jednostek)`);
+        let win = myStr > enemyStrength;
+        if(win) {
+            let lootWood = Math.floor(gameState.resources.wood*0.15);
+            let lootGold = Math.floor(gameState.resources.gold*0.15);
+            let lootStone = Math.floor(gameState.resources.stone*0.15);
+            gameState.resources.wood += lootWood;
+            gameState.resources.gold += lootGold;
+            gameState.resources.stone += lootStone;
+            gameState.stats.wins++;
+            gameState.stats.totalStolen += (lootWood+lootGold+lootStone);
+            addLog(`🏆 ZWYCIĘSTWO! Ukradłeś ${lootWood} drewna, ${lootStone} kamienia, ${lootGold} złota.`);
+            updateQuestProgress("wins",1);
+            // straty 30% wysłanej armii
+            for(let u in myUnits) {
+                let loss = Math.floor(myUnits[u] * 0.3);
+                gameState.units[u] = Math.max(0, (gameState.units[u]||0) - loss);
+            }
+        } else {
+            addLog(`💀 PORAŻKA! Twoja armia zostaje zdziesiątkowana.`);
+            for(let u in myUnits) {
+                let loss = Math.floor(myUnits[u] * 0.7);
+                gameState.units[u] = Math.max(0, (gameState.units[u]||0) - loss);
+            }
+            gameState.stats.losses++;
+        }
+        saveGame();
+        refreshUI();
+    }
+
+    // UI i odświeżanie
+    function refreshUI() {
+        document.getElementById("resourcesPanel").innerHTML = `
+            <div class="resource wood"><i class="fas fa-tree"></i> ${Math.floor(gameState.resources.wood)}</div>
+            <div class="resource stone"><i class="fas fa-mountain"></i> ${Math.floor(gameState.resources.stone)}</div>
+            <div class="resource gold"><i class="fas fa-coins"></i> ${Math.floor(gameState.resources.gold)}</div>
+            <div class="resource food"><i class="fas fa-drumstick-bite"></i> ${Math.floor(gameState.resources.food)}</div>
+            <div class="resource gems"><i class="fas fa-gem"></i> ${gameState.resources.gems}</div>
+        `;
+        // budynki
+        const buildingsList = [
+            {id:"lumberMill", name:"Tartak", baseCost:100, baseWood:80},
+            {id:"quarry", name:"Kamieniołom", baseCost:120, baseWood:90},
+            {id:"goldMine", name:"Kopalnia złota", baseCost:150, baseWood:100},
+            {id:"farm", name:"Farma", baseCost:90, baseWood:70},
+            {id:"warehouse", name:"Magazyn", baseCost:200, baseWood:150},
+            {id:"treasury", name:"Skarbiec", baseCost:180, baseWood:140},
+            {id:"barracks", name:"Koszary", baseCost:250, baseWood:200},
+            {id:"stable", name:"Stajnia", baseCost:300, baseWood:240},
+            {id:"forge", name:"Kuźnia", baseCost:350, baseWood:280},
+            {id:"workshop", name:"Warsztat", baseCost:400, baseWood:320},
+            {id:"townHall", name:"Ratusz", baseCost:500, baseWood:400},
+            {id:"university", name:"Uniwersytet", baseCost:450, baseWood:360},
+            {id:"market", name:"Targowisko", baseCost:300, baseWood:250},
+            {id:"allianceSanctuary", name:"Azyl sojuszu", baseCost:350, baseWood:280},
+            {id:"clanFortress", name:"Twierdza klanu", baseCost:400, baseWood:320}
+        ];
+        let html = "";
+        buildingsList.forEach(b=>{
+            let lvl = getBuildingLevel(b.id);
+            let cost = Math.floor(b.baseCost * (1+ lvl*0.5));
+            html += `<div class="building-card"><h3>${b.name}</h3><div class="level">Poziom ${lvl}</div>
+            <button onclick="upgradeBuilding('${b.id}', ${cost})">⬆️ Ulepsz (${cost} drewna)</button></div>`;
+        });
+        document.getElementById("buildingsContainer").innerHTML = html;
+
+        // armia
+        let cap = getArmyCapacity();
+        let curr = getCurrentArmyCount();
+        document.getElementById("armyStats").innerHTML = `<div>💪 Siła armii: ${calculateArmyStrength(gameState.units)} &nbsp;| 👥 Jednostki: ${curr}/${cap}</div>`;
+        document.getElementById("campCapacity").innerHTML = `Pojemność obozu: ${curr}/${cap}`;
+        let unitsAvail = [
+            {type:"warrior", name:"Wojownik", cost:{wood:30,food:20,gold:0}, reqTech:true},
+            {type:"archer", name:"Łucznik", cost:{wood:40,food:25,gold:0}, reqTech:"unit_archer"},
+            {type:"cavalry", name:"Kawalerzysta", cost:{wood:60,food:40,gold:15}, reqTech:"unit_cavalry"},
+            {type:"catapult", name:"Katapulta", cost:{wood:120,food:50,gold:40}, reqTech:"unit_catapult"},
+            {type:"dragon", name:"Smok", cost:{wood:300,food:200,gold:150}, reqTech:"unit_dragon"}
+        ];
+        let trainHtml = "";
+        unitsAvail.forEach(u=>{
+            let unlocked = (u.reqTech===true) || gameState.research[u.reqTech];
+            if(unlocked)
+                trainHtml += `<div class="unit-row"><span><b>${u.name}</b> 🪵${u.cost.wood} 🍗${u.cost.food} 🪙${u.cost.gold}</span>
+                <button class="train-btn" onclick="trainUnit('${u.type}',${u.cost.wood},${u.cost.food},${u.cost.gold})">Szkol</button></div>`;
+        });
+        document.getElementById("unitsTrainContainer").innerHTML = trainHtml;
+        document.getElementById("percentVal").innerText = document.getElementById("armyPercent").value;
+        // klan
+        document.getElementById("clanPanel").innerHTML = `<div class="clan-info">🏰 Klan: ${gameState.clan.name} | 🪙 Monety klanowe: ${gameState.clan.coins}<br>Członkowie: ${gameState.clan.members.join(", ")}</div>`;
+        document.getElementById("donateSection").innerHTML = `<button onclick="donateUnit()">🎁 Przekaż 1 wojownika do klanu (+ monety klanowe)</button>`;
+        // badania
+        let techHtml = "";
+        const techs = [
+            {id:"military2", name:"Taktyka wojenna (+25% siły ataku)", cost:500, prereq:true},
+            {id:"economy2", name:"Gospodarka (+50% produkcji)", cost:400, prereq:"economy1"},
+            {id:"stealing", name:"Zwiększony łup (+10% kradzieży)", cost:450},
+            {id:"unit_catapult", name:"Odblokuj Katapultę", cost:600},
+            {id:"unit_dragon", name:"Odblokuj Smoka", cost:1200}
+        ];
+        techs.forEach(t=>{
+            let owned = gameState.research[t.id]||false;
+            techHtml += `<div>${t.name} - ${owned?"✔️ Odblokowane":`<button onclick="unlockTech('${t.id}',${t.cost})">Zbadaj (${t.cost} złota)</button>`}</div>`;
+        });
+        document.getElementById("techTree").innerHTML = techHtml;
+        // zadania
+        let questHtml = "";
+        gameState.dailyQuests.forEach((q,idx)=>{
+            questHtml += `<div>📌 ${q.desc} (${q.progress}/${q.target}) ${q.completed?"✔️ Zakończone":`<button onclick="claimQuest(${idx})">Odbierz (${q.reward} złota)</button>`}</div>`;
+        });
+        document.getElementById("questList").innerHTML = questHtml;
+        let achHtml = "";
+        gameState.achievements.forEach((a,i)=>{
+            let cond = eval(a.condition);
+            if(cond && !a.achieved) { gameState.achievements[i].achieved=true; saveGame();}
+            achHtml += `<div>🏅 ${a.name} ${a.achieved?"✅":"❌"}</div>`;
+        });
+        document.getElementById("achievementsList").innerHTML = achHtml;
+        document.getElementById("rankingStats").innerHTML = `🏆 Zwycięstwa: ${gameState.stats.wins} | Porażki: ${gameState.stats.losses}<br>💰 Łącznie skradziono: ${gameState.stats.totalStolen}<br>⚔️ Wyszkolone jednostki: ${gameState.stats.totalTrained}`;
+    }
+
+    // funkcje globalne
+    window.upgradeBuilding = function(bid, cost) {
+        if(gameState.resources.wood >= cost) {
+            gameState.resources.wood -= cost;
+            gameState.buildings[bid] = (gameState.buildings[bid]||1) + 1;
+            saveGame();
+            refreshUI();
+        } else alert("Brak drewna!");
+    };
+    window.trainUnit = trainUnit;
+    document.getElementById("upgradeCampBtn")?.addEventListener("click",()=>{
+        let cost = 300 + getBuildingLevel("armyCamp")*100;
+        if(gameState.resources.wood>=cost && gameState.resources.stone>=cost/2){
+            gameState.resources.wood-=cost; gameState.resources.stone-=cost/2;
+            gameState.buildings.armyCamp++;
+            saveGame(); refreshUI();
+        } else alert("Brak surowców!");
+    });
+    document.getElementById("attackBtn")?.addEventListener("click",()=>{
+        let percent = parseInt(document.getElementById("armyPercent").value);
+        attackEnemy(percent);
+    });
+    document.getElementById("armyPercent")?.addEventListener("input",(e)=>document.getElementById("percentVal").innerText=e.target.value);
+    window.donateUnit = function(){
+        if(gameState.units.warrior>=1){
+            gameState.units.warrior--;
+            gameState.clan.coins += 15;
+            updateQuestProgress("donate",1);
+            saveGame(); refreshUI();
+            addLog("Przekazałeś wojownika do klanu!",true);
+        } else alert("Nie masz wojowników!");
+    };
+    window.unlockTech = function(techId, cost){
+        if(gameState.resources.gold>=cost){
+            gameState.resources.gold-=cost;
+            gameState.research[techId]=1;
+            saveGame(); refreshUI();
+        }else alert("Brak złota!");
+    };
+    window.claimQuest = function(idx){
+        let q = gameState.dailyQuests[idx];
+        if(!q.completed && q.progress>=q.target){
+            q.completed=true;
+            gameState.resources.gold+=q.reward;
+            saveGame(); refreshUI();
+        }else alert("Zadanie nieukończone");
+    };
+    function updateQuestProgress(type, inc){
+        gameState.dailyQuests.forEach(q=>{
+            if(!q.completed && q.type===type){
+                q.progress += inc;
+                if(q.progress>q.target) q.progress=q.target;
+            }
+        });
+        saveGame(); refreshUI();
+    }
+    function addLog(msg, battleOnly=true){
+        let logDiv = document.getElementById("battleLog");
+        if(logDiv) logDiv.innerHTML += `> ${msg}<br>`;
+        if(battleOnly) logDiv.scrollTop = logDiv.scrollHeight;
+    }
+    // klan
+    document.getElementById("createClanBtn")?.addEventListener("click",()=>{
+        let name = document.getElementById("clanNameInput").value.trim();
+        if(name && gameState.resources.gems>=20){
+            gameState.resources.gems-=20;
+            gameState.clan = { name: name, members: ["Ty"], coins: 0 };
+            saveGame(); refreshUI();
+        }else alert("Brak 20 gemów lub pusta nazwa");
+    });
+    document.getElementById("joinClanBtn")?.addEventListener("click",()=>{
+        let name = document.getElementById("joinClanInput").value.trim();
+        if(name){
+            gameState.clan.name = name;
+            if(!gameState.clan.members.includes("Ty")) gameState.clan.members.push("Ty");
+            saveGame(); refreshUI();
+        }
+    });
+    document.getElementById("clanWarBtn")?.addEventListener("click",()=>{
+        let winChance = 0.5 + (gameState.clan.coins/500);
+        if(Math.random()<winChance){
+            let reward = 300 + Math.floor(Math.random()*200);
+            gameState.clan.coins += reward;
+            document.getElementById("clanWarResult").innerHTML = "🏆 Wygraliście wojnę klanową! +"+reward+" monet klanowych";
+        }else{
+            document.getElementById("clanWarResult").innerHTML = "💔 Przegrana wojna...";
+        }
+        saveGame(); refreshUI();
+    });
+    // zakładki
+    document.querySelectorAll(".tab-btn").forEach(btn=>{
+        btn.addEventListener("click",()=>{
+            document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+            btn.classList.add("active");
+            let tabId = btn.getAttribute("data-tab");
+            document.querySelectorAll(".tab-content").forEach(t=>t.classList.remove("active"));
+            document.getElementById(tabId).classList.add("active");
+        });
+    });
+
+    loadGame();
+    refreshUI();
+    setInterval(()=>refreshUI(), 2000);
+</script>
+</body>
+</html>
