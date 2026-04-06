@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Moje transakcje - Metin2 Escrow</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <h1>📋 Moje transakcje</h1>
+            <div>
+                <a href="/">Strona główna</a>
+                <a href="offer.html">Wystaw item</a>
+                <button id="logoutBtn">Wyloguj</button>
+            </div>
+        </div>
+    </nav>
+    <main>
+        <h2>Historia transakcji</h2>
+        <div id="transactionsList" class="transactions-list"></div>
+    </main>
+    <script>
+        async function loadTransactions() {
+            const res = await fetch('/api/my-transactions');
+            if (!res.ok) {
+                alert('Nie jesteś zalogowany');
+                window.location.href = 'login.html';
+                return;
+            }
+            const txs = await res.json();
+            const container = document.getElementById('transactionsList');
+            if (txs.length === 0) {
+                container.innerHTML = '<p>Brak transakcji.</p>';
+                return;
+            }
+            container.innerHTML = txs.map(tx => `
+                <div class="transaction-card">
+                    <div><strong>${tx.item_name}</strong> (${tx.server})</div>
+                    <div>Kwota: ${tx.amount} zł</div>
+                    <div>Status: <span class="status-${tx.status}">${tx.status}</span></div>
+                    <button onclick="viewTransaction('${tx.id}')">Szczegóły</button>
+                </div>
+            `).join('');
+        }
+
+        window.viewTransaction = (id) => {
+            window.location.href = `transaction.html?id=${id}`;
+        };
+
+        document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+            await fetch('/api/logout', { method: 'POST' });
+            window.location.href = '/';
+        });
+
+        loadTransactions();
+    </script>
+</body>
+</html>
