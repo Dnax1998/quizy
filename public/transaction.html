@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Szczegóły transakcji</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav><a href="/">🏠 Strona główna</a> | <a href="dashboard.html">Moje transakcje</a></nav>
+    <main class="transaction-detail">
+        <h2>Transakcja</h2>
+        <div id="txDetails"></div>
+        <div id="actionButtons"></div>
+    </main>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const txId = urlParams.get('id');
+
+        async function loadTransaction() {
+            if (!txId) {
+                document.body.innerHTML = '<p>Brak ID transakcji</p>';
+                return;
+            }
+            const res = await fetch(`/api/transaction/${txId}`);
+            if (!res.ok) {
+                alert('Nie znaleziono transakcji lub brak dostępu');
+                window.location.href = 'dashboard.html';
+                return;
+            }
+            const tx = await res.json();
+            document.getElementById('txDetails').innerHTML = `
+                <p><strong>Przedmiot:</strong> ${tx.item_name}</p>
+                <p><strong>Serwer:</strong> ${tx.server}</p>
+                <p><strong>Kwota:</strong> ${tx.amount} zł</p>
+                <p><strong>Kupujący:</strong> ${tx.buyer_name}</p>
+                <p><strong>Sprzedający:</strong> ${tx.seller_name}</p>
+                <p><strong>Status:</strong> <span class="status-${tx.status}">${tx.status}</span></p>
+                <p><strong>Opis oferty:</strong> ${tx.description || 'brak'}</p>
+            `;
+
+            const me = await fetch('/api/me').then(r => r.json());
+            const isBuyer = me.username === tx.buyer_name;
+            const isSeller = me.username === tx.seller_name;
+            const buttons = document.getElementById('actionButtons');
+            buttons.innerHTML = '';
+
+            if (tx.status === 'awaiting_payment' && isBuyer) {
+                addButton('Potwierdź wpłatę (symulacja)', 'paid');
+            }
+            if (tx.status === 'paid' && isSeller) {
+                addButton('Potwierdź wysłanie itemu', 'item_sent');
+            }
+            if (tx.status === 'item_sent' && isBuyer) {
+                addButton('Potwierdź odbiór - zakończ transakcję', 'completed');
+            }
+            if ((isBuyer || isSeller) && ['awaiting_payment', 'paid', 'item_sent'].includes(tx.status)) {
+                addButton('Zgłoś spór', 'dispute');
+            }
+        }
+
+        function addButton(label, status) {
+            const btn = document.createElement('button');
+            btn.textContent = label;
+            btn.onclick = async () => {
+                const res = await fetch(`/api/transaction/${txId}/status`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status })
+                });
+                if (res.ok) {
+                    alert('Status zaktualizowany');
+                    location.reload();
+                } else {
+                    const err = await res.json();
+                    alert('Błąd: ' + err.error);
+                }
+            };
+            document.getElementById('actionButtons').appendChild(btn);
+        }
+
+        loadTransaction();
+    </script>
+</body>
+</html>
