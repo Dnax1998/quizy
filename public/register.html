@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Rejestracja - Metin2 Escrow</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav><a href="/">🏠 Strona główna</a></nav>
+    <main class="form-container">
+        <h2>Rejestracja</h2>
+        <form id="registerForm">
+            <input type="text" id="username" placeholder="Login" required>
+            <input type="password" id="password" placeholder="Hasło" required>
+            <input type="text" id="fullname" placeholder="Imię i nazwisko (opcjonalnie)">
+            <input type="text" id="phone" placeholder="Numer telefonu (opcjonalnie)">
+            <button type="submit">Zarejestruj</button>
+        </form>
+        <p>Masz już konto? <a href="login.html">Zaloguj się</a></p>
+    </main>
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const fullname = document.getElementById('fullname').value;
+            const phone = document.getElementById('phone').value;
+            const res = await fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password, fullname, phone })
+            });
+            if (res.ok) {
+                alert('Rejestracja udana! Możesz się zalogować.');
+                window.location.href = 'login.html';
+            } else {
+                const err = await res.json();
+                alert('Błąd: ' + err.error);
+            }
+        });
+    </script>
+</body>
+</html>
