@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>MetinTradeCenter (MTC) | Bezpieczny handel Metin2</title>
+    <!-- Google Fonts + Font Awesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at 10% 20%, #0a0f1e, #03060c);
+            color: #eef2ff;
+            line-height: 1.5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* animated gradient overlay */
+        .bg-glow {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            background: radial-gradient(circle at 70% 30%, rgba(212, 175, 55, 0.08), transparent 70%);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1.5rem 2rem;
+            position: relative;
+            z-index: 2;
+            flex: 1;
+        }
+
+        /* header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            font-size: 2.2rem;
+            color: #e6b422;
+            text-shadow: 0 0 8px rgba(230, 180, 34, 0.5);
+        }
+
+        .logo-text h1 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #fff6e0, #e6b422);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .logo-text span {
+            font-size: 0.75rem;
+            font-weight: 400;
+            color: #9ca3af;
+            letter-spacing: 1px;
+        }
+
+        .user-status {
+            background: rgba(15, 25, 45, 0.7);
+            backdrop-filter: blur(8px);
+            padding: 0.6rem 1.2rem;
+            border-radius: 60px;
+            border: 1px solid rgba(230, 180, 52, 0.4);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .user-status i {
+            color: #e6b422;
+            margin-right: 6px;
+        }
+
+        .logout-btn {
+            background: none;
+            border: none;
+            color: #f87171;
+            cursor: pointer;
+            margin-left: 12px;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+
+        .logout-btn:hover {
+            color: #ff9f9f;
+            text-shadow: 0 0 3px #ff0000;
+        }
+
+        /* MAIN GRID */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2.5rem;
+            align-items: start;
+        }
+
+        /* LEFT PANEL - info */
+        .info-panel {
+            background: rgba(12, 20, 30, 0.6);
+            backdrop-filter: blur(12px);
+            border-radius: 2rem;
+            padding: 2rem;
+            border: 1px solid rgba(230, 180, 52, 0.25);
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.5);
+        }
+
+        .badge {
+            display: inline-block;
+            background: #e6b42220;
+            color: #e6b422;
+            padding: 0.3rem 1rem;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            border: 1px solid #e6b42240;
+        }
+
+        .info-panel h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, #ffffff, #e6c87a);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .info-panel p {
+            color: #cdd9ff;
+            margin-bottom: 1.8rem;
+            font-size: 1rem;
+        }
+
+        .feature-list {
+            list-style: none;
+            margin-top: 1rem;
+        }
+
+        .feature-list li {
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .feature-list i {
+            width: 28px;
+            color: #e6b422;
+            font-size: 1.2rem;
+        }
+
+        .stat-row {
+            display: flex;
+            gap: 2rem;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px dashed #2d3a4e;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #e6b422;
+        }
+
+        /* RIGHT PANEL - auth */
+        .auth-panel {
+            background: rgba(8, 14, 24, 0.75);
+            backdrop-filter: blur(16px);
+            border-radius: 2rem;
+            padding: 2rem;
+            border: 1px solid rgba(230, 180, 52, 0.4);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            transition: all 0.2s;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #2a3346;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #9ca3af;
+            cursor: pointer;
+            transition: 0.2s;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab-btn.active {
+            color: #e6b422;
+            border-bottom-color: #e6b422;
+        }
+
+        .form-group {
+            margin-bottom: 1.3rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #b9c7dd;
+        }
+
+        .input-icon {
+            position: relative;
+        }
+
+        .input-icon i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #e6b422;
+            font-size: 1rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.9rem 1rem 0.9rem 2.8rem;
+            background: #0f1825;
+            border: 1px solid #2a3448;
+            border-radius: 1rem;
+            font-size: 0.95rem;
+            color: white;
+            transition: 0.2s;
+            font-family: 'Inter', monospace;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #e6b422;
+            box-shadow: 0 0 0 3px rgba(230, 180, 34, 0.2);
+        }
+
+        .auth-btn {
+            width: 100%;
+            background: linear-gradient(95deg, #e6b422, #c99210);
+            border: none;
+            padding: 0.9rem;
+            border-radius: 2rem;
+            font-weight: 700;
+            font-size: 1rem;
+            color: #0a0e1a;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 0.5rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .auth-btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.05);
+            box-shadow: 0 8px 18px rgba(230, 180, 34, 0.3);
+        }
+
+        .error-msg {
+            color: #ff9494;
+            font-size: 0.75rem;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .success-msg {
+            color: #8bcb8b;
+            background: #1c3a1c30;
+            padding: 0.5rem;
+            border-radius: 1rem;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        /* user dashboard inside right panel */
+        .user-dashboard {
+            text-align: center;
+        }
+
+        .user-avatar {
+            background: #e6b42220;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem auto;
+            border: 2px solid #e6b422;
+        }
+
+        .user-avatar i {
+            font-size: 2.5rem;
+            color: #e6b422;
+        }
+
+        .welcome-message {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .trade-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 2rem 0;
+        }
+
+        .trade-card {
+            background: #111a27;
+            border-radius: 1.2rem;
+            padding: 1rem;
+            transition: 0.2s;
+            border: 1px solid #2d374b;
+            cursor: pointer;
+        }
+
+        .trade-card:hover {
+            border-color: #e6b422;
+            background: #16202f;
+        }
+
+        .trade-card i {
+            margin-right: 12px;
+            color: #e6b422;
+        }
+
+        .coming-soon {
+            background: #e6b42210;
+            border-radius: 40px;
+            padding: 0.3rem 0.8rem;
+            font-size: 0.7rem;
+            color: #e6b422;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 4rem;
+            padding: 1.5rem;
+            font-size: 0.8rem;
+            color: #6c7a91;
+            border-top: 1px solid #1f2a3a;
+        }
+
+        @media (max-width: 900px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+                gap: 1.8rem;
+            }
+            .container {
+                padding: 1rem;
+            }
+            .info-panel h2 {
+                font-size: 1.6rem;
+            }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .toast-notify {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            background: #1e2a3a;
+            border-left: 5px solid #e6b422;
+            padding: 12px 20px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            animation: fadeSlide 0.3s ease;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        @keyframes fadeSlide {
+            from {
+                opacity: 0;
+                transform: translateX(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="bg-glow"></div>
+<div class="container">
+    <div class="header">
+        <div class="logo-area">
+            <i class="fas fa-shield-alt logo-icon"></i>
+            <div class="logo-text">
+                <h1>MetinTradeCenter</h1>
+                <span>MTC | escrow & bezpieczeństwo</span>
+            </div>
+        </div>
+        <div id="userStatusBar" class="user-status">
+            <i class="fas fa-user-clock"></i> <span id="statusText">Gość</span>
+            <button id="globalLogoutBtn" class="logout-btn hidden"><i class="fas fa-sign-out-alt"></i> Wyloguj</button>
+        </div>
+    </div>
+
+    <div class="main-grid">
+        <!-- LEWA KOLUMNA - informacje i trust -->
+        <div class="info-panel">
+            <div class="badge"><i class="fas fa-gem"></i> Oficjalny pośrednik MTC</div>
+            <h2>Bezpieczny handel <br>przedmiotami Metin2</h2>
+            <p>MTC działa jako zaufany escrow – chronimy zarówno kupujących, jak i sprzedających. Żadnych oszustw, natychmiastowe transakcje i wsparcie 24/7.</p>
+            <ul class="feature-list">
+                <li><i class="fas fa-handshake"></i> <strong>System Escrow</strong> – środki trafiają do sprzedawcy dopiero po potwierdzeniu</li>
+                <li><i class="fas fa-shield-virus"></i> <strong>Bezpieczeństwo transakcji</strong> – weryfikacja przedmiotów i walut</li>
+                <li><i class="fas fa-chart-line"></i> <strong>0% prowizji dla pierwszych 1000 transakcji!</strong></li>
+                <li><i class="fas fa-clock"></i> <strong>Szybka realizacja</strong> – średnio 2 minuty na transakcję</li>
+            </ul>
+            <div class="stat-row">
+                <div class="stat"><div class="stat-number">+2.5k</div><div>udanych transakcji</div></div>
+                <div class="stat"><div class="stat-number">99.8%</div><div>zadowolenia</div></div>
+                <div class="stat"><div class="stat-number">24/7</div><div>wsparcie</div></div>
+            </div>
+        </div>
+
+        <!-- PRAWA KOLUMNA - logowanie/rejestracja / panel uzytkownika -->
+        <div class="auth-panel" id="authPanel">
+            <!-- Widok niezalogowany (formularze) -->
+            <div id="unauthView">
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="loginTabBtn"><i class="fas fa-sign-in-alt"></i> Logowanie</button>
+                    <button class="tab-btn" data-tab="registerTabBtn"><i class="fas fa-user-plus"></i> Rejestracja</button>
+                </div>
+                <!-- Formularz logowania -->
+                <div id="loginForm">
+                    <div class="form-group">
+                        <label>Nazwa użytkownika lub email</label>
+                        <div class="input-icon">
+                            <i class="fas fa-user"></i>
+                            <input type="text" id="loginUsername" placeholder="nazwa lub email">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Hasło</label>
+                        <div class="input-icon">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="loginPassword" placeholder="********">
+                        </div>
+                    </div>
+                    <button id="doLoginBtn" class="auth-btn"><i class="fas fa-arrow-right-to-bracket"></i> Zaloguj się</button>
+                    <div id="loginError" class="error-msg" style="margin-top: 12px;"></div>
+                </div>
+                <!-- Formularz rejestracji (początkowo ukryty) -->
+                <div id="registerForm" class="hidden">
+                    <div class="form-group">
+                        <label>Nazwa użytkownika *</label>
+                        <div class="input-icon">
+                            <i class="fas fa-tag"></i>
+                            <input type="text" id="regUsername" placeholder="np. MetinLord">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Adres email *</label>
+                        <div class="input-icon">
+                            <i class="fas fa-envelope"></i>
+                            <input type="email" id="regEmail" placeholder="kontakt@przyklad.pl">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Hasło (min. 6 znaków)</label>
+                        <div class="input-icon">
+                            <i class="fas fa-key"></i>
+                            <input type="password" id="regPassword" placeholder="••••••">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Potwierdź hasło</label>
+                        <div class="input-icon">
+                            <i class="fas fa-check-circle"></i>
+                            <input type="password" id="regConfirmPassword" placeholder="••••••">
+                        </div>
+                    </div>
+                    <button id="doRegisterBtn" class="auth-btn"><i class="fas fa-user-check"></i> Zarejestruj się</button>
+                    <div id="registerError" class="error-msg" style="margin-top: 12px;"></div>
+                </div>
+            </div>
+
+            <!-- Widok zalogowanego użytkownika (dynamiczny) -->
+            <div id="loggedInView" class="hidden user-dashboard">
+                <div class="user-avatar">
+                    <i class="fas fa-dragon"></i>
+                </div>
+                <div class="welcome-message" id="welcomeUser"></div>
+                <p style="color:#b9c7dd; margin-bottom: 1rem;">Jesteś w systemie MTC – bezpieczny handlowy pośrednik</p>
+                <div class="trade-actions">
+                    <div class="trade-card" id="quickSellBtn">
+                        <i class="fas fa-coins"></i> Szybka sprzedaż przedmiotu
+                        <span class="coming-soon" style="float: right;">wkrótce</span>
+                    </div>
+                    <div class="trade-card" id="quickBuyBtn">
+                        <i class="fas fa-shopping-cart"></i> Przeglądaj oferty kupna
+                        <span class="coming-soon" style="float: right;">wkrótce</span>
+                    </div>
+                    <div class="trade-card" id="myOffersBtn">
+                        <i class="fas fa-list-ul"></i> Moje transakcje
+                        <span class="coming-soon" style="float: right;">wkrótce</span>
+                    </div>
+                </div>
+                <button id="internalLogoutBtn" class="auth-btn" style="background: #2d374b; color:white;"><i class="fas fa-sign-out-alt"></i> Wyloguj się</button>
+                <p style="font-size:0.7rem; margin-top: 1rem;"><i class="fas fa-lock"></i> Pełne bezpieczeństwo dzięki escrow</p>
+            </div>
+        </div>
+    </div>
+    <footer>
+        <i class="fas fa-crown"></i> MetinTradeCenter (MTC) — Zaufany pośrednik dla społeczności Metin2. Wszelkie transakcje są chronione.
+    </footer>
+</div>
+
+<script>
+    // ------------------- SYMULACJA BAZY DANYCH (localStorage) -------------------
+    const STORAGE_USERS = "mtc_users";
+    const SESSION_KEY = "mtc_logged_user";
+
+    // Inicjalizacja przykładowych danych (jeśli brak)
+    function initUsers() {
+        let users = localStorage.getItem(STORAGE_USERS);
+        if (!users) {
+            const defaultUsers = [
+                { id: "1", username: "metinadmin", email: "admin@mtc.com", password: "admin123" },
+                { id: "2", username: "gracz1", email: "gracz@metin.pl", password: "haslo123" }
+            ];
+            localStorage.setItem(STORAGE_USERS, JSON.stringify(defaultUsers));
+        }
+    }
+
+    function getUsers() {
+        return JSON.parse(localStorage.getItem(STORAGE_USERS) || "[]");
+    }
+
+    function saveUsers(users) {
+        localStorage.setItem(STORAGE_USERS, JSON.stringify(users));
+    }
+
+    // sesja
+    function setLoggedUser(user) {
+        sessionStorage.setItem(SESSION_KEY, JSON.stringify({ id: user.id, username: user.username, email: user.email }));
+    }
+
+    function getLoggedUser() {
+        const raw = sessionStorage.getItem(SESSION_KEY);
+        if (!raw) return null;
+        try {
+            return JSON.parse(raw);
+        } catch(e) { return null; }
+    }
+
+    function clearSession() {
+        sessionStorage.removeItem(SESSION_KEY);
+    }
+
+    // rejestracja
+    function registerUser(username, email, password) {
+        let users = getUsers();
+        if (users.find(u => u.username.toLowerCase() === username.toLowerCase())) {
+            return { success: false, message: "Nazwa użytkownika jest już zajęta." };
+        }
+        if (users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
+            return { success: false, message: "Email jest już zarejestrowany." };
+        }
+        if (password.length < 6) {
+            return { success: false, message: "Hasło musi mieć co najmniej 6 znaków." };
+        }
+        const newId = Date.now().toString();
+        const newUser = { id: newId, username: username.trim(), email: email.trim(), password: password };
+        users.push(newUser);
+        saveUsers(users);
+        return { success: true, message: "Rejestracja udana! Możesz się zalogować." };
+    }
+
+    function loginUser(login, password) {
+        const users = getUsers();
+        const found = users.find(u => (u.username.toLowerCase() === login.toLowerCase() || u.email.toLowerCase() === login.toLowerCase()) && u.password === password);
+        if (found) {
+            return { success: true, user: found };
+        }
+        return { success: false, message: "Nieprawidłowy login lub hasło." };
+    }
+
+    // ---------- UI Manipulation ----------
+    const unauthView = document.getElementById("unauthView");
+    const loggedInView = document.getElementById("loggedInView");
+    const loginFormDiv = document.getElementById("loginForm");
+    const registerFormDiv = document.getElementById("registerForm");
+    const tabBtns = document.querySelectorAll(".tab-btn");
+    const statusTextSpan = document.getElementById("statusText");
+    const globalLogoutBtn = document.getElementById("globalLogoutBtn");
+    const welcomeUserSpan = document.getElementById("welcomeUser");
+
+    function showToast(msg, isError = false) {
+        const toast = document.createElement("div");
+        toast.className = "toast-notify";
+        toast.innerHTML = `<i class="fas ${isError ? 'fa-circle-exclamation' : 'fa-circle-check'}" style="margin-right: 10px; color:${isError ? '#ff9494' : '#8bcb8b'}"></i>${msg}`;
+        document.body.appendChild(toast);
+        setTimeout(() => { toast.remove(); }, 3000);
+    }
+
+    function updateUIForLoggedUser() {
+        const user = getLoggedUser();
+        if (user) {
+            unauthView.classList.add("hidden");
+            loggedInView.classList.remove("hidden");
+            statusTextSpan.innerHTML = `<i class="fas fa-user-check"></i> ${user.username}`;
+            globalLogoutBtn.classList.remove("hidden");
+            welcomeUserSpan.innerText = `Witaj, ${user.username}! ✨`;
+        } else {
+            unauthView.classList.remove("hidden");
+            loggedInView.classList.add("hidden");
+            statusTextSpan.innerHTML = `<i class="fas fa-user"></i> Niezalogowany`;
+            globalLogoutBtn.classList.add("hidden");
+            // reset formularzy
+            document.getElementById("loginUsername").value = "";
+            document.getElementById("loginPassword").value = "";
+            document.getElementById("regUsername").value = "";
+            document.getElementById("regEmail").value = "";
+            document.getElementById("regPassword").value = "";
+            document.getElementById("regConfirmPassword").value = "";
+            document.getElementById("loginError").innerHTML = "";
+            document.getElementById("registerError").innerHTML = "";
+            // ustaw aktywny login tab
+            setActiveTab('login');
+        }
+    }
+
+    function setActiveTab(tabId) {
+        if (tabId === 'login') {
+            loginFormDiv.classList.remove("hidden");
+            registerFormDiv.classList.add("hidden");
+            tabBtns.forEach(btn => {
+                if (btn.getAttribute("data-tab") === "loginTabBtn") btn.classList.add("active");
+                else btn.classList.remove("active");
+            });
+        } else {
+            loginFormDiv.classList.add("hidden");
+            registerFormDiv.classList.remove("hidden");
+            tabBtns.forEach(btn => {
+                if (btn.getAttribute("data-tab") === "registerTabBtn") btn.classList.add("active");
+                else btn.classList.remove("active");
+            });
+        }
+    }
+
+    // event listeners
+    document.getElementById("doLoginBtn").addEventListener("click", () => {
+        const loginVal = document.getElementById("loginUsername").value.trim();
+        const pwd = document.getElementById("loginPassword").value;
+        const errorDiv = document.getElementById("loginError");
+        if (!loginVal || !pwd) {
+            errorDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Wypełnij wszystkie pola.';
+            return;
+        }
+        const result = loginUser(loginVal, pwd);
+        if (result.success) {
+            setLoggedUser(result.user);
+            updateUIForLoggedUser();
+            showToast(`Zalogowano jako ${result.user.username}`, false);
+            errorDiv.innerHTML = "";
+        } else {
+            errorDiv.innerHTML = `<i class="fas fa-ban"></i> ${result.message}`;
+        }
+    });
+
+    document.getElementById("doRegisterBtn").addEventListener("click", () => {
+        const username = document.getElementById("regUsername").value.trim();
+        const email = document.getElementById("regEmail").value.trim();
+        const pwd = document.getElementById("regPassword").value;
+        const confirm = document.getElementById("regConfirmPassword").value;
+        const errorDiv = document.getElementById("registerError");
+        if (!username || !email || !pwd || !confirm) {
+            errorDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Wszystkie pola są wymagane.';
+            return;
+        }
+        if (pwd !== confirm) {
+            errorDiv.innerHTML = '<i class="fas fa-times-circle"></i> Hasła nie są identyczne.';
+            return;
+        }
+        const result = registerUser(username, email, pwd);
+        if (result.success) {
+            showToast("✅ Rejestracja udana! Możesz się teraz zalogować.", false);
+            errorDiv.innerHTML = "";
+            setActiveTab('login');
+            document.getElementById("regUsername").value = "";
+            document.getElementById("regEmail").value = "";
+            document.getElementById("regPassword").value = "";
+            document.getElementById("regConfirmPassword").value = "";
+        } else {
+            errorDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${result.message}`;
+        }
+    });
+
+    // przełączanie zakładek
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            const tab = btn.getAttribute("data-tab");
+            if (tab === "loginTabBtn") setActiveTab('login');
+            else setActiveTab('register');
+        });
+    });
+
+    function logoutAction() {
+        clearSession();
+        updateUIForLoggedUser();
+        showToast("Wylogowano pomyślnie.", false);
+    }
+
+    globalLogoutBtn.addEventListener("click", logoutAction);
+    document.getElementById("internalLogoutBtn")?.addEventListener("click", logoutAction);
+
+    // Placeholder dla funkcji handlowych (w przyszłości)
+    document.getElementById("quickSellBtn")?.addEventListener("click", () => showToast("Moduł sprzedaży już wkrótce! Bądź pierwszym użytkownikiem MTC."));
+    document.getElementById("quickBuyBtn")?.addEventListener("click", () => showToast("Przeglądarka ofert w przygotowaniu. Dziękujemy za cierpliwość."));
+    document.getElementById("myOffersBtn")?.addEventListener("click", () => showToast("Historia transakcji i escrow – wkrótce online."));
+
+    // start
+    initUsers();
+    updateUIForLoggedUser();
+</script>
+</body>
+</html>
