@@ -3,27 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MTC - Giełda Przedmiotów | MetinTradeCenter</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;600;700;800&display=swap" rel="stylesheet">
+    <title>MTC - Giełda Przedmiotów</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Inter', sans-serif;
             background: radial-gradient(circle at 10% 20%, #0a0f1e, #03060c);
             color: #eef2ff;
             min-height: 100vh;
         }
-        .container {
-            max-width: 1300px;
-            margin: 0 auto;
-            padding: 1.5rem 2rem;
-        }
-        /* header nawigacja */
+        .container { max-width: 1300px; margin: 0 auto; padding: 1.5rem 2rem; }
         .navbar {
             display: flex;
             justify-content: space-between;
@@ -43,33 +34,16 @@
             color: transparent;
             text-decoration: none;
         }
-        .nav-links {
-            display: flex;
-            gap: 1.5rem;
-            align-items: center;
-        }
-        .nav-links a {
-            color: #cdd9ff;
-            text-decoration: none;
-            font-weight: 500;
-            transition: 0.2s;
-        }
-        .nav-links a:hover, .nav-links a.active {
-            color: #e6b422;
-        }
+        .nav-links { display: flex; gap: 1.5rem; align-items: center; }
+        .nav-links a { color: #cdd9ff; text-decoration: none; font-weight: 500; }
+        .nav-links a:hover, .nav-links a.active { color: #e6b422; }
         .user-info {
             background: rgba(15, 25, 45, 0.7);
             padding: 0.5rem 1.2rem;
             border-radius: 40px;
             font-size: 0.9rem;
         }
-        .btn-logout {
-            background: none;
-            border: none;
-            color: #f87171;
-            cursor: pointer;
-            margin-left: 8px;
-        }
+        .btn-logout { background: none; border: none; color: #f87171; cursor: pointer; margin-left: 8px; }
         .btn {
             background: #e6b422;
             border: none;
@@ -77,15 +51,8 @@
             border-radius: 2rem;
             font-weight: 600;
             cursor: pointer;
-            transition: 0.2s;
             color: #0a0e1a;
         }
-        .btn-outline {
-            background: transparent;
-            border: 1px solid #e6b422;
-            color: #e6b422;
-        }
-        /* formularz dodawania */
         .add-offer {
             background: rgba(12, 20, 30, 0.7);
             backdrop-filter: blur(10px);
@@ -94,23 +61,9 @@
             margin-bottom: 2rem;
             border: 1px solid #2a3448;
         }
-        .form-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            margin-bottom: 1rem;
-            align-items: flex-end;
-        }
-        .form-group {
-            flex: 1;
-            min-width: 150px;
-        }
-        .form-group label {
-            font-size: 0.75rem;
-            display: block;
-            margin-bottom: 0.3rem;
-            color: #b9c7dd;
-        }
+        .form-row { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; align-items: flex-end; }
+        .form-group { flex: 1; min-width: 150px; }
+        .form-group label { font-size: 0.75rem; display: block; margin-bottom: 0.3rem; color: #b9c7dd; }
         input, select {
             width: 100%;
             padding: 0.7rem 1rem;
@@ -119,11 +72,6 @@
             border-radius: 1rem;
             color: white;
         }
-        input:focus, select:focus {
-            border-color: #e6b422;
-            outline: none;
-        }
-        /* lista ofert */
         .offers-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -138,35 +86,11 @@
             border: 1px solid #2a3448;
             transition: 0.2s;
         }
-        .offer-card:hover {
-            border-color: #e6b422;
-            transform: translateY(-3px);
-        }
-        .item-name {
-            font-size: 1.3rem;
-            font-weight: 700;
-            display: flex;
-            justify-content: space-between;
-        }
-        .item-price {
-            color: #e6b422;
-            font-weight: 800;
-        }
-        .item-quality {
-            font-size: 0.7rem;
-            background: #2d374b;
-            display: inline-block;
-            padding: 0.2rem 0.6rem;
-            border-radius: 20px;
-            margin-top: 8px;
-        }
-        .offer-meta {
-            font-size: 0.7rem;
-            color: #8e9bb5;
-            margin: 12px 0;
-            display: flex;
-            justify-content: space-between;
-        }
+        .offer-card:hover { border-color: #e6b422; transform: translateY(-3px); }
+        .item-name { font-size: 1.3rem; font-weight: 700; display: flex; justify-content: space-between; }
+        .item-price { color: #e6b422; font-weight: 800; }
+        .item-quality { font-size: 0.7rem; background: #2d374b; display: inline-block; padding: 0.2rem 0.6rem; border-radius: 20px; margin-top: 8px; }
+        .offer-meta { font-size: 0.7rem; color: #8e9bb5; margin: 12px 0; display: flex; justify-content: space-between; }
         .buy-btn {
             background: #e6b422;
             width: 100%;
@@ -177,18 +101,8 @@
             cursor: pointer;
             margin-top: 0.5rem;
         }
-        .empty-message {
-            text-align: center;
-            padding: 3rem;
-            color: #8e9bb5;
-        }
-        footer {
-            text-align: center;
-            margin-top: 3rem;
-            padding: 1.5rem;
-            font-size: 0.8rem;
-            color: #6c7a91;
-        }
+        .empty-message { text-align: center; padding: 3rem; color: #8e9bb5; }
+        footer { text-align: center; margin-top: 3rem; padding: 1.5rem; font-size: 0.8rem; color: #6c7a91; }
         .toast {
             position: fixed;
             bottom: 20px;
@@ -199,9 +113,7 @@
             border-radius: 12px;
             z-index: 1000;
         }
-        .hidden {
-            display: none;
-        }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
@@ -218,179 +130,99 @@
         </div>
     </div>
 
-    <!-- Sekcja dodawania oferty (tylko dla zalogowanych) -->
     <div id="addOfferSection" class="add-offer hidden">
         <h3><i class="fas fa-plus-circle"></i> Wystaw przedmiot na sprzedaż</h3>
         <div class="form-row">
-            <div class="form-group">
-                <label>Nazwa przedmiotu</label>
-                <input type="text" id="itemName" placeholder="np. Miecz Smoka +9">
-            </div>
-            <div class="form-group">
-                <label>Cena (yang / przedmioty)</label>
-                <input type="number" id="itemPrice" placeholder="Cena w yang">
-            </div>
-            <div class="form-group">
-                <label>Jakość</label>
-                <select id="itemQuality">
-                    <option value="normalny">Normalny</option>
-                    <option value="+9">+9</option>
-                    <option value="+8">+8</option>
-                    <option value="legenda">Legenda</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <button id="publishOfferBtn" class="btn">📢 Wystaw</button>
-            </div>
+            <div class="form-group"><label>Nazwa przedmiotu</label><input type="text" id="itemName" placeholder="np. Miecz Smoka +9"></div>
+            <div class="form-group"><label>Cena (yang)</label><input type="number" id="itemPrice" placeholder="Cena"></div>
+            <div class="form-group"><label>Jakość</label><select id="itemQuality"><option>normalny</option><option>+9</option><option>+8</option><option>legenda</option></select></div>
+            <div class="form-group"><button id="publishOfferBtn" class="btn">📢 Wystaw</button></div>
         </div>
     </div>
 
     <h2><i class="fas fa-store"></i> Aktywne oferty (escrow MTC)</h2>
-    <div id="offersList" class="offers-grid">
-        <!-- oferty będą wstawiane dynamicznie -->
-        <div class="empty-message">Ładowanie ofert...</div>
-    </div>
-    <footer>
-        <i class="fas fa-handshake"></i> MTC jako pośrednik – każda transakcja jest bezpieczna. Po kliknięciu "Kup" środki trafiają do depozytu.
-    </footer>
+    <div id="offersList" class="offers-grid"><div class="empty-message">Ładowanie ofert...</div></div>
+    <footer><i class="fas fa-handshake"></i> MTC jako pośrednik – każda transakcja jest bezpieczna.</footer>
 </div>
 
 <script>
-    // --------------------- INTEGRACJA Z SYSTEMEM LOGOWANIA (z index.html) -----------------
     const STORAGE_USERS = "mtc_users";
     const SESSION_KEY = "mtc_logged_user";
     const STORAGE_OFFERS = "mtc_offers";
 
-    // Funkcje pomocnicze (kopiowane z poprzedniej logiki)
     function getLoggedUser() {
         const raw = sessionStorage.getItem(SESSION_KEY);
-        if (!raw) return null;
-        try { return JSON.parse(raw); } catch(e) { return null; }
+        return raw ? JSON.parse(raw) : null;
     }
 
-    function getUsers() {
-        return JSON.parse(localStorage.getItem(STORAGE_USERS) || "[]");
-    }
-
-    // Inicjalizacja przykładowych ofert
     function initOffers() {
-        let offers = localStorage.getItem(STORAGE_OFFERS);
-        if (!offers) {
-            const demoOffers = [
+        if (!localStorage.getItem(STORAGE_OFFERS)) {
+            localStorage.setItem(STORAGE_OFFERS, JSON.stringify([
                 { id: "off1", itemName: "Naszyjnik +3", price: 150000, quality: "+3", sellerId: "1", sellerName: "metinadmin", date: Date.now() },
                 { id: "off2", itemName: "Zbroja Smoka", price: 890000, quality: "+9", sellerId: "2", sellerName: "gracz1", date: Date.now() - 3600000 }
-            ];
-            localStorage.setItem(STORAGE_OFFERS, JSON.stringify(demoOffers));
+            ]));
         }
     }
 
-    function getOffers() {
-        return JSON.parse(localStorage.getItem(STORAGE_OFFERS) || "[]");
-    }
+    function getOffers() { return JSON.parse(localStorage.getItem(STORAGE_OFFERS) || "[]"); }
+    function saveOffers(offers) { localStorage.setItem(STORAGE_OFFERS, JSON.stringify(offers)); }
 
-    function saveOffers(offers) {
-        localStorage.setItem(STORAGE_OFFERS, JSON.stringify(offers));
-    }
-
-    // dodanie oferty
     function addOffer(itemName, price, quality, seller) {
         if (!itemName || price <= 0) return false;
-        const newOffer = {
-            id: Date.now() + "_" + Math.random(),
-            itemName: itemName.trim(),
-            price: parseInt(price),
-            quality: quality,
-            sellerId: seller.id,
-            sellerName: seller.username,
-            date: Date.now()
-        };
         const offers = getOffers();
-        offers.unshift(newOffer);
+        offers.unshift({ id: Date.now() + "_" + Math.random(), itemName: itemName.trim(), price: parseInt(price), quality, sellerId: seller.id, sellerName: seller.username, date: Date.now() });
         saveOffers(offers);
         return true;
     }
 
-    // kupno (escrow symulacja)
     function buyOffer(offerId, buyer) {
         const offers = getOffers();
         const index = offers.findIndex(o => o.id == offerId);
-        if (index === -1) return { success: false, msg: "Oferta już nie istnieje." };
+        if (index === -1) return { success: false, msg: "Oferta nie istnieje." };
         const offer = offers[index];
         if (offer.sellerId === buyer.id) return { success: false, msg: "Nie możesz kupić własnego przedmiotu." };
-        // symulacja escrow: usuwamy ofertę i pokazujemy komunikat o zamrożeniu środków
         offers.splice(index, 1);
         saveOffers(offers);
-        // w realnej aplikacji tutaj tworzy się transakcja escrow, my zapiszemy w konsoli i powiadomimy
-        return { success: true, msg: `✅ Transakcja escrow rozpoczęta! Środki (${offer.price} yang) zostały zablokowane. Admin MTC zweryfikuje przedmiot i sfinalizuje.` };
+        return { success: true, msg: `✅ Transakcja escrow rozpoczęta! Środki (${offer.price} yang) zablokowane. Admin zweryfikuje przedmiot.` };
     }
 
-    // Renderowanie listy ofert
     function renderOffers() {
         const container = document.getElementById("offersList");
         const offers = getOffers();
         const user = getLoggedUser();
-        if (!offers.length) {
-            container.innerHTML = `<div class="empty-message"><i class="fas fa-box-open"></i> Brak aktywnych ofert. Bądź pierwszy!</div>`;
-            return;
-        }
+        if (!offers.length) { container.innerHTML = `<div class="empty-message"><i class="fas fa-box-open"></i> Brak ofert.</div>`; return; }
         container.innerHTML = "";
         offers.forEach(offer => {
             const card = document.createElement("div");
             card.className = "offer-card";
             card.innerHTML = `
-                <div class="item-name">
-                    <span>${escapeHtml(offer.itemName)}</span>
-                    <span class="item-price">${offer.price.toLocaleString()} yang</span>
-                </div>
+                <div class="item-name"><span>${escapeHtml(offer.itemName)}</span><span class="item-price">${offer.price.toLocaleString()} yang</span></div>
                 <div class="item-quality">✨ ${offer.quality}</div>
-                <div class="offer-meta">
-                    <span><i class="fas fa-user"></i> ${escapeHtml(offer.sellerName)}</span>
-                    <span><i class="fas fa-clock"></i> ${new Date(offer.date).toLocaleString()}</span>
-                </div>
-                ${user && user.id !== offer.sellerId ? `<button class="buy-btn" data-id="${offer.id}">🔒 Kup przez escrow</button>` : 
-                  (user && user.id === offer.sellerId ? `<button disabled style="background:#555; cursor:not-allowed;" class="buy-btn">Twoja oferta</button>` : 
-                  `<button class="buy-btn btn-outline" disabled style="background:#2d374b; cursor:pointer;" data-id="${offer.id}">Zaloguj się, by kupić</button>`)}
+                <div class="offer-meta"><span><i class="fas fa-user"></i> ${escapeHtml(offer.sellerName)}</span><span><i class="fas fa-clock"></i> ${new Date(offer.date).toLocaleString()}</span></div>
+                ${user && user.id !== offer.sellerId ? `<button class="buy-btn" data-id="${offer.id}">🔒 Kup przez escrow</button>` : (user && user.id === offer.sellerId ? `<button disabled style="background:#555;">Twoja oferta</button>` : `<button disabled class="buy-btn">Zaloguj się</button>`)}
             `;
             container.appendChild(card);
         });
-
-        // przypisanie eventów do przycisków kupna
         document.querySelectorAll(".buy-btn[data-id]").forEach(btn => {
             btn.addEventListener("click", (e) => {
-                e.preventDefault();
-                const offerId = btn.getAttribute("data-id");
-                const currentUser = getLoggedUser();
-                if (!currentUser) {
-                    showToast("Musisz się zalogować, aby kupować przedmioty.", true);
-                    return;
-                }
-                const result = buyOffer(offerId, currentUser);
+                const user = getLoggedUser();
+                if (!user) { showToast("Musisz się zalogować.", true); return; }
+                const result = buyOffer(btn.getAttribute("data-id"), user);
                 showToast(result.msg, !result.success);
-                if (result.success) renderOffers(); // odświeżenie listy
+                if (result.success) renderOffers();
             });
         });
     }
 
-    // prosty escape XSS
-    function escapeHtml(str) {
-        if (!str) return '';
-        return str.replace(/[&<>]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
-        });
-    }
-
+    function escapeHtml(str) { return str.replace(/[&<>]/g, function(m) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]; }); }
     function showToast(msg, isError = false) {
         const toast = document.createElement("div");
         toast.className = "toast";
-        toast.innerHTML = `<i class="fas ${isError ? 'fa-exclamation-triangle' : 'fa-check-circle'}" style="margin-right: 10px;"></i>${msg}`;
+        toast.innerHTML = `<i class="fas ${isError ? 'fa-exclamation-triangle' : 'fa-check-circle'}"></i> ${msg}`;
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 3500);
     }
 
-    // aktualizacja interfejsu w zależności od logowania
     function updateUIForAuth() {
         const user = getLoggedUser();
         const userNameSpan = document.getElementById("userNameDisplay");
@@ -405,52 +237,28 @@
             logoutBtn.classList.add("hidden");
             addSection.classList.add("hidden");
         }
-        renderOffers(); // odśwież oferty (przyciski kupna zależne od sesji)
+        renderOffers();
     }
 
-    // wylogowanie
-    function logout() {
-        sessionStorage.removeItem(SESSION_KEY);
-        updateUIForAuth();
-        showToast("Wylogowano pomyślnie.");
-    }
-
-    // publikacja oferty
+    function logout() { sessionStorage.removeItem(SESSION_KEY); updateUIForAuth(); showToast("Wylogowano."); }
+    document.getElementById("logoutBtnHeader")?.addEventListener("click", logout);
     document.getElementById("publishOfferBtn")?.addEventListener("click", () => {
         const user = getLoggedUser();
-        if (!user) {
-            showToast("Zaloguj się, aby wystawić przedmiot.", true);
-            return;
-        }
+        if (!user) { showToast("Zaloguj się, aby wystawić.", true); return; }
         const name = document.getElementById("itemName").value.trim();
         const price = document.getElementById("itemPrice").value;
         const quality = document.getElementById("itemQuality").value;
-        if (!name || !price || price <= 0) {
-            showToast("Wypełnij poprawnie nazwę i cenę (większą od 0).", true);
-            return;
-        }
-        const added = addOffer(name, price, quality, user);
-        if (added) {
-            showToast(`Przedmiot "${name}" został wystawiony!`);
+        if (!name || price <= 0) { showToast("Poprawnie wypełnij nazwę i cenę.", true); return; }
+        if (addOffer(name, price, quality, user)) {
+            showToast(`Wystawiono: ${name}`);
             document.getElementById("itemName").value = "";
             document.getElementById("itemPrice").value = "";
             renderOffers();
-        } else {
-            showToast("Błąd podczas dodawania oferty.", true);
-        }
+        } else { showToast("Błąd dodawania.", true); }
     });
 
-    document.getElementById("logoutBtnHeader")?.addEventListener("click", logout);
-
-    // start
     initOffers();
     updateUIForAuth();
-    // dodatkowe odświeżenie na zmianę sesji (jeśli ktoś loguje się na innej karcie - niekonieczne)
-    window.addEventListener("storage", (e) => {
-        if (e.key === SESSION_KEY || e.key === STORAGE_OFFERS) {
-            updateUIForAuth();
-        }
-    });
 </script>
 </body>
 </html>
