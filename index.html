@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Zdrowie psychiczne – Znajdź pomoc</title>
+    <!-- Leaflet CSS + JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Font Awesome 6 (darmowe ikony) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        }
+        body {
+            background: #f4f9ff;
+            color: #1a2c3e;
+            line-height: 1.5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+        /* kryzysowy pasek */
+        .crisis-bar {
+            background: #c62828;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            border-radius: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .crisis-bar h3 {
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+        }
+        .crisis-bar a {
+            color: #ffeb3b;
+            text-decoration: underline;
+            font-weight: bold;
+        }
+        .crisis-bar .numbers {
+            font-size: 1.2rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        /* filtry */
+        .filters {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+        }
+        .filter-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.2rem;
+            align-items: flex-end;
+        }
+        .filter-group {
+            flex: 1 1 200px;
+        }
+        .filter-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+            font-size: 0.9rem;
+        }
+        select, input {
+            width: 100%;
+            padding: 0.6rem;
+            border-radius: 2rem;
+            border: 1px solid #ccc;
+            background: #fefefe;
+            font-size: 0.9rem;
+        }
+        button {
+            background: #2c7da0;
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        button:hover {
+            background: #1f5e7a;
+        }
+        .sort-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        /* layout lista + mapa */
+        .two-columns {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        .offer-list {
+            flex: 1.2;
+            min-width: 280px;
+        }
+        .map-container {
+            flex: 1;
+            min-width: 280px;
+            height: 500px;
+            border-radius: 1.5rem;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+        .card {
+            background: white;
+            border-radius: 1.2rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+            transition: 0.1s;
+            border-left: 6px solid #2c7da0;
+        }
+        .card.free {
+            border-left-color: #2e7d32;
+            background: #f1f8e9;
+        }
+        .card h4 {
+            font-size: 1.2rem;
+            margin-bottom: 0.4rem;
+        }
+        .badge {
+            display: inline-block;
+            background: #e0e0e0;
+            padding: 0.2rem 0.7rem;
+            border-radius: 2rem;
+            font-size: 0.75rem;
+            margin-right: 0.5rem;
+            margin-bottom: 0.4rem;
+        }
+        .badge.free {
+            background: #a5d6a7;
+            color: #1b5e20;
+        }
+        .wait-time {
+            font-weight: bold;
+            color: #c62828;
+        }
+        .contact {
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            color: #2c3e50;
+        }
+        /* FAQ */
+        .faq-section {
+            background: white;
+            border-radius: 2rem;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+        .faq-item {
+            border-bottom: 1px solid #ddd;
+            padding: 1rem 0;
+        }
+        .faq-question {
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            user-select: none;
+        }
+        .faq-answer {
+            display: none;
+            padding-top: 0.8rem;
+            color: #2c3e50;
+        }
+        .faq-answer.show {
+            display: block;
+        }
+        footer {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 0.8rem;
+            color: #5a6e7c;
+        }
+        @media (max-width: 800px) {
+            .two-columns {
+                flex-direction: column;
+            }
+            .map-container {
+                height: 350px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- PUNKT 2: SEKCJA KRYZYSOWA -->
+    <div class="crisis-bar">
+        <h3><i class="fas fa-phone-alt"></i> Potrzebujesz natychmiastowej pomocy?</h3>
+        <div class="numbers">☎️ 116 123 – Ogólnopolski telefon zaufania dla osób dorosłych w kryzysie emocjonalnym<br>
+        ☎️ 116 111 – Telefon zaufania dla dzieci i młodzieży<br>
+        📞 112 – W sytuacji bezpośredniego zagrożenia życia</div>
+        <p style="margin-top:0.5rem; font-size:0.9rem;">Nie czekaj – te linie są czynne 24/7, bezpłatnie.</p>
+    </div>
+
+    <!-- PUNKT 1: FILTRY -->
+    <div class="filters">
+        <h3><i class="fas fa-sliders-h"></i> Znajdź odpowiednią pomoc</h3>
+        <div class="filter-grid">
+            <div class="filter-group">
+                <label>Rodzaj finansowania</label>
+                <select id="paymentFilter">
+                    <option value="all">Wszystkie</option>
+                    <option value="free">Bezpłatne (NFZ / NGO)</option>
+                    <option value="paid">Płatne (komercyjne)</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Forma kontaktu</label>
+                <select id="contactFilter">
+                    <option value="all">Wszystkie</option>
+                    <option value="stacjonarnie">Stacjonarnie</option>
+                    <option value="online">Online</option>
+                    <option value="hybrydowo">Hybrydowo</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Specjalizacja</label>
+                <select id="specFilter">
+                    <option value="all">Wszystkie</option>
+                    <option value="depresja">Depresja</option>
+                    <option value="leki">Lęki / fobie</option>
+                    <option value="trauma">Trauma / PTSD</option>
+                    <option value="adhd">ADHD (diagnoza/terapia)</option>
+                    <option value="zaburzenia odzywiania">Zaburzenia odżywiania</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Maks. czas oczekiwania (dni)</label>
+                <input type="number" id="maxWait" placeholder="np. 30" value="" step="1" min="0">
+            </div>
+            <div class="filter-group">
+                <label>Sortowanie</label>
+                <div class="sort-buttons">
+                    <button id="sortAsc">⏫ Czas rosnąco</button>
+                    <button id="sortDesc">⏬ Czas malejąco</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PUNKT 3 (lista porównywarka) + PUNKT 4 (mapa) -->
+    <div class="two-columns">
+        <div class="offer-list" id="offersList">
+            <!-- dynamicznie wypełniane karty -->
+            <p>Ładowanie ofert...</p>
+        </div>
+        <div class="map-container">
+            <div id="map"></div>
+        </div>
+    </div>
+
+    <!-- PUNKT 11: FAQ PRAWA PACJENTA -->
+    <div class="faq-section">
+        <h3><i class="fas fa-gavel"></i> Prawa pacjenta – najczęstsze pytania</h3>
+        <div class="faq-item">
+            <div class="faq-question">Czy poradnia może odmówić przyjęcia na NFZ? <i class="fas fa-chevron-down"></i></div>
+            <div class="faq-answer">Tak, jeśli nie ma wolnych miejsc lub nie realizuje kontraktu z NFZ. Ale musi wskazać inną placówkę lub zapisać na listę oczekujących. Nie można odmówić pomocy w nagłym stanie psychicznym (izba przyjęć).</div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-question">Ile trwa terapia na NFZ? <i class="fas fa-chevron-down"></i></div>
+            <div class="faq-answer">Standardowo do 12-20 sesji, ale przy głębszych zaburzeniach można wnioskować o przedłużenie. W niektórych poradniach jest możliwość długoterminowej psychoterapii po opinii lekarza.</div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-question">Co zrobić, gdy czuję się źle potraktowany przez psychologa? <i class="fas fa-chevron-down"></i></div>
+            <div class="faq-answer">Maszt prawo złożyć skargę do Rzecznika Praw Pacjenta (telefon 800 190 590) lub do samorządu zawodowego (Polskie Towarzystwo Psychologiczne / izba lekarska).</div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-question">Czy bezpłatna pomoc oznacza gorszą jakość? <i class="fas fa-chevron-down"></i></div>
+            <div class="faq-answer">Nie. Wiele poradni NFZ zatrudnia świetnych specjalistów. Różnica często dotyczy czasu oczekiwania i długości sesji. W przypadku kryzysu zawsze liczy się szybka reakcja.</div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-question">Jakie dokumenty potrzebuję na pierwszą wizytę? <i class="fas fa-chevron-down"></i></div>
+            <div class="faq-answer">Dowód osobisty, ewentualnie skierowanie od lekarza rodzinnego (nie zawsze wymagane – sprawdź w poradni). Dla dziecka – dokumenty opiekuna.</div>
+        </div>
+    </div>
+    <footer>Strona ma charakter informacyjny – nie zastępuje diagnozy medycznej. W nagłych stanach dzwoń po pomoc.</footer>
+</div>
+
+<script>
+    // --------------------- PRZYKŁADOWE DANE PORADNI (10) -------------------------
+    const places = [
+        { id:1, name:"Poradnia Zdrowia Psychicznego 'Spokój'", payment:"free", contact:"stacjonarnie", specialization:"depresja, lęki", waitDays:45, lat:52.2297, lng:21.0122, address:"ul. Zdrowa 12, Warszawa", phone:"22 123 45 67" },
+        { id:2, name:"Centrum Terapii 'Krok w przód'", payment:"paid", contact:"online", specialization:"trauma, adhd", waitDays:5, lat:52.2397, lng:21.0222, address:"online / stacjonarnie Kraków", phone:"12 345 67 89" },
+        { id:3, name:"Miejska Poradnia Psychologiczna", payment:"free", contact:"hybrydowo", specialization:"depresja, zaburzenia odżywiania", waitDays:90, lat:52.2197, lng:21.0022, address:"ul. Krzywa 5, Warszawa", phone:"22 987 65 43" },
+        { id:4, name:"Instytut Terapii Poznawczej", payment:"paid", contact:"stacjonarnie", specialization:"lęki, depresja", waitDays:10, lat:52.2497, lng:21.0322, address:"al. Niepodległości 100, Warszawa", phone:"22 444 55 66" },
+        { id:5, name:"Fundacja 'Wsparcie'", payment:"free", contact:"online", specialization:"trauma, kryzys", waitDays:14, lat:52.2097, lng:20.9922, address:"online / ul. Polna 8", phone:"600 700 800" },
+        { id:6, name:"PsychoCare Łódź", payment:"paid", contact:"hybrydowo", specialization:"adhd, depresja", waitDays:3, lat:51.7592, lng:19.4559, address:"ul. Piotrkowska 72, Łódź", phone:"42 111 22 33" },
+        { id:7, name:"Poradnia Rodzinna 'Mosty'", payment:"free", contact:"stacjonarnie", specialization:"zaburzenia odżywiania", waitDays:60, lat:51.7492, lng:19.4659, address:"ul. Zachodnia 15, Łódź", phone:"42 777 88 99" },
+        { id:8, name:"Terapia Online Harmonia", payment:"paid", contact:"online", specialization:"lęki, trauma", waitDays:2, lat:52.22, lng:21.01, address:"online (cały kraj)", phone:"123 456 789" },
+        { id:9, name:"Ośrodek Interwencji Kryzysowej", payment:"free", contact:"stacjonarnie", specialization:"kryzys, trauma", waitDays:0, lat:52.2597, lng:21.0422, address:"ul. Kryzysowa 2, Warszawa", phone:"22 999 11 22" },
+        { id:10, name:"Klinika Dobrej Terapii", payment:"paid", contact:"stacjonarnie", specialization:"depresja, lęki", waitDays:7, lat:52.1997, lng:20.9822, address:"ul. Spokojna 30, Warszawa", phone:"22 333 44 55" }
+    ];
+
+    let currentPlaces = [...places];
+    let map = null;
+    let markersLayer = null;
+
+    // Inicjalizacja mapy (Leaflet)
+    function initMap() {
+        map = L.map('map').setView([52.2297, 21.0122], 12);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> & CartoDB',
+            subdomains: 'abcd',
+            maxZoom: 19
+        }).addTo(map);
+        markersLayer = L.layerGroup().addTo(map);
+    }
+
+    // Rysowanie markerów dla przekazanej listy
+    function updateMarkers(placesArray) {
+        markersLayer.clearLayers();
+        placesArray.forEach(place => {
+            if (place.lat && place.lng) {
+                const marker = L.marker([place.lat, place.lng]).addTo(markersLayer);
+                const paymentType = place.payment === 'free' ? 'Bezpłatna' : 'Płatna';
+                marker.bindPopup(`
+                    <b>${place.name}</b><br>
+                    ${place.address}<br>
+                    ${paymentType} | ${place.contact}<br>
+                    Czekanie: ${place.waitDays} dni<br>
+                    <i class="fas fa-phone"></i> ${place.phone}
+                `);
+            }
+        });
+        if (placesArray.length > 0 && map) {
+            // dopasuj widok do markerów (opcjonalnie)
+            const group = L.featureGroup(markersLayer.getLayers());
+            if (group.getBounds().isValid()) map.fitBounds(group.getBounds());
+        }
+    }
+
+    // Renderowanie listy ofert (porównywarka)
+    function renderList(placesArray) {
+        const container = document.getElementById('offersList');
+        if (!placesArray.length) {
+            container.innerHTML = '<p>😔 Brak poradni spełniających kryteria. Zmień filtry.</p>';
+            updateMarkers([]);
+            return;
+        }
+        let html = '';
+        placesArray.forEach(p => {
+            const freeClass = p.payment === 'free' ? 'free' : '';
+            const badgeFree = p.payment === 'free' ? '<span class="badge free"><i class="fas fa-check-circle"></i> Bezpłatna</span>' : '<span class="badge">Płatna</span>';
+            let waitColor = p.waitDays === 0 ? 'wait-time' : '';
+            html += `
+                <div class="card ${freeClass}">
+                    <h4>${p.name}</h4>
+                    <div>${badgeFree} <span class="badge">${p.contact}</span> <span class="badge">${p.specialization}</span></div>
+                    <div class="wait-time">⏱ Czas oczekiwania: ${p.waitDays === 0 ? 'NATYCHMIAST' : p.waitDays + ' dni'}</div>
+                    <div class="contact"><i class="fas fa-map-marker-alt"></i> ${p.address} <br> <i class="fas fa-phone"></i> ${p.phone}</div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+        updateMarkers(placesArray);
+    }
+
+    // Filtrowanie i sortowanie
+    let currentSort = null; // 'asc' lub 'desc'
+    function filterAndSort() {
+        const payment = document.getElementById('paymentFilter').value;
+        const contact = document.getElementById('contactFilter').value;
+        const spec = document.getElementById('specFilter').value;
+        const maxWaitRaw = document.getElementById('maxWait').value;
+        const maxWait = maxWaitRaw === '' ? Infinity : parseInt(maxWaitRaw, 10);
+        
+        let filtered = places.filter(place => {
+            if (payment !== 'all' && place.payment !== payment) return false;
+            if (contact !== 'all' && place.contact !== contact) return false;
+            if (spec !== 'all' && !place.specialization.includes(spec)) return false;
+            if (place.waitDays > maxWait) return false;
+            return true;
+        });
+        
+        if (currentSort === 'asc') {
+            filtered.sort((a,b) => a.waitDays - b.waitDays);
+        } else if (currentSort === 'desc') {
+            filtered.sort((a,b) => b.waitDays - a.waitDays);
+        }
+        currentPlaces = filtered;
+        renderList(currentPlaces);
+    }
+
+    // Obsługa zdarzeń
+    document.getElementById('paymentFilter').addEventListener('change', filterAndSort);
+    document.getElementById('contactFilter').addEventListener('change', filterAndSort);
+    document.getElementById('specFilter').addEventListener('change', filterAndSort);
+    document.getElementById('maxWait').addEventListener('input', filterAndSort);
+    document.getElementById('sortAsc').addEventListener('click', () => {
+        currentSort = 'asc';
+        filterAndSort();
+    });
+    document.getElementById('sortDesc').addEventListener('click', () => {
+        currentSort = 'desc';
+        filterAndSort();
+    });
+    
+    // FAQ accordion
+    const faqItems = document.querySelectorAll('.faq-item');
+    faqItems.forEach(item => {
+        const questionDiv = item.querySelector('.faq-question');
+        const answerDiv = item.querySelector('.faq-answer');
+        questionDiv.addEventListener('click', () => {
+            answerDiv.classList.toggle('show');
+            const icon = questionDiv.querySelector('i');
+            if (answerDiv.classList.contains('show')) {
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+            } else {
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+            }
+        });
+    });
+    
+    // start
+    initMap();
+    filterAndSort(); // wstępne załadowanie
+</script>
+</body>
+</html>
