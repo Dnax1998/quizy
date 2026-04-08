@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Zdrowie Psychiczne - Strona Główna</title>
+    <style>
+        /* Całkowity reset - brak marginesów, przewijania */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f0f2f5; /* kolor tła tylko na wypadek, gdyby obrazek się nie załadował */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: system-ui, 'Segoe UI', sans-serif;
+        }
+
+        /* Kontener na obrazek - responsywny, wyśrodkowany */
+        .image-wrapper {
+            max-width: 1400px;
+            width: 100%;
+            margin: 20px auto;
+            line-height: 0;      /* usuwa odstęp pod obrazkiem */
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        img {
+            width: 100%;
+            height: auto;
+            display: block;
+            cursor: pointer;
+        }
+
+        /* Mała informacja pomocnicza (nie przeszkadza, można usunąć, ale zostawiam dla wygody) */
+        .info-tip {
+            text-align: center;
+            margin-top: 16px;
+            font-size: 13px;
+            color: #2c5a7a;
+            background: rgba(255,255,240,0.8);
+            display: inline-block;
+            width: auto;
+            padding: 6px 16px;
+            border-radius: 40px;
+            backdrop-filter: blur(4px);
+            position: fixed;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            pointer-events: none;  /* aby nie przeszkadzać w klikaniu */
+            font-weight: 500;
+            z-index: 10;
+        }
+        .info-tip a {
+            pointer-events: auto;
+            color: #0b4f6c;
+        }
+        @media (max-width: 700px) {
+            .info-tip { font-size: 10px; bottom: 8px; white-space: nowrap; }
+        }
+    </style>
+</head>
+<body>
+<div style="width: 100%; padding: 0 10px;">
+    <div class="image-wrapper">
+        <!-- UWAGA: zmień nazwę pliku na DOKŁADNĄ NAZWĘ TWOJEGO OBRAZKA -->
+        <img src="IMG_2532.png" 
+             alt="Zdrowie psychiczne – infolinie, poradnie, instytucje"
+             id="mainImage"
+             usemap="#healthMap"
+             style="width:100%; height:auto;">
+
+        <!-- Mapa obrazu – tutaj definiujemy klikalne obszary -->
+        <map name="healthMap" id="healthMap">
+            <!-- ========================================================= -->
+            <!-- UWAGA: PONIŻSZE WSPÓŁRZĘDNE SĄ PRZYKŁADOWE!               -->
+            <!-- Aby przyciski działały idealnie, musisz je dostosować     -->
+            --> do swojego obrazka za pomocą darmowego narzędzia:         -->
+            --> https://www.image-map.net/                               -->
+            ========================================================= -->
+
+            <!-- MENU GÓRNE (Strona Główna, O Nas, Artykuły, Kontakt) -->
+            <area shape="rect" coords="80,110,210,150" href="#glowna" title="Strona Główna" alt="Strona Główna">
+            <area shape="rect" coords="250,110,370,150" href="#onas" title="O Nas" alt="O Nas">
+            <area shape="rect" coords="410,110,540,150" href="#artykuly" title="Artykuły" alt="Artykuły">
+            <area shape="rect" coords="580,110,710,150" href="#kontakt" title="Kontakt" alt="Kontakt">
+
+            <!-- NUMERY TELEFONÓW ZAUFANIA -->
+            <!-- 116 111 -->
+            <area shape="rect" coords="180,410,540,465" href="tel:116111" title="Zadzwoń 116 111 - Telefon Zaufania dla Dzieci i Młodzieży" alt="Telefon 116 111">
+            <!-- 800 70 222 -->
+            <area shape="rect" coords="180,485,540,540" href="tel:80070222" title="Zadzwoń 800 70 222 - Linia Wsparcia" alt="Linia Wsparcia 800 70 222">
+            <!-- PRZYCISK "Więcej informacji" (obok telefonów) -->
+            <area shape="rect" coords="760,470,1020,520" href="https://www.gov.pl/web/zdrowie/telefony-zaufania" target="_blank" title="Więcej informacji o telefonach zaufania" alt="Więcej informacji">
+
+            <!-- PRZYCISK "Znajdź poradnię >" -->
+            <area shape="rect" coords="760,670,1020,720" href="https://poradnie.ppp.edu.pl/" target="_blank" title="Znajdź poradnię psychologiczno-pedagogiczną" alt="Znajdź poradnię">
+
+            <!-- PRZYCISK "Sprawdź możliwość wsparcia >" -->
+            <area shape="rect" coords="760,850,1040,900" href="https://www.opp.org.pl/" target="_blank" title="Sprawdź możliwości wsparcia w fundacjach" alt="Sprawdź możliwość wsparcia">
+
+            <!-- KAFELKI (4 instytucje) – zakładając, że znajdują się w dolnej części obrazka -->
+            <area shape="rect" coords="100,1060,360,1120" href="https://www.nfz.gov.pl/dla-pacjenta/psychiatria/szpitale" target="_blank" title="Szpitale Psychiatryczne - leczenie zaburzeń" alt="Szpitale Psychiatryczne">
+            <area shape="rect" coords="400,1060,660,1120" href="https://www.nfz.gov.pl/dla-pacjenta/psychiatria/poradnie" target="_blank" title="Poradnie Zdrowia Psychicznego - terapia i konsultacje" alt="Poradnie Zdrowia Psychicznego">
+            <area shape="rect" coords="700,1060,960,1120" href="https://www.nfz.gov.pl/dla-pacjenta/psychiatria/czs" target="_blank" title="Centra Zdrowia Środowiskowego - wsparcie w społeczności" alt="Centra Zdrowia Środowiskowego">
+            <area shape="rect" coords="100,1140,360,1200" href="https://www.niebieskalinia.pl/osrodki-interwencji-kryzysowej" target="_blank" title="Ośrodki Interwencji Kryzysowej - pomoc w nagłych sytuacjach" alt="Ośrodki Interwencji Kryzysowej">
+        </map>
+    </div>
+</div>
+
+<div class="info-tip">
+    ⚡ Klikalne obszary: telefony, przyciski, menu, kafelki. 
+    <a href="#" id="editCoordsBtn" style="pointer-events: auto;">❓ Nie trafiają? Dostosuj współrzędne</a>
+</div>
+
+<script>
+    (function() {
+        // -------------------------------
+        // RESPONSYWNA SKALA WSPÓŁRZĘDNYCH
+        // -------------------------------
+        const img = document.getElementById('mainImage');
+        const map = document.getElementById('healthMap');
+        if (!img || !map) return;
+
+        const areas = Array.from(map.querySelectorAll('area[shape="rect"]'));
+
+        // Zapamiętaj oryginalne współrzędne (względem naturalnych wymiarów obrazka)
+        function storeOriginalCoords() {
+            for (let area of areas) {
+                if (!area.hasAttribute('data-original')) {
+                    const original = area.getAttribute('coords');
+                    if (original) area.setAttribute('data-original', original);
+                }
+            }
+        }
+
+        // Przeskaluj współrzędne do aktualnego rozmiaru obrazka
+        function scaleCoords() {
+            if (!img.naturalWidth || !img.naturalHeight) return;
+            const scaleX = img.clientWidth / img.naturalWidth;
+            const scaleY = img.clientHeight / img.naturalHeight;
+            for (let area of areas) {
+                const orig = area.getAttribute('data-original');
+                if (orig) {
+                    const parts = orig.split(',').map(Number);
+                    if (parts.length === 4) {
+                        const newCoords = `${Math.round(parts[0]*scaleX)},${Math.round(parts[1]*scaleY)},${Math.round(parts[2]*scaleX)},${Math.round(parts[3]*scaleY)}`;
+                        area.setAttribute('coords', newCoords);
+                    }
+                }
+            }
+        }
+
+        // Inicjalizacja: zapisz i przeskaluj po załadowaniu obrazka
+        if (img.complete && img.naturalWidth > 0) {
+            storeOriginalCoords();
+            scaleCoords();
+        } else {
+            img.addEventListener('load', () => {
+                storeOriginalCoords();
+                scaleCoords();
+            });
+        }
+
+        // Przy zmianie rozmiaru okna – przeskaluj
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                if (img.naturalWidth && img.naturalHeight) scaleCoords();
+            }, 100);
+        });
+
+        // Obsługa przycisku pomocy (instrukcja)
+        const helpBtn = document.getElementById('editCoordsBtn');
+        if (helpBtn) {
+            helpBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                alert(
+                    "📐 JAK DOPASOWAĆ KLIKALNE OBSZARY DO TWOJEGO OBRAZKA?\n\n" +
+                    "1. Wejdź na stronę: https://www.image-map.net/\n" +
+                    "2. Kliknij 'Upload image' i wybierz swój plik IMG_2532.png\n" +
+                    "3. Zaznaczaj prostokątami (rect) każdy element:\n" +
+                    "   - Strona Główna, O Nas, Artykuły, Kontakt\n" +
+                    "   - Numery telefonów (116 111 i 800 70 222)\n" +
+                    "   - Przycisk 'Więcej informacji'\n" +
+                    "   - Przycisk 'Znajdź poradnię >'\n" +
+                    "   - Przycisk 'Sprawdź możliwość wsparcia >'\n" +
+                    "   - 4 kafelki (Szpitale, Poradnie, Centra, Ośrodki)\n" +
+                    "4. Dla każdego obszaru ustaw link (href):\n" +
+                    "   - dla telefonów: tel:116111 lub tel:80070222\n" +
+                    "   - dla przycisków: wklej docelowy adres URL\n" +
+                    "5. Kliknij 'Show Me The Code' i skopiuj wszystkie znaczniki <area ...>\n" +
+                    "6. Wklej je do swojego pliku HTML (między <map> a </map>) – zastąp istniejące.\n" +
+                    "7. Zapisz plik, wgraj na GitHub – wszystko będzie działać idealnie."
+                );
+            });
+        }
+
+        // Dodanie target="_blank" dla wszystkich linków zewnętrznych
+        for (let area of areas) {
+            let href = area.getAttribute('href');
+            if (href && (href.startsWith('http') || href.startsWith('https')) && !area.getAttribute('target')) {
+                area.setAttribute('target', '_blank');
+                area.setAttribute('rel', 'noopener noreferrer');
+            }
+        }
+    })();
+</script>
+</body>
+</html>
