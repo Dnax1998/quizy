@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Zdrowie Psychiczne - Klikalna mapa</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        /* obrazek zajmuje całą dostępną szerokość, zachowuje proporcje */
+        .image-container {
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+            line-height: 0;
+        }
+        img {
+            width: 100%;
+            height: auto;
+            display: block;
+            cursor: pointer;
+        }
+        /* mała informacja na dole (nie zasłania obrazka) */
+        .info {
+            text-align: center;
+            margin-top: 16px;
+            font-family: sans-serif;
+            font-size: 14px;
+            color: #2c3e4e;
+        }
+    </style>
+</head>
+<body>
+<div style="width: 100%; padding: 10px;">
+    <div class="image-container">
+        <!-- WAŻNE: zmień nazwę pliku na swoją -->
+        <img src="IMG_2531.png" 
+             alt="Zdrowie psychiczne - mapa pomocy"
+             id="healthImage"
+             usemap="#healthMap"
+             style="width:100%; height:auto;">
+
+        <map name="healthMap" id="healthMap">
+            <!-- 
+                =======================================================
+                TUTAJ MUSISZ WPISAĆ PRAWDZIWE WSPÓŁRZĘDNE
+                =======================================================
+                Poniższe wartości są PRZYKŁADOWE (dla obrazka o szerokości ~1200px).
+                Aby działały idealnie na TWOIM obrazku:
+                
+                → Otwórz stronę: https://www.image-map.net/
+                → Wgraj swój plik IMG_2531.png
+                → Zaznaczaj prostokątami (rect) kolejno:
+                     - menu (Strona Główna, O Nas, Artykuły, Kontakt)
+                     - numery telefonów 116 111 i 800 70 222
+                     - przycisk "Więcej informacji"
+                     - przycisk "Znajdź poradnię →"
+                     - przycisk "Sprawdź możliwości" (jeśli jest)
+                     - cztery kafelki w dolnej tabeli
+                → Skopiuj wygenerowane współrzędne i wstaw je poniżej.
+                → Zapisz plik i wgraj na GitHub.
+                
+                Poniżej daję gotowe obszary (ale z przykładowymi koordynatami).
+                Bez poprawnych współrzędnych klikalność NIE BĘDZIE DZIAŁAĆ.
+            -->
+
+            <!-- MENU GÓRNE (przykładowe współrzędne) -->
+            <area shape="rect" coords="80,110,210,150" href="#glowna" title="Strona Główna">
+            <area shape="rect" coords="250,110,370,150" href="#onas" title="O Nas">
+            <area shape="rect" coords="410,110,540,150" href="#artykuly" title="Artykuły">
+            <area shape="rect" coords="580,110,710,150" href="#kontakt" title="Kontakt">
+
+            <!-- TELEFONY ZAUFANIA -->
+            <area shape="rect" coords="180,410,540,465" href="tel:116111" title="Zadzwoń 116 111">
+            <area shape="rect" coords="180,485,540,540" href="tel:80070222" title="Zadzwoń 800 70 222">
+            <area shape="rect" coords="760,470,1020,520" href="https://www.gov.pl/web/zdrowie/telefony-zaufania" target="_blank" title="Więcej informacji">
+
+            <!-- PRZYCISK "Znajdź poradnię →" -->
+            <area shape="rect" coords="760,670,1020,720" href="https://poradnie.ppp.edu.pl/" target="_blank" title="Znajdź poradnię">
+
+            <!-- PRZYCISK "Sprawdź możliwości" (jeśli istnieje na obrazku) – dopasuj -->
+            <area shape="rect" coords="760,850,1040,900" href="https://www.opp.org.pl/" target="_blank" title="Sprawdź możliwości">
+
+            <!-- TABELA – 4 INSTYTUCJE (przykładowe obszary) -->
+            <area shape="rect" coords="100,1060,360,1120" href="https://www.nfz.gov.pl/szpitale" target="_blank" title="Szpitale Psychiatryczne">
+            <area shape="rect" coords="400,1060,660,1120" href="https://www.nfz.gov.pl/poradnie" target="_blank" title="Poradnie Zdrowia Psychicznego">
+            <area shape="rect" coords="700,1060,960,1120" href="https://www.nfz.gov.pl/czs" target="_blank" title="Centra Zdrowia Środowiskowego">
+            <area shape="rect" coords="100,1140,360,1200" href="https://www.niebieskalinia.pl/ośrodki" target="_blank" title="Ośrodki Interwencji Kryzysowej">
+        </map>
+    </div>
+    <div class="info">
+        ⚠️ <strong>Klikalność działa tylko po ustawieniu poprawnych współrzędnych</strong> – <a href="#" id="openMapEditor">kliknij tutaj, aby wygenerować je łatwo</a>
+    </div>
+</div>
+
+<script>
+    // Automatyczne skalowanie współrzędnych (aby działało na różnych rozmiarach ekranu)
+    const img = document.getElementById('healthImage');
+    const map = document.getElementById('healthMap');
+    
+    function storeAndScale() {
+        const areas = map.querySelectorAll('area[shape="rect"]');
+        // Zapisz oryginalne współrzędne (względem naturalnej wielkości obrazka)
+        areas.forEach(area => {
+            if (!area.hasAttribute('data-original')) {
+                area.setAttribute('data-original', area.getAttribute('coords'));
+            }
+        });
+        
+        if (!img.naturalWidth || !img.naturalHeight) return;
+        const scaleX = img.clientWidth / img.naturalWidth;
+        const scaleY = img.clientHeight / img.naturalHeight;
+        
+        areas.forEach(area => {
+            const orig = area.getAttribute('data-original');
+            if (orig) {
+                const [x1,y1,x2,y2] = orig.split(',').map(Number);
+                const newCoords = `${Math.round(x1*scaleX)},${Math.round(y1*scaleY)},${Math.round(x2*scaleX)},${Math.round(y2*scaleY)}`;
+                area.setAttribute('coords', newCoords);
+            }
+        });
+    }
+    
+    if (img.complete && img.naturalWidth) {
+        storeAndScale();
+    } else {
+        img.addEventListener('load', storeAndScale);
+    }
+    window.addEventListener('resize', () => setTimeout(storeAndScale, 100));
+    
+    // Obsługa linku do edytora map
+    document.getElementById('openMapEditor')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        alert(
+            "📐 JAK DOSTOSOWAĆ WSPÓŁRZĘDNE:\n\n" +
+            "1. Wejdź na https://www.image-map.net/\n" +
+            "2. Kliknij 'Upload image' i wybierz swój plik IMG_2531.png\n" +
+            "3. Zaznaczaj prostokątami każdy klikalny obszar (przycisk, numer telefonu, kafelek).\n" +
+            "4. Dla każdego obszaru ustaw link (href) – np. tel:116111 lub https://...\n" +
+            "5. Po zakończeniu kliknij 'Show Me The Code' i skopiuj znaczniki <area>.\n" +
+            "6. Wklej je do swojego pliku HTML (między <map> a </map>) zamiast przykładowych.\n" +
+            "7. Zapisz, wgraj na GitHub – wszystko będzie działać."
+        );
+    });
+</script>
+</body>
+</html>
