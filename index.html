@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Magazyn Regały 3x5x20</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { margin: 0; padding: 16px; background: #f4f6f9; }
+        .app { max-width: 1000px; margin: 0 auto; }
+        h1 { font-size: 1.8rem; margin: 0 0 8px 0; color: #1e293b; display: flex; align-items: center; gap: 8px; }
+        .subtitle { color: #475569; margin-bottom: 20px; }
+        .search-box { width: 100%; padding: 12px 16px; font-size: 16px; border: 1px solid #cbd5e1; border-radius: 40px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
+        .racks-tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; }
+        .rack-tab { padding: 12px 24px; background: none; border: none; font-size: 18px; font-weight: 600; color: #64748b; cursor: pointer; border-radius: 20px 20px 0 0; transition: 0.2s; }
+        .rack-tab.active { color: #2563eb; background: white; box-shadow: 0 -2px 8px rgba(0,0,0,0.02); }
+        .rack-container { background: white; border-radius: 24px; padding: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
+        .shelf { margin-bottom: 16px; }
+        .shelf-label { font-weight: 700; margin-bottom: 6px; color: #334155; font-size: 14px; display: flex; justify-content: space-between; }
+        .slots { display: grid; grid-template-columns: repeat(20, 1fr); gap: 6px; }
+        .slot { aspect-ratio: 1 / 1.2; background: #f1f5f9; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #1e293b; cursor: pointer; border: 2px solid transparent; transition: all 0.15s; padding: 4px 2px; text-align: center; line-height: 1.2; box-shadow: inset 0 1px 3px rgba(0,0,0,0.03); }
+        .slot.occupied { background: #dbeafe; border-color: #3b82f6; color: #1e3a8a; }
+        .slot:hover { background: #e2e8f0; transform: scale(0.98); }
+        .slot-code { font-size: 9px; opacity: 0.7; margin-bottom: 2px; }
+        .slot-data { font-size: 10px; }
+        /* Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 1000; }
+        .modal-card { background: white; max-width: 450px; width: 90%; border-radius: 28px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+        .modal-card h3 { margin-top: 0; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-weight: 500; margin-bottom: 6px; color: #334155; }
+        .form-group input { width: 100%; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 16px; font-size: 16px; }
+        .btn { padding: 12px 20px; border-radius: 40px; border: none; font-weight: 600; font-size: 16px; cursor: pointer; background: #e2e8f0; color: #1e293b; }
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+        .flex-row { display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px; }
+        .status-badge { font-size: 12px; background: #cbd5e1; padding: 2px 8px; border-radius: 20px; }
+        .toast-msg { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 10px 20px; border-radius: 40px; opacity: 0; transition: 0.2s; pointer-events: none; z-index: 2000; }
+    </style>
+</head>
+<body>
+<div class="app">
+    <h1>📦 Magazyn Regały <span style="font-size: 14px; background: #e2e8f0; padding: 4px 12px; border-radius: 40px;">A · B · C (5x20)</span></h1>
+    <input type="text" id="searchInput" class="search-box" placeholder="🔍 Szukaj produktu, kodu, daty... (podświetli miejsce)" autocomplete="off">
+
+    <div class="racks-tabs">
+        <button class="rack-tab active" data-rack="A">Regał A</button>
+        <button class="rack-tab" data-rack="B">Regał B</button>
+        <button class="rack-tab" data-rack="C">Regał C</button>
+    </div>
+
+    <div id="rackView" class="rack-container">
+        <!-- Dynamicznie generowany regał -->
+        <div style="text-align: center; padding: 40px; color: #64748b;">Ładowanie danych...</div>
+    </div>
+</div>
+
+<!-- Modal edycji pola -->
+<div class="modal" id="editModal">
+    <div class="modal-card">
+        <h3 id="modalTitle">Pole <span id="locationCodeDisplay"></span></h3>
+        <div class="form-group">
+            <label>📦 Nazwa produktu</label>
+            <input type="text" id="productName" placeholder="np. Mleko Łaciate 3.2%">
+        </div>
+        <div class="form-group">
+            <label>🏷️ Kod produktu</label>
+            <input type="text" id="productCode" placeholder="IND-12345">
+        </div>
+        <div class="form-group">
+            <label>📅 Data produkcji</label>
+            <input type="date" id="prodDate">
+        </div>
+        <div class="form-group">
+            <label>📊 Ilość na palecie</label>
+            <input type="number" id="quantity" min="0" step="1" value="1">
+        </div>
+        <div class="flex-row">
+            <button class="btn" id="cancelBtn">Anuluj</button>
+            <button class="btn btn-primary" id="saveBtn">Zapisz</button>
+            <button class="btn btn-danger" id="clearBtn">Wyczyść pole</button>
+        </div>
+    </div>
+</div>
+<div id="toast" class="toast-msg">Zapisano</div>
+
+<script>
+    // ========== KONFIGURACJA FIREBASE ==========
+    // 👇👇👇 WKLEJ SWÓJ firebaseConfig Z KONSOLI FIREBASE 👇👇👇
+    const firebaseConfig = {
+        // Przykład:
+        apiKey: "AIzaSyD-xxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        authDomain: "magazyn-xxxxx.firebaseapp.com",
+        projectId: "magazyn-xxxxx",
+        storageBucket: "magazyn-xxxxx.appspot.com",
+        messagingSenderId: "123456789",
+        appId: "1:123456789:web:abc123"
+    };
+    // 👆👆👆 KONIEC KONFIGURACJI 👆👆👆
+
+    // Inicjalizacja Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    
+    // Ustawienia regałów
+    const RACKS = ['A', 'B', 'C'];
+    const LEVELS = 5;   // 5 poziomów
+    const COLUMNS = 20; // 20 kolumn
+
+    let currentRack = 'A';
+    let allSlotsData = {}; // cache: "R1-P3-K12" -> dane produktu
+    let unsubscribe = null;
+
+    // Elementy DOM
+    const rackView = document.getElementById('rackView');
+    const searchInput = document.getElementById('searchInput');
+    const tabs = document.querySelectorAll('.rack-tab');
+    const modal = document.getElementById('editModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const locCodeSpan = document.getElementById('locationCodeDisplay');
+    const productNameInp = document.getElementById('productName');
+    const productCodeInp = document.getElementById('productCode');
+    const prodDateInp = document.getElementById('prodDate');
+    const quantityInp = document.getElementById('quantity');
+    const saveBtn = document.getElementById('saveBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const toast = document.getElementById('toast');
+
+    let currentEditingLocation = null; // np. "R1-P3-K12"
+
+    // Funkcja pomocnicza: generowanie ID lokalizacji
+    function getLocationId(rack, level, col) {
+        return `R${rack}-P${level}-K${col}`;
+    }
+
+    // Subskrypcja danych z Firestore dla wszystkich lokalizacji
+    function subscribeToData() {
+        if (unsubscribe) unsubscribe();
+        // Pobieramy wszystkie dokumenty z kolekcji "slots"
+        unsubscribe = db.collection("slots").onSnapshot((snapshot) => {
+            allSlotsData = {};
+            snapshot.forEach(doc => {
+                allSlotsData[doc.id] = doc.data();
+            });
+            renderCurrentRack();
+        }, (error) => {
+            console.error("Błąd subskrypcji:", error);
+            alert("Problem z połączeniem do bazy. Sprawdź konfigurację Firebase.");
+        });
+    }
+
+    // Renderowanie aktywnego regału
+    function renderCurrentRack() {
+        let html = '';
+        for (let level = 1; level <= LEVELS; level++) {
+            html += `<div class="shelf">`;
+            html += `<div class="shelf-label"><span>📌 Poziom ${level}</span> <span class="status-badge">${COLUMNS} pól</span></div>`;
+            html += `<div class="slots">`;
+            for (let col = 1; col <= COLUMNS; col++) {
+                const locId = getLocationId(currentRack, level, col);
+                const data = allSlotsData[locId] || null;
+                const isOccupied = data && data.productName;
+                const productShort = isOccupied ? (data.productName.substring(0, 12) + (data.productName.length>12?'…':'')) : '';
+                const prodCodeShort = isOccupied && data.productCode ? data.productCode.substring(0,10) : '';
+                
+                html += `<div class="slot ${isOccupied ? 'occupied' : ''}" data-location-id="${locId}" data-rack="${currentRack}" data-level="${level}" data-col="${col}">`;
+                html += `<div class="slot-code">${level}-${col}</div>`;
+                if (isOccupied) {
+                    html += `<div class="slot-data" style="font-weight:700;">${productShort || '—'}</div>`;
+                    if (data.prodDate) {
+                        const d = data.prodDate.toDate ? data.prodDate.toDate() : new Date(data.prodDate);
+                        const dateStr = d.toLocaleDateString('pl-PL', {day:'2-digit', month:'2-digit', year:'numeric'});
+                        html += `<div class="slot-data" style="font-size:9px;">${dateStr}</div>`;
+                    }
+                    if (data.quantity) html += `<div class="slot-data">${data.quantity} szt.</div>`;
+                } else {
+                    html += `<div class="slot-data" style="opacity:0.5;">puste</div>`;
+                }
+                html += `</div>`;
+            }
+            html += `</div></div>`;
+        }
+        rackView.innerHTML = html;
+        
+        // Podpinamy event listenery do slotów
+        document.querySelectorAll('.slot').forEach(slot => {
+            slot.addEventListener('click', (e) => {
+                const locId = slot.dataset.locationId;
+                openEditModal(locId);
+            });
+        });
+    }
+
+    // Otwarcie modala z danymi pola
+    function openEditModal(locId) {
+        currentEditingLocation = locId;
+        locCodeSpan.textContent = locId;
+        const data = allSlotsData[locId] || {};
+        
+        productNameInp.value = data.productName || '';
+        productCodeInp.value = data.productCode || '';
+        if (data.prodDate) {
+            const d = data.prodDate.toDate ? data.prodDate.toDate() : new Date(data.prodDate);
+            prodDateInp.value = d.toISOString().split('T')[0];
+        } else {
+            prodDateInp.value = '';
+        }
+        quantityInp.value = data.quantity || '';
+        
+        modal.style.display = 'flex';
+    }
+
+    function closeModal() {
+        modal.style.display = 'none';
+        currentEditingLocation = null;
+    }
+
+    // Zapis do Firestore
+    async function saveSlot(locId, data) {
+        try {
+            await db.collection("slots").doc(locId).set(data, { merge: true });
+            showToast('✅ Zapisano');
+            closeModal();
+        } catch (err) {
+            alert('Błąd zapisu: ' + err.message);
+        }
+    }
+
+    async function clearSlot(locId) {
+        try {
+            await db.collection("slots").doc(locId).delete();
+            showToast('🗑️ Pole wyczyszczone');
+            closeModal();
+        } catch (err) {
+            alert('Błąd: ' + err.message);
+        }
+    }
+
+    function showToast(msg) {
+        toast.textContent = msg;
+        toast.style.opacity = 1;
+        setTimeout(() => toast.style.opacity = 0, 2000);
+    }
+
+    // Obsługa przycisków
+    saveBtn.addEventListener('click', () => {
+        if (!currentEditingLocation) return;
+        const prodDateStr = prodDateInp.value;
+        const prodDate = prodDateStr ? firebase.firestore.Timestamp.fromDate(new Date(prodDateStr)) : null;
+        
+        const data = {
+            productName: productNameInp.value.trim() || null,
+            productCode: productCodeInp.value.trim() || null,
+            prodDate: prodDate,
+            quantity: quantityInp.value ? parseInt(quantityInp.value) : null,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        // Usuwamy pola null, żeby nie zaśmiecać
+        Object.keys(data).forEach(key => data[key] === null && delete data[key]);
+        saveSlot(currentEditingLocation, data);
+    });
+
+    clearBtn.addEventListener('click', () => {
+        if (!currentEditingLocation) return;
+        if (confirm('Na pewno wyczyścić to pole?')) {
+            clearSlot(currentEditingLocation);
+        }
+    });
+
+    cancelBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+    // Zmiana zakładki regału
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const rack = tab.dataset.rack;
+            currentRack = rack;
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            renderCurrentRack();
+        });
+    });
+
+    // Wyszukiwanie (podświetlenie)
+    searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        document.querySelectorAll('.slot').forEach(slot => {
+            slot.style.outline = 'none';
+            slot.style.boxShadow = '';
+        });
+        if (query === '') return;
+        
+        // Szukamy po nazwie, kodzie lub dacie
+        for (const [locId, data] of Object.entries(allSlotsData)) {
+            if (!data.productName && !data.productCode) continue;
+            const name = (data.productName || '').toLowerCase();
+            const code = (data.productCode || '').toLowerCase();
+            let dateStr = '';
+            if (data.prodDate) {
+                const d = data.prodDate.toDate ? data.prodDate.toDate() : new Date(data.prodDate);
+                dateStr = d.toLocaleDateString('pl-PL');
+            }
+            if (name.includes(query) || code.includes(query) || dateStr.includes(query)) {
+                // Znajdź slot w DOM
+                const slotEl = document.querySelector(`.slot[data-location-id="${locId}"]`);
+                if (slotEl) {
+                    slotEl.style.outline = '4px solid #fbbf24';
+                    slotEl.style.boxShadow = '0 0 0 4px rgba(251,191,36,0.3)';
+                    // Można przewinąć do elementu
+                    slotEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        }
+    });
+
+    // Inicjalizacja
+    subscribeToData();
+
+    // Wypełnienie brakujących dokumentów (przy pierwszym uruchomieniu puste pola nie istnieją, ale to OK)
+    // Możemy dodać funkcję tworzącą strukturę, ale lepiej zostawić tak: zapis pojawia się przy pierwszej edycji.
+</script>
+</body>
+</html>
