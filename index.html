@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>Magazyn Regały + Produkty + Typy</title>
+    <title>Magazyn Regały + Partie</title>
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -24,37 +24,43 @@
         .shelf-label { font-weight: 700; margin-bottom: 6px; color: #334155; font-size: 14px; display: flex; justify-content: space-between; }
         .slots { display: grid; grid-template-columns: repeat(21, 1fr); gap: 6px; }
         .slot { aspect-ratio: 1 / 1.2; background: #f1f5f9; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #1e293b; cursor: pointer; border: 2px solid transparent; transition: all 0.15s; padding: 4px 2px; text-align: center; line-height: 1.2; box-shadow: inset 0 1px 3px rgba(0,0,0,0.03); }
-        .slot.occupied-mag { background: #fee2e2; border-color: #ef4444; color: #991b1b; }   /* czerwony */
-        .slot.occupied-sped { background: #dcfce7; border-color: #22c55e; color: #166534; } /* zielony */
-        .slot.occupied-other { background: #dbeafe; border-color: #3b82f6; color: #1e3a8a; } /* niebieski dla starych */
+        .slot.occupied-mag { background: #fee2e2; border-color: #ef4444; color: #991b1b; }
+        .slot.occupied-sped { background: #dcfce7; border-color: #22c55e; color: #166534; }
+        .slot.occupied-other { background: #dbeafe; border-color: #3b82f6; color: #1e3a8a; }
         .slot:hover { background: #e2e8f0; transform: scale(0.98); }
         .slot-code { font-size: 9px; opacity: 0.7; margin-bottom: 2px; }
         .slot-data { font-size: 10px; }
 
         /* Modale */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 1000; }
-        .modal-card { background: white; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto; border-radius: 28px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+        .modal-card { background: white; max-width: 600px; width: 90%; max-height: 85vh; overflow-y: auto; border-radius: 28px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
         .modal-card h3 { margin-top: 0; }
         .form-group { margin-bottom: 16px; }
         .form-group label { display: block; font-weight: 500; margin-bottom: 6px; color: #334155; }
         .form-group input, .form-group select { width: 100%; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 16px; font-size: 16px; background: white; }
-        .btn { padding: 12px 20px; border-radius: 40px; border: none; font-weight: 600; font-size: 16px; cursor: pointer; background: #e2e8f0; color: #1e293b; }
+        .btn { padding: 10px 18px; border-radius: 40px; border: none; font-weight: 600; font-size: 14px; cursor: pointer; background: #e2e8f0; color: #1e293b; }
         .btn-primary { background: #2563eb; color: white; }
         .btn-danger { background: #ef4444; color: white; }
-        .flex-row { display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px; }
+        .btn-sm { padding: 6px 12px; font-size: 13px; }
+        .flex-row { display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px; flex-wrap: wrap; }
         .status-badge { font-size: 12px; background: #cbd5e1; padding: 2px 8px; border-radius: 20px; }
         .toast-msg { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 10px 20px; border-radius: 40px; opacity: 0; transition: 0.2s; pointer-events: none; z-index: 2000; }
 
-        /* Lista produktów */
+        /* Lista partii */
+        .batch-list { margin-top: 8px; }
+        .batch-item { background: #f8fafc; border-radius: 12px; padding: 12px; margin-bottom: 8px; border: 1px solid #e2e8f0; }
+        .batch-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .batch-fields { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; }
+        .batch-remove { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 18px; padding: 0 4px; }
+        .add-batch-btn { margin-top: 8px; width: 100%; }
+
+        /* Produkty */
         .product-list { margin-top: 16px; border-top: 1px solid #e2e8f0; padding-top: 16px; }
         .product-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
         .product-info { font-size: 14px; }
         .product-actions { display: flex; gap: 8px; }
         .icon-btn { background: none; border: none; font-size: 18px; cursor: pointer; padding: 4px 8px; border-radius: 20px; }
         .icon-btn:hover { background: #e2e8f0; }
-        .type-badge { display: inline-block; width: 12px; height: 12px; border-radius: 4px; margin-right: 4px; }
-        .type-mag { background: #ef4444; }
-        .type-sped { background: #22c55e; }
     </style>
 </head>
 <body>
@@ -81,7 +87,7 @@
     </div>
 </div>
 
-<!-- Modal edycji pola regału -->
+<!-- Modal edycji pola (z partiami) -->
 <div class="modal" id="editModal">
     <div class="modal-card">
         <h3>Pole <span id="locationCodeDisplay"></span></h3>
@@ -101,29 +107,27 @@
             <input type="text" id="productCode" readonly disabled style="background:#f8fafc;">
         </div>
         <div class="form-group">
-            <label>📅 Data produkcji</label>
-            <input type="date" id="prodDate">
-        </div>
-        <div class="form-group">
-            <label>📊 Ilość na palecie</label>
-            <input type="number" id="quantity" min="0" step="1" value="1">
-        </div>
-        <div class="form-group">
             <label>🚚 Typ palety</label>
             <select id="palletType">
                 <option value="magazynowa">🔴 Magazynowa (czerwony)</option>
                 <option value="spedycyjna">🟢 Spedycyjna (zielony)</option>
             </select>
         </div>
+        
+        <hr style="margin: 20px 0; border: none; border-top: 1px solid #e2e8f0;">
+        <label style="font-weight:600;">📦 Partie towaru</label>
+        <div id="batchesContainer" class="batch-list"></div>
+        <button class="btn btn-secondary add-batch-btn" id="addBatchBtn">➕ Dodaj partię</button>
+        
         <div class="flex-row">
             <button class="btn" id="cancelEditBtn">Anuluj</button>
             <button class="btn btn-primary" id="saveSlotBtn">Zapisz</button>
-            <button class="btn btn-danger" id="clearSlotBtn">Wyczyść</button>
+            <button class="btn btn-danger" id="clearSlotBtn">Wyczyść pole</button>
         </div>
     </div>
 </div>
 
-<!-- Modal zarządzania produktami -->
+<!-- Modal produktów (bez zmian) -->
 <div class="modal" id="productsModal">
     <div class="modal-card">
         <h3>📋 Baza produktów</h3>
@@ -137,7 +141,7 @@
                 <input type="text" id="newProductCode" placeholder="IND-12345">
             </div>
             <div class="form-group">
-                <label>Domyślna ilość na palecie</label>
+                <label>Domyślna ilość na palecie (szt.)</label>
                 <input type="number" id="newProductQty" min="0" step="1" value="1">
             </div>
             <button class="btn btn-primary" id="addProductBtn" style="width:100%;">➕ Dodaj produkt</button>
@@ -156,7 +160,7 @@
 <script>
     // ========== KONFIGURACJA FIREBASE ==========
     // 👇 WKLEJ SWÓJ KLUCZ Z KONSOLI FIREBASE 👇
-    const firebaseConfig = {
+      const firebaseConfig = {
         apiKey: "AIzaSyAbMTVozOhIXesvF59REYnIOtmo-V5qimk",
         authDomain: "forevermagazyn.firebaseapp.com",
         projectId: "forevermagazyn",
@@ -173,33 +177,33 @@
     const LEVELS = 5;
     const COLUMNS = 21;
     let currentRack = 'A';
-    let allSlotsData = {};
+    let allSlotsData = {};       // cache slotów
+    let slotBatches = {};        // cache partii: locId -> array
     let productsList = [];
     let unsubscribeSlots = null;
     let unsubscribeProducts = null;
+    let unsubscribeBatches = null;
 
-    // Elementy DOM
+    // DOM
     const rackView = document.getElementById('rackView');
     const searchProductInput = document.getElementById('searchProductInput');
     const searchDateInput = document.getElementById('searchDateInput');
     const clearSearchBtn = document.getElementById('clearSearchBtn');
     const tabs = document.querySelectorAll('.rack-tab');
     
-    // Modal edycji
     const editModal = document.getElementById('editModal');
     const locCodeSpan = document.getElementById('locationCodeDisplay');
     const productSelect = document.getElementById('productSelect');
     const productNameDisplay = document.getElementById('productNameDisplay');
     const productCodeInp = document.getElementById('productCode');
-    const prodDateInp = document.getElementById('prodDate');
-    const quantityInp = document.getElementById('quantity');
     const palletType = document.getElementById('palletType');
+    const batchesContainer = document.getElementById('batchesContainer');
     const saveSlotBtn = document.getElementById('saveSlotBtn');
     const cancelEditBtn = document.getElementById('cancelEditBtn');
     const clearSlotBtn = document.getElementById('clearSlotBtn');
     const addNewProductLink = document.getElementById('addNewProductLink');
+    const addBatchBtn = document.getElementById('addBatchBtn');
     
-    // Modal produktów
     const productsModal = document.getElementById('productsModal');
     const newProductName = document.getElementById('newProductName');
     const newProductCode = document.getElementById('newProductCode');
@@ -212,6 +216,7 @@
     const toast = document.getElementById('toast');
     
     let currentEditingLocation = null;
+    let currentBatches = []; // tablica obiektów partii dla edytowanego pola
 
     function getLocationId(rack, level, col) {
         return `R${rack}-P${level}-K${col}`;
@@ -230,10 +235,29 @@
             allSlotsData = {};
             snapshot.forEach(doc => allSlotsData[doc.id] = doc.data());
             renderCurrentRack();
-            applySearchHighlight(); // ponowne podświetlenie po zmianie
-        }, err => {
-            console.error(err);
-            alert("Błąd połączenia z Firebase (slots).");
+            applySearchHighlight();
+        });
+    }
+
+    function subscribeToBatches() {
+        // Subskrybujemy całą kolekcję "batches" (wszystkie dokumenty z podkolekcjami)
+        // Firestore nie wspiera głębokich subskrypcji, więc użyjemy kolekcji grupowej (collectionGroup)
+        if (unsubscribeBatches) unsubscribeBatches();
+        unsubscribeBatches = db.collectionGroup("batches").onSnapshot(snapshot => {
+            // Czyścimy cache
+            slotBatches = {};
+            snapshot.forEach(doc => {
+                // doc.ref.parent.parent.id to ID slotu (lokalizacji)
+                const locId = doc.ref.parent.parent.id;
+                if (!slotBatches[locId]) slotBatches[locId] = [];
+                slotBatches[locId].push({ id: doc.id, ...doc.data() });
+            });
+            // Sortujemy partie wg daty
+            Object.keys(slotBatches).forEach(locId => {
+                slotBatches[locId].sort((a,b) => (a.prodDate?.seconds || 0) - (b.prodDate?.seconds || 0));
+            });
+            renderCurrentRack();
+            applySearchHighlight();
         });
     }
 
@@ -245,13 +269,10 @@
             productsList.sort((a,b) => (a.name || '').localeCompare(b.name || ''));
             updateProductSelect();
             renderProductsList();
-        }, err => {
-            console.error(err);
-            alert("Błąd połączenia z Firebase (products).");
         });
     }
 
-    // ========== WIDOK REGAŁÓW ==========
+    // ========== RENDER REGAŁÓW ==========
     function renderCurrentRack() {
         let html = '';
         for (let level = 1; level <= LEVELS; level++) {
@@ -267,15 +288,27 @@
                     else slotClass = 'occupied-other';
                 }
                 const productShort = isOccupied ? (data.productName.substring(0, 12) + (data.productName.length>12?'…':'')) : '';
+                
+                // Oblicz sumaryczną ilość z partii
+                const batches = slotBatches[locId] || [];
+                let totalCartons = 0, totalPieces = 0;
+                batches.forEach(b => { totalCartons += b.cartons || 0; totalPieces += b.pieces || 0; });
+                const qtyStr = (totalCartons > 0 || totalPieces > 0) ? `${totalCartons}k ${totalPieces}szt` : (data.quantity ? `${data.quantity} szt` : '');
+                
                 html += `<div class="slot ${slotClass}" data-location-id="${locId}">`;
                 html += `<div class="slot-code">${level}-${col}</div>`;
                 if (isOccupied) {
                     html += `<div class="slot-data" style="font-weight:700;">${productShort || '—'}</div>`;
-                    if (data.prodDate) {
+                    if (batches.length > 0) {
+                        // pokaż pierwszą datę
+                        const firstDate = batches[0].prodDate?.toDate();
+                        if (firstDate) html += `<div class="slot-data" style="font-size:9px;">${firstDate.toLocaleDateString('pl-PL')}</div>`;
+                        if (batches.length > 1) html += `<div class="slot-data">📦+${batches.length-1}</div>`;
+                    } else if (data.prodDate) {
                         const d = data.prodDate.toDate ? data.prodDate.toDate() : new Date(data.prodDate);
                         html += `<div class="slot-data" style="font-size:9px;">${d.toLocaleDateString('pl-PL')}</div>`;
                     }
-                    if (data.quantity) html += `<div class="slot-data">${data.quantity} szt.</div>`;
+                    if (qtyStr) html += `<div class="slot-data">${qtyStr}</div>`;
                 } else {
                     html += `<div class="slot-data" style="opacity:0.5;">puste</div>`;
                 }
@@ -289,24 +322,18 @@
         });
     }
 
-    // ========== WYSZUKIWANIE ==========
+    // ========== WYSZUKIWANIE (uwzględnia partie) ==========
     function applySearchHighlight() {
         const productQuery = searchProductInput.value.trim().toLowerCase();
         const dateQuery = searchDateInput.value.trim();
         
-        // Usuń poprzednie podświetlenia
-        document.querySelectorAll('.slot').forEach(s => { 
-            s.style.outline = 'none'; 
-            s.style.boxShadow = ''; 
-        });
-        
+        document.querySelectorAll('.slot').forEach(s => { s.style.outline = 'none'; s.style.boxShadow = ''; });
         if (!productQuery && !dateQuery) return;
         
         Object.entries(allSlotsData).forEach(([locId, data]) => {
             if (!data.productName && !data.productCode) return;
             
-            let productMatch = true;
-            let dateMatch = true;
+            let productMatch = true, dateMatch = true;
             
             if (productQuery) {
                 const name = (data.productName || '').toLowerCase();
@@ -315,17 +342,19 @@
             }
             
             if (dateQuery) {
-                if (!data.prodDate) {
-                    dateMatch = false;
-                } else {
+                const batches = slotBatches[locId] || [];
+                if (batches.length === 0 && data.prodDate) {
+                    // stary format
                     const d = data.prodDate.toDate ? data.prodDate.toDate() : new Date(data.prodDate);
-                    // Sformatuj datę jako DD.MM.RRRR (bez kropki na końcu)
-                    const day = String(d.getDate()).padStart(2, '0');
-                    const month = String(d.getMonth() + 1).padStart(2, '0');
-                    const year = d.getFullYear();
-                    const dateStr = `${day}.${month}.${year}`;
-                    // Sprawdź, czy wpisana fraza zawiera się w sformatowanej dacie
+                    const dateStr = `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
                     dateMatch = dateStr.includes(dateQuery);
+                } else {
+                    dateMatch = batches.some(b => {
+                        if (!b.prodDate) return false;
+                        const d = b.prodDate.toDate();
+                        const dateStr = `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
+                        return dateStr.includes(dateQuery);
+                    });
                 }
             }
             
@@ -334,7 +363,6 @@
                 if (el) {
                     el.style.outline = '4px solid #fbbf24';
                     el.style.boxShadow = '0 0 0 4px rgba(251,191,36,0.3)';
-                    // Przewiń do pierwszego znalezionego
                     if (!window._firstHighlightScrolled) {
                         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         window._firstHighlightScrolled = true;
@@ -353,6 +381,57 @@
         applySearchHighlight();
     });
 
+    // ========== OBSŁUGA PARTII W MODALU ==========
+    function renderBatchesList() {
+        let html = '';
+        currentBatches.forEach((batch, index) => {
+            const dateVal = batch.prodDate ? batch.prodDate.toISOString().split('T')[0] : '';
+            html += `<div class="batch-item" data-index="${index}">
+                <div class="batch-header">
+                    <span>Partia ${index+1}</span>
+                    <button class="batch-remove" data-index="${index}">🗑️</button>
+                </div>
+                <div class="batch-fields">
+                    <input type="date" class="batch-date" value="${dateVal}" placeholder="Data">
+                    <input type="number" class="batch-cartons" placeholder="Kartony" min="0" value="${batch.cartons || 0}">
+                    <input type="number" class="batch-pieces" placeholder="Sztuki" min="0" value="${batch.pieces || 0}">
+                </div>
+            </div>`;
+        });
+        batchesContainer.innerHTML = html || '<div style="color:#64748b; text-align:center;">Brak partii. Kliknij "Dodaj partię".</div>';
+        
+        // Podepnij eventy do przycisków usuwania
+        document.querySelectorAll('.batch-remove').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const idx = parseInt(btn.dataset.index);
+                currentBatches.splice(idx, 1);
+                renderBatchesList();
+            });
+        });
+    }
+
+    function collectBatchesFromForm() {
+        const batches = [];
+        document.querySelectorAll('.batch-item').forEach(item => {
+            const dateInput = item.querySelector('.batch-date');
+            const cartonsInput = item.querySelector('.batch-cartons');
+            const piecesInput = item.querySelector('.batch-pieces');
+            if (dateInput.value) {
+                batches.push({
+                    prodDate: firebase.firestore.Timestamp.fromDate(new Date(dateInput.value)),
+                    cartons: parseInt(cartonsInput.value) || 0,
+                    pieces: parseInt(piecesInput.value) || 0
+                });
+            }
+        });
+        return batches;
+    }
+
+    addBatchBtn.addEventListener('click', () => {
+        currentBatches.push({ cartons: 0, pieces: 0 });
+        renderBatchesList();
+    });
+
     // ========== MODAL EDYCJI ==========
     function updateProductSelect() {
         productSelect.innerHTML = '<option value="">-- Wybierz z listy --</option>';
@@ -369,25 +448,29 @@
         locCodeSpan.textContent = locId;
         const data = allSlotsData[locId] || {};
         
-        prodDateInp.value = data.prodDate ? new Date(data.prodDate.toDate()).toISOString().split('T')[0] : '';
-        quantityInp.value = data.quantity || '';
         palletType.value = data.palletType || 'magazynowa';
         
         const productId = data.productId || '';
         const selectedProduct = productsList.find(p => p.id === productId);
-        
         if (selectedProduct) {
             productSelect.value = selectedProduct.id;
             productNameDisplay.value = selectedProduct.name || '';
             productCodeInp.value = selectedProduct.code || '';
-            if (!data.quantity && selectedProduct.defaultQty) {
-                quantityInp.value = selectedProduct.defaultQty;
-            }
         } else {
             productSelect.value = '';
             productNameDisplay.value = data.productName || '';
             productCodeInp.value = data.productCode || '';
         }
+        
+        // Wczytaj partie
+        const batches = slotBatches[locId] || [];
+        currentBatches = batches.map(b => ({
+            id: b.id,
+            prodDate: b.prodDate,
+            cartons: b.cartons || 0,
+            pieces: b.pieces || 0
+        }));
+        renderBatchesList();
         
         editModal.style.display = 'flex';
     }
@@ -398,7 +481,6 @@
         if (prod) {
             productNameDisplay.value = prod.name || '';
             productCodeInp.value = prod.code || '';
-            if (prod.defaultQty) quantityInp.value = prod.defaultQty;
         } else {
             productNameDisplay.value = '';
             productCodeInp.value = '';
@@ -413,6 +495,7 @@
 
     saveSlotBtn.addEventListener('click', async () => {
         if (!currentEditingLocation) return;
+        
         const selectedId = productSelect.value;
         let productData = {};
         if (selectedId) {
@@ -432,21 +515,35 @@
             };
         }
         
-        const prodDate = prodDateInp.value ? firebase.firestore.Timestamp.fromDate(new Date(prodDateInp.value)) : null;
-        const quantity = quantityInp.value ? parseInt(quantityInp.value) : null;
         const type = palletType.value;
+        const newBatches = collectBatchesFromForm();
         
-        const data = {
+        // Zapisz dane slotu
+        const slotData = {
             ...productData,
-            prodDate: prodDate,
-            quantity: quantity,
             palletType: type,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         };
-        Object.keys(data).forEach(k => data[k] === null && delete data[k]);
+        // Usuń stare pole quantity jeśli istniało (opcjonalnie)
         
         try {
-            await db.collection("slots").doc(currentEditingLocation).set(data, { merge: true });
+            const slotRef = db.collection("slots").doc(currentEditingLocation);
+            await slotRef.set(slotData, { merge: true });
+            
+            // Usuń stare partie
+            const oldBatchesSnapshot = await slotRef.collection("batches").get();
+            const batchPromises = oldBatchesSnapshot.docs.map(doc => doc.ref.delete());
+            await Promise.all(batchPromises);
+            
+            // Dodaj nowe partie
+            for (const b of newBatches) {
+                await slotRef.collection("batches").add({
+                    prodDate: b.prodDate,
+                    cartons: b.cartons,
+                    pieces: b.pieces
+                });
+            }
+            
             showToast('✅ Zapisano');
             editModal.style.display = 'none';
         } catch (err) {
@@ -456,9 +553,13 @@
 
     clearSlotBtn.addEventListener('click', async () => {
         if (!currentEditingLocation) return;
-        if (!confirm('Na pewno wyczyścić to pole?')) return;
+        if (!confirm('Na pewno wyczyścić to pole (usunie też wszystkie partie)?')) return;
         try {
-            await db.collection("slots").doc(currentEditingLocation).delete();
+            const slotRef = db.collection("slots").doc(currentEditingLocation);
+            // Usuń partie
+            const batchesSnapshot = await slotRef.collection("batches").get();
+            await Promise.all(batchesSnapshot.docs.map(d => d.ref.delete()));
+            await slotRef.delete();
             showToast('🗑️ Pole wyczyszczone');
             editModal.style.display = 'none';
         } catch (err) {
@@ -471,7 +572,7 @@
     // ========== ZARZĄDZANIE PRODUKTAMI ==========
     function renderProductsList() {
         if (productsList.length === 0) {
-            productsListContainer.innerHTML = '<div style="text-align:center; color:#64748b;">Brak produktów. Dodaj pierwszy!</div>';
+            productsListContainer.innerHTML = '<div style="text-align:center; color:#64748b;">Brak produktów.</div>';
             return;
         }
         let html = '';
@@ -482,31 +583,26 @@
                     <span style="font-size:12px; color:#64748b;">Kod: ${prod.code || '—'} | Domyślnie: ${prod.defaultQty || 1} szt.</span>
                 </div>
                 <div class="product-actions">
-                    <button class="icon-btn edit-product" data-id="${prod.id}" title="Edytuj">✏️</button>
-                    <button class="icon-btn delete-product" data-id="${prod.id}" title="Usuń">🗑️</button>
+                    <button class="icon-btn edit-product" data-id="${prod.id}">✏️</button>
+                    <button class="icon-btn delete-product" data-id="${prod.id}">🗑️</button>
                 </div>
             </div>`;
         });
         productsListContainer.innerHTML = html;
-        document.querySelectorAll('.edit-product').forEach(btn => {
-            btn.addEventListener('click', () => editProduct(btn.dataset.id));
-        });
-        document.querySelectorAll('.delete-product').forEach(btn => {
-            btn.addEventListener('click', () => deleteProduct(btn.dataset.id));
-        });
+        document.querySelectorAll('.edit-product').forEach(btn => btn.addEventListener('click', () => editProduct(btn.dataset.id)));
+        document.querySelectorAll('.delete-product').forEach(btn => btn.addEventListener('click', () => deleteProduct(btn.dataset.id)));
     }
 
     async function addProduct() {
         const name = newProductName.value.trim();
-        if (!name) { alert('Podaj nazwę produktu'); return; }
-        const code = newProductCode.value.trim();
-        const defaultQty = parseInt(newProductQty.value) || 1;
+        if (!name) { alert('Podaj nazwę'); return; }
         try {
             await db.collection("products").add({
-                name, code: code || null, defaultQty,
+                name, code: newProductCode.value.trim() || null,
+                defaultQty: parseInt(newProductQty.value) || 1,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
-            newProductName.value = ''; newProductCode.value = ''; newProductQty.value = '1';
+            newProductName.value = newProductCode.value = ''; newProductQty.value = '1';
             showToast('✅ Produkt dodany');
         } catch (err) { alert('Błąd: ' + err.message); }
     }
@@ -516,12 +612,11 @@
         if (!prod) return;
         const newName = prompt('Nowa nazwa:', prod.name); if (newName === null) return;
         const newCode = prompt('Nowy kod:', prod.code || '');
-        const newQty = prompt('Domyślna ilość na palecie:', prod.defaultQty || 1);
-        if (newName.trim() === '') { alert('Nazwa nie może być pusta'); return; }
+        const newQty = prompt('Domyślna ilość:', prod.defaultQty || 1);
+        if (!newName.trim()) { alert('Nazwa wymagana'); return; }
         try {
             await db.collection("products").doc(id).update({
-                name: newName.trim(),
-                code: newCode.trim() || null,
+                name: newName.trim(), code: newCode.trim() || null,
                 defaultQty: parseInt(newQty) || 1
             });
             showToast('✅ Zaktualizowano');
@@ -529,11 +624,9 @@
     }
 
     async function deleteProduct(id) {
-        if (!confirm('Usunąć produkt? UWAGA: nie usunie to towaru z regałów.')) return;
-        try {
-            await db.collection("products").doc(id).delete();
-            showToast('🗑️ Produkt usunięty');
-        } catch (err) { alert('Błąd: ' + err.message); }
+        if (!confirm('Usunąć produkt?')) return;
+        try { await db.collection("products").doc(id).delete(); showToast('🗑️ Usunięto'); }
+        catch (err) { alert('Błąd: ' + err.message); }
     }
 
     addProductBtn.addEventListener('click', addProduct);
@@ -555,6 +648,7 @@
     });
 
     subscribeToSlots();
+    subscribeToBatches();
     subscribeToProducts();
 </script>
 </body>
