@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <title>Zdrowie Psychiczne · wsparcie i informacje</title>
+  <!-- Font Awesome dla subtelnych ikon (opcjonalnie, nie zakłóca wyglądu) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: #f4fbfe;  /* bardzo jasny błękit / spokojne tło */
+      color: #1a2e3b;
+      line-height: 1.5;
+      padding: 20px 16px 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .page-wrap {
+      max-width: 1280px;
+      margin: 0 auto;
+      width: 100%;
+      flex: 1;
+    }
+
+    /* ----- nagłówek i nawigacja ----- */
+    h1 {
+      font-size: clamp(2.4rem, 10vw, 4rem);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      text-align: center;
+      color: #0b3b4f;
+      margin-bottom: 0.5rem;
+      margin-top: 0.2rem;
+    }
+
+    .nav-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 0.25rem 0.5rem;
+      margin-bottom: 2.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid rgba(11, 59, 79, 0.08);
+    }
+
+    .nav-bar a {
+      text-decoration: none;
+      color: #1e5266;
+      font-weight: 500;
+      font-size: 1.1rem;
+      padding: 0.3rem 0.2rem;
+      transition: color 0.2s;
+    }
+
+    .nav-bar a:hover {
+      color: #0a2e3c;
+      text-decoration: underline;
+      text-underline-offset: 4px;
+    }
+
+    .nav-sep {
+      color: #7f9eaa;
+      font-weight: 300;
+      user-select: none;
+    }
+
+    /* ----- wspólne style kart i bloków ----- */
+    .card, .phone-card, .institution-card {
+      background: #ffffff;
+      border-radius: 24px;
+      padding: 1.8rem 1.6rem;
+      box-shadow: 0 10px 25px -5px rgba(0, 30, 40, 0.06), 0 4px 8px rgba(0, 20, 30, 0.02);
+      transition: box-shadow 0.2s ease;
+      border: 1px solid rgba(165, 200, 215, 0.15);
+    }
+
+    .card:hover, .phone-card:hover, .institution-card:hover {
+      box-shadow: 0 18px 30px -8px rgba(18, 80, 100, 0.1);
+    }
+
+    /* linki ze strzałką – bez tła, podkreślenie po najechaniu */
+    .arrow-link {
+      display: inline-block;
+      text-decoration: none;
+      color: #1f728c;
+      font-weight: 550;
+      font-size: 1rem;
+      margin-top: 1rem;
+      transition: all 0.15s;
+      border-bottom: 1.5px solid transparent;
+    }
+
+    .arrow-link:hover {
+      color: #0b4b60;
+      text-decoration: underline;
+      text-underline-offset: 5px;
+      text-decoration-thickness: 1.5px;
+      border-bottom-color: #0b4b60;
+    }
+
+    .arrow-link i {
+      margin-left: 6px;
+      font-size: 0.85rem;
+      transition: transform 0.1s;
+    }
+
+    .arrow-link:hover i {
+      transform: translateX(3px);
+    }
+
+    /* sekcje */
+    section {
+      margin-bottom: 3.5rem;
+    }
+
+    h2 {
+      font-size: 2rem;
+      font-weight: 600;
+      color: #124c61;
+      margin-bottom: 1.25rem;
+      letter-spacing: -0.01em;
+    }
+
+    .section-subhead {
+      font-size: 1.2rem;
+      color: #2c6073;
+      margin-bottom: 1.75rem;
+      font-weight: 400;
+    }
+
+    /* --- sekcja telefonów --- */
+    .phone-card {
+      padding: 2rem 2rem;
+    }
+
+    .phone-title {
+      font-size: 1.9rem;
+      font-weight: 600;
+      color: #0f4257;
+      margin-bottom: 1.5rem;
+    }
+
+    .phone-numbers {
+      margin-bottom: 0.5rem;
+    }
+
+    .phone-item {
+      font-size: 1.4rem;
+      margin-bottom: 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.2rem 0.8rem;
+    }
+
+    .phone-number {
+      font-weight: 700;
+      background: #e9f2f7;
+      padding: 0.2rem 1rem;
+      border-radius: 60px;
+      font-size: 1.6rem;
+      letter-spacing: 0.5px;
+      color: #0a384b;
+      display: inline-block;
+    }
+
+    .phone-desc {
+      font-weight: 450;
+      color: #1e4457;
+    }
+
+    /* trzy kafelki (karty) */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.8rem;
+      margin-top: 1rem;
+    }
+
+    .card h3 {
+      font-size: 1.7rem;
+      font-weight: 600;
+      color: #0b3b4f;
+      margin-bottom: 1rem;
+    }
+
+    .card p {
+      color: #254f61;
+      margin-bottom: 1.2rem;
+    }
+
+    /* siatka instytucji 4 kolumny */
+    .inst-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.8rem;
+      margin: 2rem 0 1.2rem;
+    }
+
+    .institution-card {
+      padding: 1.8rem 1.4rem;
+      text-align: left;
+    }
+
+    .institution-card h4 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #124c61;
+      margin-bottom: 0.75rem;
+    }
+
+    .institution-card p {
+      color: #2a5568;
+      font-size: 1rem;
+    }
+
+    .profesjonalna-info {
+      text-align: center;
+      font-size: 1.2rem;
+      color: #1d5a70;
+      margin-top: 1.5rem;
+      margin-bottom: 0.8rem;
+      font-weight: 470;
+    }
+
+    /* stopka */
+    .footer-note {
+      background: #e3eef4;  /* jasnoszary/błękitnawy */
+      color: #1a4a5e;
+      text-align: center;
+      padding: 1.2rem 1.5rem;
+      border-radius: 30px 30px 0 0;
+      font-size: 0.95rem;
+      margin-top: 2.8rem;
+      border-top: 1px solid #c2dae5;
+      letter-spacing: 0.2px;
+    }
+
+    /* responsywność */
+    @media screen and (max-width: 900px) {
+      .cards-grid {
+        gap: 1.2rem;
+      }
+    }
+
+    @media screen and (max-width: 768px) {
+      h1 {
+        margin-bottom: 0.2rem;
+      }
+
+      .cards-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+      }
+
+      .inst-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.2rem;
+      }
+
+      .phone-item {
+        font-size: 1.2rem;
+      }
+
+      .phone-number {
+        font-size: 1.4rem;
+      }
+
+      .phone-card {
+        padding: 1.5rem;
+      }
+    }
+
+    @media screen and (max-width: 480px) {
+      body {
+        padding: 12px 10px 0;
+      }
+
+      .inst-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .nav-bar {
+        gap: 0.1rem 0.3rem;
+      }
+
+      .nav-bar a {
+        font-size: 1rem;
+      }
+
+      h2 {
+        font-size: 1.8rem;
+      }
+
+      .phone-title {
+        font-size: 1.6rem;
+      }
+
+      .institution-card h4 {
+        font-size: 1.4rem;
+      }
+    }
+
+    /* drobne poprawki */
+    .mt-2 {
+      margin-top: 0.6rem;
+    }
+
+    .text-center {
+      text-align: center;
+    }
+
+    i {
+      color: inherit;
+    }
+
+    /* link w karcie – zachowuje styl arrow-link */
+    .card .arrow-link {
+      margin-top: 0.2rem;
+    }
+
+    /* wyrównanie dla pierwszej karty bez linku */
+    .card p:last-of-type {
+      margin-bottom: 0;
+    }
+
+    /* separator nawigacji */
+    .nav-sep {
+      margin: 0 2px;
+    }
+  </style>
+</head>
+<body>
+<div class="page-wrap">
+  <!-- Nagłówek -->
+  <header>
+    <h1>Zdrowie Psychiczne</h1>
+    <div class="nav-bar">
+      <a href="#">Strona Główna</a>
+      <span class="nav-sep">|</span>
+      <a href="#">O Nas</a>
+      <span class="nav-sep">|</span>
+      <a href="#">Artykuły</a>
+      <span class="nav-sep">|</span>
+      <a href="#">Kontakt</a>
+    </div>
+  </header>
+
+  <main>
+    <!-- Sekcja: Bezpłatne Telefony Zaufania -->
+    <section>
+      <div class="phone-card">
+        <div class="phone-title">📞 Bezpłatne Telefony Zaufania</div>
+        <div class="phone-numbers">
+          <div class="phone-item">
+            <span class="phone-number">116 111</span>
+            <span class="phone-desc">– Telefon Zaufania dla Dzieci i Młodzieży</span>
+          </div>
+          <div class="phone-item">
+            <span class="phone-number">800 70 222</span>
+            <span class="phone-desc">– Linia Wsparcia</span>
+          </div>
+        </div>
+        <a href="#" class="arrow-link">Więcej informacji <i class="fas fa-chevron-right"></i></a>
+      </div>
+    </section>
+
+    <!-- Trzy kafelki / karty -->
+    <section>
+      <div class="cards-grid">
+        <!-- Karta 1: bez przycisku -->
+        <div class="card">
+          <h3>Higiena Zdrowia Psychicznego</h3>
+          <p>Jak dbać o swoje samopoczucie na co dzień? Porady dotyczące relaksu i redukcji stresu.</p>
+          <!-- brak przycisku zgodnie z opisem -->
+        </div>
+
+        <!-- Karta 2: z linkiem -->
+        <div class="card">
+          <h3>Poradnie Psychologiczno-Pedagogiczne</h3>
+          <p>Gdzie szukać pomocy? Informacje o lokalnych poradniach i ich ofercie.</p>
+          <a href="#" class="arrow-link">Znajdź poradnię <i class="fas fa-chevron-right"></i></a>
+        </div>
+
+        <!-- Karta 3: z linkiem -->
+        <div class="card">
+          <h3>Wsparcie w Fundacjach i Stowarzyszeniach</h3>
+          <p>Formy pomocy dostępne w organizacjach pozarządowych wspierających zdrowie psychiczne.</p>
+          <a href="#" class="arrow-link">Sprawdź możliwości <i class="fas fa-chevron-right"></i></a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sekcja: Instytucje Zdrowia Psychicznego -->
+    <section>
+      <h2>Instytucje Zdrowia Psychicznego</h2>
+      <div class="section-subhead">Jakie instytucje mogą Ci pomóc?</div>
+
+      <!-- Siatka 4 kolumny (desktop), 2 tablet, 1 mobile -->
+      <div class="inst-grid">
+        <div class="institution-card">
+          <h4>Szpitale Psychiatryczne</h4>
+          <p>Leczenie zaburzeń i kryzysów.</p>
+        </div>
+        <div class="institution-card">
+          <h4>Poradnie Zdrowia Psychicznego</h4>
+          <p>Terapia i konsultacje.</p>
+        </div>
+        <div class="institution-card">
+          <h4>Centra Zdrowia Środowiskowego</h4>
+          <p>Wsparcie w społeczności.</p>
+        </div>
+        <div class="institution-card">
+          <h4>Ośrodki Interwencji Kryzysowej</h4>
+          <p>Pomoc w nagłych sytuacjach.</p>
+        </div>
+      </div>
+
+      <!-- Zdanie pod siatką, wyśrodkowane -->
+      <div class="profesjonalna-info">
+        Profesjonalna pomoc w różnych obszarach zdrowia psychicznego.
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- Stopka (dyskretna, jasnoszare tło) -->
+<footer class="footer-note">
+  Strona ma charakter informacyjny – nie zastępuje diagnozy.
+</footer>
+
+<!-- (opcjonalnie: minimalny JS dla zachowania – nic nie jest wymagane, ale pozostawiamy pusty) -->
+<script>
+  (function() {
+    // Całkowicie zgodnie z opisem – skrypt może być pusty.
+    // Można dodać delikatną interakcję, ale nie jest wymagana.
+    console.log('Strona Zdrowie Psychiczne – wersja informacyjna');
+  })();
+</script>
+</body>
+</html>
