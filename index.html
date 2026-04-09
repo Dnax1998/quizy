@@ -288,7 +288,6 @@
                 let totalCartons = 0, totalPieces = 0;
                 batches.forEach(b => { totalCartons += b.cartons || 0; totalPieces += b.pieces || 0; });
                 
-                // Bezpieczne odczytanie starej ilości
                 const oldQty = (data && data.quantity) ? `${data.quantity} szt` : '';
                 const qtyStr = (totalCartons > 0 || totalPieces > 0) ? `${totalCartons}k ${totalPieces}szt` : oldQty;
                 
@@ -313,9 +312,7 @@
             html += `</div></div>`;
         }
         rackView.innerHTML = html;
-        document.querySelectorAll('.slot').forEach(slot => {
-            slot.addEventListener('click', () => openEditModal(slot.dataset.locationId));
-        });
+        // Listenery są teraz przez delegację na rackView
     }
 
     // ========== WYSZUKIWANIE ==========
@@ -619,6 +616,16 @@
     addProductBtn.addEventListener('click', addProduct);
     manageProductsBtn.addEventListener('click', () => productsModal.style.display = 'flex');
     closeProductsBtn.addEventListener('click', () => productsModal.style.display = 'none');
+
+    // ========== DELEGACJA KLIKNIĘĆ W SLOTY ==========
+    rackView.addEventListener('click', (e) => {
+        const slot = e.target.closest('.slot');
+        if (!slot) return;
+        const locId = slot.dataset.locationId;
+        if (locId) {
+            openEditModal(locId);
+        }
+    });
 
     // ========== INICJALIZACJA ==========
     tabs.forEach(tab => tab.addEventListener('click', () => {
