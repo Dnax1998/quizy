@@ -127,7 +127,7 @@
     </div>
 </div>
 
-<!-- Modal produktów (bez zmian) -->
+<!-- Modal produktów -->
 <div class="modal" id="productsModal">
     <div class="modal-card">
         <h3>📋 Baza produktów</h3>
@@ -160,7 +160,7 @@
 <script>
     // ========== KONFIGURACJA FIREBASE ==========
     // 👇 WKLEJ SWÓJ KLUCZ Z KONSOLI FIREBASE 👇
-      const firebaseConfig = {
+    const firebaseConfig = {
         apiKey: "AIzaSyAbMTVozOhIXesvF59REYnIOtmo-V5qimk",
         authDomain: "forevermagazyn.firebaseapp.com",
         projectId: "forevermagazyn",
@@ -177,8 +177,8 @@
     const LEVELS = 5;
     const COLUMNS = 21;
     let currentRack = 'A';
-    let allSlotsData = {};       // cache slotów
-    let slotBatches = {};        // cache partii: locId -> array
+    let allSlotsData = {};
+    let slotBatches = {};
     let productsList = [];
     let unsubscribeSlots = null;
     let unsubscribeProducts = null;
@@ -216,7 +216,7 @@
     const toast = document.getElementById('toast');
     
     let currentEditingLocation = null;
-    let currentBatches = []; // tablica obiektów partii dla edytowanego pola
+    let currentBatches = [];
 
     function getLocationId(rack, level, col) {
         return `R${rack}-P${level}-K${col}`;
@@ -236,29 +236,24 @@
             snapshot.forEach(doc => allSlotsData[doc.id] = doc.data());
             renderCurrentRack();
             applySearchHighlight();
-        });
+        }, err => console.error("Slots error:", err));
     }
 
     function subscribeToBatches() {
-        // Subskrybujemy całą kolekcję "batches" (wszystkie dokumenty z podkolekcjami)
-        // Firestore nie wspiera głębokich subskrypcji, więc użyjemy kolekcji grupowej (collectionGroup)
         if (unsubscribeBatches) unsubscribeBatches();
         unsubscribeBatches = db.collectionGroup("batches").onSnapshot(snapshot => {
-            // Czyścimy cache
             slotBatches = {};
             snapshot.forEach(doc => {
-                // doc.ref.parent.parent.id to ID slotu (lokalizacji)
                 const locId = doc.ref.parent.parent.id;
                 if (!slotBatches[locId]) slotBatches[locId] = [];
                 slotBatches[locId].push({ id: doc.id, ...doc.data() });
             });
-            // Sortujemy partie wg daty
             Object.keys(slotBatches).forEach(locId => {
                 slotBatches[locId].sort((a,b) => (a.prodDate?.seconds || 0) - (b.prodDate?.seconds || 0));
             });
             renderCurrentRack();
             applySearchHighlight();
-        });
+        }, err => console.error("Batches error:", err));
     }
 
     function subscribeToProducts() {
@@ -269,10 +264,10 @@
             productsList.sort((a,b) => (a.name || '').localeCompare(b.name || ''));
             updateProductSelect();
             renderProductsList();
-        });
+        }, err => console.error("Products error:", err));
     }
 
-    // ========== RENDER REGAŁÓW ==========
+    // ========== RENDER REGAŁÓW (POPRAWIONY) ==========
     function renderCurrentRack() {
         let html = '';
         for (let level = 1; level <= LEVELS; level++) {
@@ -289,22 +284,23 @@
                 }
                 const productShort = isOccupied ? (data.productName.substring(0, 12) + (data.productName.length>12?'…':'')) : '';
                 
-                // Oblicz sumaryczną ilość z partii
                 const batches = slotBatches[locId] || [];
                 let totalCartons = 0, totalPieces = 0;
                 batches.forEach(b => { totalCartons += b.cartons || 0; totalPieces += b.pieces || 0; });
-                const qtyStr = (totalCartons > 0 || totalPieces > 0) ? `${totalCartons}k ${totalPieces}szt` : (data.quantity ? `${data.quantity} szt` : '');
+                
+                // Bezpieczne odczytanie starej ilości
+                const oldQty = (data && data.quantity) ? `${data.quantity} szt` : '';
+                const qtyStr = (totalCartons > 0 || totalPieces > 0) ? `${totalCartons}k ${totalPieces}szt` : oldQty;
                 
                 html += `<div class="slot ${slotClass}" data-location-id="${locId}">`;
                 html += `<div class="slot-code">${level}-${col}</div>`;
                 if (isOccupied) {
                     html += `<div class="slot-data" style="font-weight:700;">${productShort || '—'}</div>`;
                     if (batches.length > 0) {
-                        // pokaż pierwszą datę
                         const firstDate = batches[0].prodDate?.toDate();
                         if (firstDate) html += `<div class="slot-data" style="font-size:9px;">${firstDate.toLocaleDateString('pl-PL')}</div>`;
                         if (batches.length > 1) html += `<div class="slot-data">📦+${batches.length-1}</div>`;
-                    } else if (data.prodDate) {
+                    } else if (data && data.prodDate) {
                         const d = data.prodDate.toDate ? data.prodDate.toDate() : new Date(data.prodDate);
                         html += `<div class="slot-data" style="font-size:9px;">${d.toLocaleDateString('pl-PL')}</div>`;
                     }
@@ -322,7 +318,7 @@
         });
     }
 
-    // ========== WYSZUKIWANIE (uwzględnia partie) ==========
+    // ========== WYSZUKIWANIE ==========
     function applySearchHighlight() {
         const productQuery = searchProductInput.value.trim().toLowerCase();
         const dateQuery = searchDateInput.value.trim();
@@ -343,8 +339,7 @@
             
             if (dateQuery) {
                 const batches = slotBatches[locId] || [];
-                if (batches.length === 0 && data.prodDate) {
-                    // stary format
+                if (batches.length === 0 && data && data.prodDate) {
                     const d = data.prodDate.toDate ? data.prodDate.toDate() : new Date(data.prodDate);
                     const dateStr = `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
                     dateMatch = dateStr.includes(dateQuery);
@@ -381,7 +376,7 @@
         applySearchHighlight();
     });
 
-    // ========== OBSŁUGA PARTII W MODALU ==========
+    // ========== OBSŁUGA PARTII ==========
     function renderBatchesList() {
         let html = '';
         currentBatches.forEach((batch, index) => {
@@ -400,7 +395,6 @@
         });
         batchesContainer.innerHTML = html || '<div style="color:#64748b; text-align:center;">Brak partii. Kliknij "Dodaj partię".</div>';
         
-        // Podepnij eventy do przycisków usuwania
         document.querySelectorAll('.batch-remove').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const idx = parseInt(btn.dataset.index);
@@ -462,7 +456,6 @@
             productCodeInp.value = data.productCode || '';
         }
         
-        // Wczytaj partie
         const batches = slotBatches[locId] || [];
         currentBatches = batches.map(b => ({
             id: b.id,
@@ -518,24 +511,19 @@
         const type = palletType.value;
         const newBatches = collectBatchesFromForm();
         
-        // Zapisz dane slotu
         const slotData = {
             ...productData,
             palletType: type,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         };
-        // Usuń stare pole quantity jeśli istniało (opcjonalnie)
         
         try {
             const slotRef = db.collection("slots").doc(currentEditingLocation);
             await slotRef.set(slotData, { merge: true });
             
-            // Usuń stare partie
             const oldBatchesSnapshot = await slotRef.collection("batches").get();
-            const batchPromises = oldBatchesSnapshot.docs.map(doc => doc.ref.delete());
-            await Promise.all(batchPromises);
+            await Promise.all(oldBatchesSnapshot.docs.map(doc => doc.ref.delete()));
             
-            // Dodaj nowe partie
             for (const b of newBatches) {
                 await slotRef.collection("batches").add({
                     prodDate: b.prodDate,
@@ -556,7 +544,6 @@
         if (!confirm('Na pewno wyczyścić to pole (usunie też wszystkie partie)?')) return;
         try {
             const slotRef = db.collection("slots").doc(currentEditingLocation);
-            // Usuń partie
             const batchesSnapshot = await slotRef.collection("batches").get();
             await Promise.all(batchesSnapshot.docs.map(d => d.ref.delete()));
             await slotRef.delete();
@@ -569,7 +556,7 @@
 
     cancelEditBtn.addEventListener('click', () => editModal.style.display = 'none');
 
-    // ========== ZARZĄDZANIE PRODUKTAMI ==========
+    // ========== PRODUKTY ==========
     function renderProductsList() {
         if (productsList.length === 0) {
             productsListContainer.innerHTML = '<div style="text-align:center; color:#64748b;">Brak produktów.</div>';
