@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>Magazyn Regały + Grupowanie co 3</title>
+    <title>Magazyn Regały + Eksport CSV</title>
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -22,21 +22,8 @@
         .rack-container { background: white; border-radius: 24px; padding: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
         .shelf { margin-bottom: 16px; }
         .shelf-label { font-weight: 700; margin-bottom: 6px; color: #334155; font-size: 14px; display: flex; justify-content: space-between; }
-        
-        /* Nagłówek kolumn */
-        .columns-header { display: grid; grid-template-columns: repeat(21, 1fr); gap: 6px; margin-bottom: 4px; padding: 0 2px; }
-        .col-number { font-size: 10px; text-align: center; color: #64748b; font-weight: 500; }
-        .col-number.group-end { color: #1e293b; font-weight: 700; background: #e2e8f0; border-radius: 4px; }
-        
-        /* Siatka slotów */
         .slots { display: grid; grid-template-columns: repeat(21, 1fr); gap: 6px; }
         .slot { aspect-ratio: 1 / 1.2; background: #f1f5f9; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #1e293b; cursor: pointer; border: 2px solid transparent; transition: all 0.15s; padding: 4px 2px; text-align: center; line-height: 1.2; box-shadow: inset 0 1px 3px rgba(0,0,0,0.03); }
-        /* Belka wzmacniająca – pogrubiona linia co 3 kolumny */
-        .slot:nth-child(3n) { border-right: 3px solid #94a3b8; }
-        .slot:nth-child(3n+1) { border-left: none; }
-        /* Opcjonalnie można dodać lekkie tło dla co trzeciej kolumny */
-        .slot:nth-child(3n) { background: #f8fafc; }
-        
         .slot.occupied-mag { background: #fee2e2; border-color: #ef4444; color: #991b1b; }
         .slot.occupied-sped { background: #dcfce7; border-color: #22c55e; color: #166534; }
         .slot.occupied-other { background: #dbeafe; border-color: #3b82f6; color: #1e3a8a; }
@@ -59,7 +46,7 @@
         .status-badge { font-size: 12px; background: #cbd5e1; padding: 2px 8px; border-radius: 20px; }
         .toast-msg { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 10px 20px; border-radius: 40px; opacity: 0; transition: 0.2s; pointer-events: none; z-index: 2000; }
 
-        /* Lista partii w edycji */
+        /* Lista partii */
         .batch-list { margin-top: 8px; }
         .batch-item { background: #f8fafc; border-radius: 12px; padding: 12px; margin-bottom: 8px; border: 1px solid #e2e8f0; }
         .batch-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
@@ -81,6 +68,9 @@
         .product-actions { display: flex; gap: 8px; }
         .icon-btn { background: none; border: none; font-size: 18px; cursor: pointer; padding: 4px 8px; border-radius: 20px; }
         .icon-btn:hover { background: #e2e8f0; }
+        
+        /* Eksport CSV */
+        .export-options { display: flex; gap: 16px; margin: 16px 0; flex-direction: column; }
     </style>
 </head>
 <body>
@@ -94,6 +84,7 @@
         </div>
         <button class="btn-secondary" id="clearSearchBtn">✖ Wyczyść</button>
         <button class="btn-secondary" id="batchesByProductBtn">📊 Partie wg produktu</button>
+        <button class="btn-secondary" id="exportCsvBtn">📥 Eksportuj CSV</button>
         <button class="btn-secondary" id="manageProductsBtn">📋 Produkty</button>
     </div>
 
@@ -183,12 +174,29 @@
     </div>
 </div>
 
+<!-- Modal eksportu CSV -->
+<div class="modal" id="exportCsvModal">
+    <div class="modal-card" style="max-width:450px;">
+        <h3>📥 Eksport do CSV</h3>
+        <p>Wybierz zakres danych:</p>
+        <div class="export-options">
+            <label><input type="radio" name="exportScope" value="currentRack" checked> Tylko bieżący regał (<span id="currentRackLabel">A</span>)</label>
+            <label><input type="radio" name="exportScope" value="allRacks"> Wszystkie regały</label>
+        </div>
+        <p>Zostaną wyeksportowane wszystkie zajęte lokalizacje wraz ze szczegółami partii.</p>
+        <div class="flex-row">
+            <button class="btn" id="cancelExportBtn">Anuluj</button>
+            <button class="btn btn-primary" id="doExportBtn">Eksportuj</button>
+        </div>
+    </div>
+</div>
+
 <div id="toast" class="toast-msg">Zapisano</div>
 
 <script>
     // ========== KONFIGURACJA FIREBASE ==========
     // 👇 WKLEJ SWÓJ KLUCZ Z KONSOLI FIREBASE 👇
-const firebaseConfig = {
+    const firebaseConfig = {
         apiKey: "AIzaSyAbMTVozOhIXesvF59REYnIOtmo-V5qimk",
         authDomain: "forevermagazyn.firebaseapp.com",
         projectId: "forevermagazyn",
@@ -236,12 +244,18 @@ const firebaseConfig = {
     const manageProductsBtn = document.getElementById('manageProductsBtn');
     const closeProductsBtn = document.getElementById('closeProductsBtn');
     
-    // Modal FIFO
     const productBatchesModal = document.getElementById('productBatchesModal');
     const productFilterSelect = document.getElementById('productFilterSelect');
     const batchesTableBody = document.getElementById('batchesTableBody');
     const batchesByProductBtn = document.getElementById('batchesByProductBtn');
     const closeProductBatchesBtn = document.getElementById('closeProductBatchesBtn');
+    
+    // Eksport CSV
+    const exportCsvBtn = document.getElementById('exportCsvBtn');
+    const exportCsvModal = document.getElementById('exportCsvModal');
+    const cancelExportBtn = document.getElementById('cancelExportBtn');
+    const doExportBtn = document.getElementById('doExportBtn');
+    const currentRackLabel = document.getElementById('currentRackLabel');
     
     const toast = document.getElementById('toast');
     
@@ -297,25 +311,11 @@ const firebaseConfig = {
         }, err => console.error("Products error:", err));
     }
 
-    // ========== RENDER REGAŁÓW (z nagłówkiem kolumn) ==========
+    // ========== RENDER REGAŁÓW ==========
     function renderCurrentRack() {
         let html = '';
-        
-        // Generuj nagłówek z numerami kolumn (wizualne grupowanie co 3)
-        let headerHtml = '<div class="columns-header">';
-        for (let col = 1; col <= COLUMNS; col++) {
-            const isGroupEnd = (col % 3 === 0);
-            headerHtml += `<div class="col-number ${isGroupEnd ? 'group-end' : ''}">${col}</div>`;
-        }
-        headerHtml += '</div>';
-        
         for (let level = 1; level <= LEVELS; level++) {
-            html += `<div class="shelf">`;
-            html += `<div class="shelf-label"><span>📌 Poziom ${level}</span><span class="status-badge">${COLUMNS} pól</span></div>`;
-            // Dodaj nagłówek tylko nad pierwszym poziomem, żeby nie powielać
-            if (level === 1) html += headerHtml;
-            
-            html += `<div class="slots">`;
+            html += `<div class="shelf"><div class="shelf-label"><span>📌 Poziom ${level}</span><span class="status-badge">${COLUMNS} pól</span></div><div class="slots">`;
             for (let col = 1; col <= COLUMNS; col++) {
                 const locId = getLocationId(currentRack, level, col);
                 const data = allSlotsData[locId] || null;
@@ -427,7 +427,7 @@ const firebaseConfig = {
         applySearchHighlight();
     });
 
-    // ========== OBSŁUGA WIELU PRODUKTÓW W MODALU ==========
+    // ========== OBSŁUGA WIELU PRODUKTÓW ==========
     function renderBatchesList() {
         let html = '';
         currentBatches.forEach((batch, index) => {
@@ -729,12 +729,16 @@ const firebaseConfig = {
             row.addEventListener('click', () => {
                 const locId = row.dataset.locationId;
                 if (!locId) return;
+                
                 const rack = locId.charAt(1);
                 if (RACKS.includes(rack)) {
                     currentRack = rack;
-                    tabs.forEach(t => t.classList.toggle('active', t.dataset.rack === rack));
+                    tabs.forEach(t => {
+                        t.classList.toggle('active', t.dataset.rack === rack);
+                    });
                     renderCurrentRack();
                 }
+                
                 productBatchesModal.style.display = 'none';
                 openEditModal(locId);
             });
@@ -743,8 +747,11 @@ const firebaseConfig = {
 
     productFilterSelect.addEventListener('change', () => {
         const productId = productFilterSelect.value;
-        if (productId) renderBatchesForProduct(productId);
-        else batchesTableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Wybierz produkt</td></tr>';
+        if (productId) {
+            renderBatchesForProduct(productId);
+        } else {
+            batchesTableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Wybierz produkt</td></tr>';
+        }
     });
 
     batchesByProductBtn.addEventListener('click', () => {
@@ -752,7 +759,91 @@ const firebaseConfig = {
         productBatchesModal.style.display = 'flex';
     });
 
-    closeProductBatchesBtn.addEventListener('click', () => productBatchesModal.style.display = 'none');
+    closeProductBatchesBtn.addEventListener('click', () => {
+        productBatchesModal.style.display = 'none';
+    });
+
+    // ========== EKSPORT CSV ==========
+    function generateCSV() {
+        const scope = document.querySelector('input[name="exportScope"]:checked').value;
+        
+        const rows = [];
+        rows.push(['Regał', 'Poziom', 'Kolumna', 'Lokalizacja', 'Typ palety', 'Produkt', 'Kod produktu', 'Data produkcji', 'Kartony', 'Sztuki'].join(';'));
+        
+        const racksToExport = scope === 'currentRack' ? [currentRack] : RACKS;
+        
+        for (const rack of racksToExport) {
+            for (let level = 1; level <= LEVELS; level++) {
+                for (let col = 1; col <= COLUMNS; col++) {
+                    const locId = getLocationId(rack, level, col);
+                    const slotData = allSlotsData[locId];
+                    const batches = slotBatches[locId] || [];
+                    
+                    if (batches.length > 0) {
+                        batches.forEach(batch => {
+                            const row = [
+                                rack,
+                                level,
+                                col,
+                                locId,
+                                slotData?.palletType || 'magazynowa',
+                                batch.productName || '',
+                                batch.productCode || '',
+                                batch.prodDate ? batch.prodDate.toDate().toLocaleDateString('pl-PL') : '',
+                                batch.cartons || 0,
+                                batch.pieces || 0
+                            ];
+                            rows.push(row.join(';'));
+                        });
+                    } else if (slotData && slotData.productName) {
+                        const row = [
+                            rack,
+                            level,
+                            col,
+                            locId,
+                            slotData.palletType || 'magazynowa',
+                            slotData.productName,
+                            slotData.productCode || '',
+                            slotData.prodDate ? slotData.prodDate.toDate().toLocaleDateString('pl-PL') : '',
+                            '0',
+                            slotData.quantity || 0
+                        ];
+                        rows.push(row.join(';'));
+                    }
+                }
+            }
+        }
+        
+        if (rows.length === 1) {
+            alert('Brak danych do eksportu.');
+            return;
+        }
+        
+        const csvContent = rows.join('\n');
+        const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `magazyn_${scope === 'currentRack' ? currentRack : 'wszystkie'}_${new Date().toISOString().slice(0,10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        showToast('✅ Eksport zakończony');
+        exportCsvModal.style.display = 'none';
+    }
+
+    exportCsvBtn.addEventListener('click', () => {
+        currentRackLabel.textContent = currentRack;
+        exportCsvModal.style.display = 'flex';
+    });
+    
+    cancelExportBtn.addEventListener('click', () => {
+        exportCsvModal.style.display = 'none';
+    });
+    
+    doExportBtn.addEventListener('click', generateCSV);
 
     // ========== DELEGACJA KLIKNIĘĆ ==========
     rackView.addEventListener('click', (e) => {
@@ -769,12 +860,14 @@ const firebaseConfig = {
         tab.classList.add('active');
         renderCurrentRack();
         applySearchHighlight();
+        currentRackLabel.textContent = currentRack; // aktualizuj etykietę w modalu eksportu
     }));
 
     window.addEventListener('click', (e) => {
         if (e.target === editModal) editModal.style.display = 'none';
         if (e.target === productsModal) productsModal.style.display = 'none';
         if (e.target === productBatchesModal) productBatchesModal.style.display = 'none';
+        if (e.target === exportCsvModal) exportCsvModal.style.display = 'none';
     });
 
     subscribeToSlots();
