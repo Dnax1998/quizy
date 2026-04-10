@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>Magazyn Regały 4x5x21 + AMER + FIFO + CSV</title>
+    <title>Magazyn Regały 4x5x21 + FIFO + CSV (wybór regału)</title>
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -23,13 +23,10 @@
         .shelf { margin-bottom: 16px; }
         .shelf-label { font-weight: 700; margin-bottom: 6px; color: #334155; font-size: 14px; display: flex; justify-content: space-between; }
         .slots { display: grid; grid-template-columns: repeat(21, 1fr); gap: 6px; }
-        .slot { aspect-ratio: 1 / 1.2; background: #f1f5f9; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #1e293b; cursor: pointer; border: 2px solid transparent; transition: all 0.15s; padding: 4px 2px; text-align: center; line-height: 1.2; box-shadow: inset 0 1px 3px rgba(0,0,0,0.03); position: relative; }
-        /* Belki co 3 kolumny */
-        .slot:nth-child(3n+1) { border-left: 3px solid #94a3b8; }
+        .slot { aspect-ratio: 1 / 1.2; background: #f1f5f9; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #1e293b; cursor: pointer; border: 2px solid transparent; transition: all 0.15s; padding: 4px 2px; text-align: center; line-height: 1.2; box-shadow: inset 0 1px 3px rgba(0,0,0,0.03); }
         .slot.occupied-mag { background: #fee2e2; border-color: #ef4444; color: #991b1b; }
         .slot.occupied-sped { background: #dcfce7; border-color: #22c55e; color: #166534; }
-        .slot.occupied-amer { background: #dbeafe; border-color: #3b82f6; color: #1e3a8a; }
-        .slot.occupied-linked { background: #e2e8f0; border-color: #94a3b8; color: #475569; cursor: not-allowed; opacity: 0.7; }
+        .slot.occupied-other { background: #dbeafe; border-color: #3b82f6; color: #1e3a8a; }
         .slot:hover { background: #e2e8f0; transform: scale(0.98); }
         .slot-code { font-size: 9px; opacity: 0.7; margin-bottom: 2px; }
         .slot-data { font-size: 10px; }
@@ -67,13 +64,13 @@
         .icon-btn { background: none; border: none; font-size: 18px; cursor: pointer; padding: 4px 8px; border-radius: 20px; }
         .icon-btn:hover { background: #e2e8f0; }
 
+        /* Mały modal wyboru regału */
         .small-modal-card { max-width: 400px !important; }
-        .warning-text { color: #b45309; font-size: 13px; margin-top: 4px; }
     </style>
 </head>
 <body>
 <div class="app">
-    <h1>📦 Magazyn Regały <span style="font-size: 14px; background: #e2e8f0; padding: 4px 12px; border-radius: 40px;">A · B · C · D (5x21) + AMER</span></h1>
+    <h1>📦 Magazyn Regały <span style="font-size: 14px; background: #e2e8f0; padding: 4px 12px; border-radius: 40px;">A · B · C · D (5x21)</span></h1>
     
     <div class="top-bar">
         <div class="search-group">
@@ -102,22 +99,12 @@
 <div class="modal" id="editModal">
     <div class="modal-card">
         <h3>Pole <span id="locationCodeDisplay"></span></h3>
-        <div id="linkedWarning" class="warning-text" style="display:none;">⚠️ Ten slot jest częścią palety amerykańskiej. Edytuj slot główny.</div>
         <div class="form-group">
             <label>🚚 Typ palety</label>
             <select id="palletType">
-                <option value="magazynowa">🔴 Magazynowa EUR (1 slot)</option>
-                <option value="spedycyjna">🟢 Spedycyjna EUR (1 slot)</option>
-                <option value="amerykanska">🔵 Amerykańska (2 sloty)</option>
+                <option value="magazynowa">🔴 Magazynowa (czerwony)</option>
+                <option value="spedycyjna">🟢 Spedycyjna (zielony)</option>
             </select>
-        </div>
-        <div id="amerDirectionGroup" class="form-group" style="display:none;">
-            <label>➡️ Kierunek drugiego slotu</label>
-            <select id="amerDirection">
-                <option value="right">Zajmij slot po prawej (+1 kolumna)</option>
-                <option value="left">Zajmij slot po lewej (-1 kolumna)</option>
-            </select>
-            <div class="warning-text">Uwaga: sąsiedni slot zostanie zablokowany.</div>
         </div>
         <hr style="margin: 20px 0; border: none; border-top: 1px solid #e2e8f0;">
         <label style="font-weight:600;">📦 Produkty na palecie</label>
@@ -188,7 +175,6 @@
 
 <script>
     // ========== KONFIGURACJA FIREBASE ==========
-    // 👇 WKLEJ SWÓJ KLUCZ Z KONSOLI FIREBASE 👇
     const firebaseConfig = {
         apiKey: "TWOJ_KLUCZ",
         authDomain: "TWOJ_PROJEKT.firebaseapp.com",
@@ -197,7 +183,6 @@
         messagingSenderId: "TWOJ_NUMER",
         appId: "TWOJ_APP_ID"
     };
-    // 👆 KONIEC KONFIGURACJI 👆
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
@@ -213,7 +198,6 @@
     let unsubscribeProducts = null;
     let unsubscribeBatches = null;
 
-    // Elementy DOM
     const rackView = document.getElementById('rackView');
     const searchProductInput = document.getElementById('searchProductInput');
     const searchDateInput = document.getElementById('searchDateInput');
@@ -222,9 +206,6 @@
     const editModal = document.getElementById('editModal');
     const locCodeSpan = document.getElementById('locationCodeDisplay');
     const palletType = document.getElementById('palletType');
-    const amerDirectionGroup = document.getElementById('amerDirectionGroup');
-    const amerDirection = document.getElementById('amerDirection');
-    const linkedWarning = document.getElementById('linkedWarning');
     const batchesContainer = document.getElementById('batchesContainer');
     const saveSlotBtn = document.getElementById('saveSlotBtn');
     const cancelEditBtn = document.getElementById('cancelEditBtn');
@@ -251,7 +232,6 @@
     
     let currentEditingLocation = null;
     let currentBatches = [];
-    let isLinkedSlot = false;
 
     function getLocationId(rack, level, col) {
         return `R${rack}-P${level}-K${col}`;
@@ -311,15 +291,13 @@
                 const locId = getLocationId(currentRack, level, col);
                 const data = allSlotsData[locId] || null;
                 const batches = slotBatches[locId] || [];
-                const isLinked = data?.linkedTo ? true : false;
                 const isOccupied = batches.length > 0 || (data && data.productName);
                 let slotClass = '';
                 if (isOccupied) {
                     const type = data?.palletType || 'magazynowa';
-                    if (isLinked) slotClass = 'occupied-linked';
-                    else if (type === 'magazynowa') slotClass = 'occupied-mag';
+                    if (type === 'magazynowa') slotClass = 'occupied-mag';
                     else if (type === 'spedycyjna') slotClass = 'occupied-sped';
-                    else if (type === 'amerykanska') slotClass = 'occupied-amer';
+                    else slotClass = 'occupied-other';
                 }
                 
                 const productNames = [...new Set(batches.map(b => b.productName).filter(n => n))];
@@ -347,7 +325,6 @@
                         html += `<div class="slot-data" style="font-size:9px;">${d.toLocaleDateString('pl-PL')}</div>`;
                     }
                     if (qtyStr) html += `<div class="slot-data">${qtyStr}</div>`;
-                    if (data?.palletType === 'amerykanska' && !isLinked) html += `<div class="slot-data" style="background:#3b82f6; color:white; border-radius:10px; padding:2px 4px;">AMER</div>`;
                 } else {
                     html += `<div class="slot-data" style="opacity:0.5;">puste</div>`;
                 }
@@ -496,48 +473,12 @@
         renderBatchesList();
     });
 
-    // ========== SPRAWDZANIE DOSTĘPNOŚCI SLOTÓW DLA AMERYKAŃSKIEJ ==========
-    function isSlotAvailable(locId) {
-        const data = allSlotsData[locId];
-        return !data || !data.productName; // slot pusty lub tylko zablokowany (linked)
-    }
-
-    function canPlaceAmer(rack, level, col, direction) {
-        const mainLocId = getLocationId(rack, level, col);
-        if (!isSlotAvailable(mainLocId)) return false;
-        
-        let linkedCol = direction === 'right' ? col + 1 : col - 1;
-        if (linkedCol < 1 || linkedCol > COLUMNS) return false;
-        
-        const linkedLocId = getLocationId(rack, level, linkedCol);
-        if (!isSlotAvailable(linkedLocId)) return false;
-        
-        // Dodatkowe zabezpieczenie przed kolizją z belkami? (opcjonalnie)
-        return true;
-    }
-
     // ========== MODAL EDYCJI ==========
-    palletType.addEventListener('change', () => {
-        amerDirectionGroup.style.display = palletType.value === 'amerykanska' ? 'block' : 'none';
-    });
-
     function openEditModal(locId) {
         currentEditingLocation = locId;
-        const data = allSlotsData[locId] || {};
-        isLinkedSlot = !!data.linkedTo;
-        linkedWarning.style.display = isLinkedSlot ? 'block' : 'none';
-        
-        if (isLinkedSlot) {
-            palletType.value = data.palletType || 'magazynowa';
-            palletType.disabled = true;
-            amerDirectionGroup.style.display = 'none';
-        } else {
-            palletType.disabled = false;
-            palletType.value = data.palletType || 'magazynowa';
-            amerDirectionGroup.style.display = palletType.value === 'amerykanska' ? 'block' : 'none';
-        }
-        
         locCodeSpan.textContent = locId;
+        const data = allSlotsData[locId] || {};
+        palletType.value = data.palletType || 'magazynowa';
         const batches = slotBatches[locId] || [];
         currentBatches = batches.map(b => ({
             id: b.id,
@@ -563,24 +504,10 @@
     }
 
     saveSlotBtn.addEventListener('click', async () => {
-        if (!currentEditingLocation || isLinkedSlot) { alert('Nie można edytować zablokowanego slotu.'); return; }
+        if (!currentEditingLocation) return;
         const type = palletType.value;
         const newBatches = collectBatchesFromForm();
         if (newBatches.length === 0) { alert('Dodaj przynajmniej jeden produkt z datą!'); return; }
-        
-        const locParts = currentEditingLocation.match(/R([A-D])-P(\d+)-K(\d+)/);
-        if (!locParts) return;
-        const rack = locParts[1], level = parseInt(locParts[2]), col = parseInt(locParts[3]);
-        
-        // Sprawdzenie dostępności dla amerykańskiej
-        if (type === 'amerykanska') {
-            const dir = amerDirection.value;
-            if (!canPlaceAmer(rack, level, col, dir)) {
-                alert('Nie można umieścić palety amerykańskiej – brak wolnego miejsca lub kolizja z krawędzią regału.');
-                return;
-            }
-        }
-        
         const mainProduct = newBatches[0];
         const slotData = {
             productId: mainProduct.productId,
@@ -589,59 +516,27 @@
             palletType: type,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         };
-        
         try {
             const slotRef = db.collection("slots").doc(currentEditingLocation);
             await slotRef.set(slotData, { merge: true });
-            
-            // Usuń stare partie i dodaj nowe
-            const oldBatches = await slotRef.collection("batches").get();
-            await Promise.all(oldBatches.docs.map(d => d.ref.delete()));
+            const oldBatchesSnapshot = await slotRef.collection("batches").get();
+            await Promise.all(oldBatchesSnapshot.docs.map(doc => doc.ref.delete()));
             for (const b of newBatches) {
                 await slotRef.collection("batches").add({
                     productId: b.productId, productName: b.productName, productCode: b.productCode,
                     prodDate: b.prodDate, cartons: b.cartons, pieces: b.pieces
                 });
             }
-            
-            // Obsługa palety amerykańskiej
-            if (type === 'amerykanska') {
-                const dir = amerDirection.value;
-                let linkedCol = dir === 'right' ? col + 1 : col - 1;
-                const linkedLocId = getLocationId(rack, level, linkedCol);
-                const linkedRef = db.collection("slots").doc(linkedLocId);
-                const linkedData = { linkedTo: currentEditingLocation, palletType: 'amerykanska', updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
-                await linkedRef.set(linkedData, { merge: true });
-                // Wyczyść ewentualne partie w linkowanym slocie
-                const linkedBatches = await linkedRef.collection("batches").get();
-                await Promise.all(linkedBatches.docs.map(d => d.ref.delete()));
-            }
-            
             showToast('✅ Zapisano');
             editModal.style.display = 'none';
         } catch (err) { alert('Błąd zapisu: ' + err.message); }
     });
 
     clearSlotBtn.addEventListener('click', async () => {
-        if (!currentEditingLocation || isLinkedSlot) { alert('Nie można wyczyścić zablokowanego slotu.'); return; }
+        if (!currentEditingLocation) return;
         if (!confirm('Na pewno wyczyścić to pole?')) return;
         try {
             const slotRef = db.collection("slots").doc(currentEditingLocation);
-            const data = allSlotsData[currentEditingLocation] || {};
-            // Jeśli to główny slot palety amerykańskiej, wyczyść też linkowany
-            if (data.palletType === 'amerykanska' && !data.linkedTo) {
-                const locParts = currentEditingLocation.match(/R([A-D])-P(\d+)-K(\d+)/);
-                if (locParts) {
-                    const rack = locParts[1], level = parseInt(locParts[2]), col = parseInt(locParts[3]);
-                    for (let delta of [-1, 1]) {
-                        const linkedLocId = getLocationId(rack, level, col + delta);
-                        const linkedData = allSlotsData[linkedLocId];
-                        if (linkedData && linkedData.linkedTo === currentEditingLocation) {
-                            await db.collection("slots").doc(linkedLocId).delete();
-                        }
-                    }
-                }
-            }
             const batchesSnapshot = await slotRef.collection("batches").get();
             await Promise.all(batchesSnapshot.docs.map(d => d.ref.delete()));
             await slotRef.delete();
@@ -743,7 +638,7 @@
         allBatches.forEach(b => {
             const loc = b.locationId;
             const date = b.prodDate?.toDate().toLocaleDateString('pl-PL') || '—';
-            const type = b.palletType === 'magazynowa' ? '🔴 Magazyn' : (b.palletType === 'spedycyjna' ? '🟢 Spedycja' : '🔵 Amerykańska');
+            const type = b.palletType === 'magazynowa' ? '🔴 Magazyn' : '🟢 Spedycja';
             html += `<tr data-location-id="${loc}"><td>${loc}</td><td>${date}</td><td>${b.cartons}</td><td>${b.pieces}</td><td>${type}</td></tr>`;
         });
         batchesTableBody.innerHTML = html;
@@ -774,7 +669,7 @@
     });
     closeProductBatchesBtn.addEventListener('click', () => productBatchesModal.style.display = 'none');
 
-    // ========== EKSPORT CSV ==========
+    // ========== EKSPORT CSV (Z WYBOREM Z LISTY) ==========
     function doExportCsv(rackChoice) {
         const rows = [];
         rows.push(['Lokalizacja', 'Produkt', 'Kod', 'Data produkcji', 'Kartony', 'Sztuki', 'Typ palety'].join(';'));
@@ -807,11 +702,11 @@
 
     exportCsvBtn.addEventListener('click', () => {
         exportCsvModal.style.display = 'flex';
-        exportRackSelect.value = '';
+        exportRackSelect.value = '';  // domyślnie wszystkie
     });
 
     confirmExportCsvBtn.addEventListener('click', () => {
-        const rackChoice = exportRackSelect.value;
+        const rackChoice = exportRackSelect.value; // "" dla wszystkich
         exportCsvModal.style.display = 'none';
         doExportCsv(rackChoice);
     });
