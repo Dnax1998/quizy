@@ -395,8 +395,8 @@
             if (productMatch && dateMatch) {
                 const el = document.querySelector(`.slot[data-location-id="${locId}"]`);
                 if (el) {
-                    el.style.outline = '4px solid #fbbf24';
-                    el.style.boxShadow = '0 0 0 4px rgba(251,191,36,0.3)';
+                    el.style.outline = '4px solid #000000';               // czarna ramka
+                    el.style.boxShadow = '0 0 0 4px rgba(0, 0, 0, 0.5)'; // czarny cień
                     if (!window._firstHighlightScrolled) {
                         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         window._firstHighlightScrolled = true;
