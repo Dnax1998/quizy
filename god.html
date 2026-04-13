@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Magazyn Regały + SZYBKIE WYBIERANIE PRODUKTU</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { margin: 0; padding: 16px; background: #f4f6f9; }
+        .app { max-width: 1300px; margin: 0 auto; }
+        h1 { font-size: 1.8rem; margin: 0 0 8px 0; color: #1e293b; display: flex; align-items: center; gap: 8px; }
+        .top-bar { display: flex; gap: 12px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
+        .search-group { display: flex; gap: 8px; flex: 2; min-width: 250px; }
+        .search-box { flex: 1; padding: 12px 16px; font-size: 16px; border: 1px solid #cbd5e1; border-radius: 40px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
+        .btn-secondary { background: white; border: 1px solid #cbd5e1; padding: 10px 18px; border-radius: 40px; font-weight: 600; color: #1e293b; cursor: pointer; white-space: nowrap; }
+        .racks-tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; flex-wrap: wrap; }
+        .rack-tab { padding: 12px 24px; background: none; border: none; font-size: 18px; font-weight: 600; color: #64748b; cursor: pointer; border-radius: 20px 20px 0 0; transition: 0.2s; }
+        .rack-tab.active { color: #2563eb; background: white; box-shadow: 0 -2px 8px rgba(0,0,0,0.02); }
+        .rack-container { background: white; border-radius: 24px; padding: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
+        .shelf { margin-bottom: 16px; }
+        .shelf-label { font-weight: 700; margin-bottom: 6px; color: #334155; font-size: 14px; display: flex; justify-content: space-between; }
+        .slots { display: grid; grid-template-columns: repeat(21, 1fr); gap: 6px; }
+        .slot { aspect-ratio: 1 / 1.2; background: #f1f5f9; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #1e293b; cursor: pointer; border: 2px solid transparent; transition: all 0.15s; padding: 4px 2px; text-align: center; line-height: 1.2; box-shadow: inset 0 1px 3px rgba(0,0,0,0.03); }
+        .slot.occupied-mag { background: #fee2e2; border-color: #ef4444; color: #991b1b; }
+        .slot.occupied-sped { background: #dcfce7; border-color: #22c55e; color: #166534; }
+        .slot.occupied-other { background: #dbeafe; border-color: #3b82f6; color: #1e3a8a; }
+        .slot:hover { background: #e2e8f0; transform: scale(0.98); }
+        .slot-code { font-size: 9px; opacity: 0.7; margin-bottom: 2px; }
+        .slot-data { font-size: 10px; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 1000; }
+        .modal-card { background: white; max-width: 700px; width: 90%; max-height: 85vh; overflow-y: auto; border-radius: 28px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+        .modal-card h3 { margin-top: 0; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-weight: 500; margin-bottom: 6px; color: #334155; }
+        .form-group input, .form-group select { width: 100%; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 16px; font-size: 16px; background: white; }
+        .btn { padding: 10px 18px; border-radius: 40px; border: none; font-weight: 600; font-size: 14px; cursor: pointer; background: #e2e8f0; color: #1e293b; }
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-warning { background: #f59e0b; color: white; }
+        .btn-success { background: #10b981; color: white; }
+        .flex-row { display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px; flex-wrap: wrap; }
+        .status-badge { font-size: 12px; background: #cbd5e1; padding: 2px 8px; border-radius: 20px; }
+        .toast-msg { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 10px 20px; border-radius: 40px; opacity: 0; transition: 0.2s; pointer-events: none; z-index: 2000; }
+
+        .batch-list { margin-top: 8px; }
+        .batch-item { background: #f8fafc; border-radius: 12px; padding: 12px; margin-bottom: 8px; border: 1px solid #e2e8f0; }
+        .batch-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .batch-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .batch-product-input { grid-column: span 2; }
+        .batch-remove { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 18px; padding: 0 4px; }
+        .add-batch-btn { margin-top: 8px; width: 100%; }
+
+        .product-batches-table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 14px; }
+        .product-batches-table th { text-align: left; padding: 8px; background: #f1f5f9; position: sticky; top: 0; }
+        .product-batches-table td { padding: 8px; border-bottom: 1px solid #e2e8f0; cursor: pointer; }
+        .product-batches-table tr:hover { background: #f8fafc; }
+
+        .product-list { margin-top: 16px; border-top: 1px solid #e2e8f0; padding-top: 16px; }
+        .product-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
+        .product-info { font-size: 14px; }
+        .product-actions { display: flex; gap: 8px; }
+        .icon-btn { background: none; border: none; font-size: 18px; cursor: pointer; padding: 4px 8px; border-radius: 20px; }
+        .icon-btn:hover { background: #e2e8f0; }
+
+        .small-modal-card { max-width: 400px !important; }
+        .move-mode-indicator { background: #fef3c7; border: 2px dashed #f59e0b; padding: 12px; border-radius: 16px; margin-bottom: 16px; text-align: center; display: none; }
+        .copy-mode-indicator { background: #d1fae5; border: 2px dashed #10b981; padding: 12px; border-radius: 16px; margin-bottom: 16px; text-align: center; display: none; }
+    </style>
+</head>
+<body>
+<div class="app">
+    <h1>📦 Magazyn Regały <span style="font-size: 14px; background: #e2e8f0; padding: 4px 12px; border-radius: 40px;">A · B · C · D (5x21)</span></h1>
+    
+    <div class="top-bar">
+        <div class="search-group">
+            <input type="text" id="searchProductInput" class="search-box" placeholder="🔍 Produkt / kod" autocomplete="off">
+            <input type="text" id="searchDateInput" class="search-box" placeholder="📅 Data (np. 1.04.2026)" autocomplete="off">
+        </div>
+        <button class="btn-secondary" id="clearSearchBtn">✖ Wyczyść</button>
+        <button class="btn-secondary" id="batchesByProductBtn">📊 Partie wg produktu</button>
+        <button class="btn-secondary" id="exportCsvBtn">📥 Eksportuj CSV</button>
+        <button class="btn-secondary" id="manageProductsBtn">📋 Produkty</button>
+    </div>
+
+    <div class="racks-tabs">
+        <button class="rack-tab active" data-rack="A">Regał A</button>
+        <button class="rack-tab" data-rack="B">Regał B</button>
+        <button class="rack-tab" data-rack="C">Regał C</button>
+        <button class="rack-tab" data-rack="D">Regał D</button>
+    </div>
+
+    <div id="moveModeIndicator" class="move-mode-indicator">
+        🚚 Tryb przenoszenia – kliknij na pusty slot, aby przenieść tutaj paletę. 
+        <button id="cancelMoveBtn" class="btn-sm" style="margin-left:12px; padding:4px 12px;">Anuluj</button>
+    </div>
+    <div id="copyModeIndicator" class="copy-mode-indicator">
+        📋 Tryb kopiowania – kliknij na pusty slot, aby skopiować tutaj paletę. 
+        <button id="cancelCopyBtn" class="btn-sm" style="margin-left:12px; padding:4px 12px;">Anuluj</button>
+    </div>
+
+    <div id="rackView" class="rack-container">
+        <div style="text-align: center; padding: 40px; color: #64748b;">Ładowanie danych...</div>
+    </div>
+</div>
+
+<!-- Modal edycji pola -->
+<div class="modal" id="editModal">
+    <div class="modal-card">
+        <h3>Pole <span id="locationCodeDisplay"></span></h3>
+        <div class="form-group">
+            <label>🚚 Typ palety</label>
+            <select id="palletType">
+                <option value="magazynowa">🔴 Magazynowa (czerwony)</option>
+                <option value="spedycyjna">🟢 Spedycyjna (zielony)</option>
+            </select>
+        </div>
+        <hr style="margin: 20px 0; border: none; border-top: 1px solid #e2e8f0;">
+        <label style="font-weight:600;">📦 Produkty na palecie</label>
+        <div id="batchesContainer" class="batch-list"></div>
+        <button class="btn btn-secondary add-batch-btn" id="addBatchBtn">➕ Dodaj produkt</button>
+        <div class="flex-row">
+            <button class="btn" id="cancelEditBtn">Anuluj</button>
+            <button class="btn btn-primary" id="saveSlotBtn">Zapisz</button>
+            <button class="btn btn-success" id="copySlotBtn">📋 Kopiuj</button>
+            <button class="btn btn-warning" id="moveSlotBtn">🚚 Przenieś</button>
+            <button class="btn btn-danger" id="clearSlotBtn">Wyczyść pole</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal produktów -->
+<div class="modal" id="productsModal">
+    <div class="modal-card">
+        <h3>📋 Baza produktów</h3>
+        <div style="margin-bottom:20px;">
+            <div class="form-group"><label>Nazwa produktu</label><input type="text" id="newProductName" placeholder="np. Dezodorant 067"></div>
+            <div class="form-group"><label>Kod produktu</label><input type="text" id="newProductCode" placeholder="IND-12345"></div>
+            <button class="btn btn-primary" id="addProductBtn" style="width:100%;">➕ Dodaj produkt</button>
+        </div>
+        <div class="product-list" id="productsListContainer">Ładowanie...</div>
+        <div class="flex-row"><button class="btn" id="closeProductsBtn">Zamknij</button></div>
+    </div>
+</div>
+
+<!-- Modal FIFO -->
+<div class="modal" id="productBatchesModal">
+    <div class="modal-card" style="max-width:800px;">
+        <h3>📊 Wszystkie partie produktu (FIFO)</h3>
+        <div class="form-group">
+            <label>Wybierz produkt</label>
+            <select id="productFilterSelect" style="width:100%;"><option value="">-- Wybierz produkt --</option></select>
+        </div>
+        <div style="max-height:400px; overflow-y:auto;">
+            <table class="product-batches-table">
+                <thead><tr><th>Lokalizacja</th><th>Data prod.</th><th>Kartony</th><th>Sztuki</th><th>Typ</th></tr></thead>
+                <tbody id="batchesTableBody"><tr><td colspan="5">Wybierz produkt</td></tr></tbody>
+            </table>
+        </div>
+        <div class="flex-row"><button class="btn" id="closeProductBatchesBtn">Zamknij</button></div>
+    </div>
+</div>
+
+<!-- Modal wyboru regału dla CSV -->
+<div class="modal" id="exportCsvModal">
+    <div class="modal-card small-modal-card">
+        <h3>📥 Eksportuj dane do CSV</h3>
+        <div class="form-group">
+            <label>Wybierz zakres</label>
+            <select id="exportRackSelect">
+                <option value="">-- Wszystkie regały --</option>
+                <option value="A">Regał A</option>
+                <option value="B">Regał B</option>
+                <option value="C">Regał C</option>
+                <option value="D">Regał D</option>
+            </select>
+        </div>
+        <div class="flex-row">
+            <button class="btn" id="cancelExportCsvBtn">Anuluj</button>
+            <button class="btn btn-primary" id="confirmExportCsvBtn">Eksportuj</button>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast-msg">Zapisano</div>
+
+<script>
+    // ========== KONFIGURACJA FIREBASE ==========
+    const firebaseConfig = {
+        apiKey: "AIzaSyAbMTVozOhIXesvF59REYnIOtmo-V5qimk",
+        authDomain: "forevermagazyn.firebaseapp.com",
+        projectId: "forevermagazyn",
+        storageBucket: "forevermagazyn.firebasestorage.app",
+        messagingSenderId: "251843942343",
+        appId: "1:251843942343:web:2c81227b12ab4ad0052be2"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    
+    const RACKS = ['A', 'B', 'C', 'D'];
+    const LEVELS = 5;
+    const COLUMNS = 21;
+    let currentRack = 'A';
+    let allSlotsData = {};
+    let slotBatches = {};
+    let productsList = [];
+    let unsubscribeSlots = null;
+    let unsubscribeProducts = null;
+    let unsubscribeBatches = null;
+
+    const rackView = document.getElementById('rackView');
+    const searchProductInput = document.getElementById('searchProductInput');
+    const searchDateInput = document.getElementById('searchDateInput');
+    const clearSearchBtn = document.getElementById('clearSearchBtn');
+    const tabs = document.querySelectorAll('.rack-tab');
+    const editModal = document.getElementById('editModal');
+    const locCodeSpan = document.getElementById('locationCodeDisplay');
+    const palletType = document.getElementById('palletType');
+    const batchesContainer = document.getElementById('batchesContainer');
+    const saveSlotBtn = document.getElementById('saveSlotBtn');
+    const cancelEditBtn = document.getElementById('cancelEditBtn');
+    const clearSlotBtn = document.getElementById('clearSlotBtn');
+    const moveSlotBtn = document.getElementById('moveSlotBtn');
+    const copySlotBtn = document.getElementById('copySlotBtn');
+    const addBatchBtn = document.getElementById('addBatchBtn');
+    const productsModal = document.getElementById('productsModal');
+    const newProductName = document.getElementById('newProductName');
+    const newProductCode = document.getElementById('newProductCode');
+    const addProductBtn = document.getElementById('addProductBtn');
+    const productsListContainer = document.getElementById('productsListContainer');
+    const manageProductsBtn = document.getElementById('manageProductsBtn');
+    const closeProductsBtn = document.getElementById('closeProductsBtn');
+    const productBatchesModal = document.getElementById('productBatchesModal');
+    const productFilterSelect = document.getElementById('productFilterSelect');
+    const batchesTableBody = document.getElementById('batchesTableBody');
+    const batchesByProductBtn = document.getElementById('batchesByProductBtn');
+    const closeProductBatchesBtn = document.getElementById('closeProductBatchesBtn');
+    const exportCsvBtn = document.getElementById('exportCsvBtn');
+    const exportCsvModal = document.getElementById('exportCsvModal');
+    const exportRackSelect = document.getElementById('exportRackSelect');
+    const cancelExportCsvBtn = document.getElementById('cancelExportCsvBtn');
+    const confirmExportCsvBtn = document.getElementById('confirmExportCsvBtn');
+    const toast = document.getElementById('toast');
+    const moveModeIndicator = document.getElementById('moveModeIndicator');
+    const cancelMoveBtn = document.getElementById('cancelMoveBtn');
+    const copyModeIndicator = document.getElementById('copyModeIndicator');
+    const cancelCopyBtn = document.getElementById('cancelCopyBtn');
+    
+    let currentEditingLocation = null;
+    let currentBatches = [];
+    let moveSourceLocation = null;
+    let copySourceLocation = null;
+
+    function getLocationId(rack, level, col) {
+        return `R${rack}-P${level}-K${col}`;
+    }
+
+    function showToast(msg) {
+        toast.textContent = msg;
+        toast.style.opacity = 1;
+        setTimeout(() => toast.style.opacity = 0, 2000);
+    }
+
+    // ========== SUBSKRYPCJE ==========
+    function subscribeToSlots() {
+        if (unsubscribeSlots) unsubscribeSlots();
+        unsubscribeSlots = db.collection("slots").onSnapshot(snapshot => {
+            allSlotsData = {};
+            snapshot.forEach(doc => allSlotsData[doc.id] = doc.data());
+            renderCurrentRack();
+            applySearchHighlight();
+        }, err => console.error("Slots error:", err));
+    }
+
+    function subscribeToBatches() {
+        if (unsubscribeBatches) unsubscribeBatches();
+        unsubscribeBatches = db.collectionGroup("batches").onSnapshot(snapshot => {
+            slotBatches = {};
+            snapshot.forEach(doc => {
+                const locId = doc.ref.parent.parent.id;
+                if (!slotBatches[locId]) slotBatches[locId] = [];
+                slotBatches[locId].push({ id: doc.id, ...doc.data() });
+            });
+            Object.keys(slotBatches).forEach(locId => {
+                slotBatches[locId].sort((a,b) => (a.prodDate?.seconds || 0) - (b.prodDate?.seconds || 0));
+            });
+            renderCurrentRack();
+            applySearchHighlight();
+        }, err => console.error("Batches error:", err));
+    }
+
+    function subscribeToProducts() {
+        if (unsubscribeProducts) unsubscribeProducts();
+        unsubscribeProducts = db.collection("products").onSnapshot(snapshot => {
+            productsList = [];
+            snapshot.forEach(doc => productsList.push({ id: doc.id, ...doc.data() }));
+            productsList.sort((a,b) => (a.name || '').localeCompare(b.name || ''));
+            renderProductsList();
+            updateProductFilterSelect();
+        }, err => console.error("Products error:", err));
+    }
+
+    // ========== RENDER REGAŁÓW ==========
+    function renderCurrentRack() {
+        let html = '';
+        for (let level = 1; level <= LEVELS; level++) {
+            html += `<div class="shelf"><div class="shelf-label"><span>📌 Poziom ${level}</span><span class="status-badge">${COLUMNS} pól</span></div><div class="slots">`;
+            for (let col = 1; col <= COLUMNS; col++) {
+                const locId = getLocationId(currentRack, level, col);
+                const data = allSlotsData[locId] || null;
+                const batches = slotBatches[locId] || [];
+                const isOccupied = batches.length > 0 || (data && data.productName);
+                let slotClass = '';
+                if (isOccupied) {
+                    const type = data?.palletType || 'magazynowa';
+                    if (type === 'magazynowa') slotClass = 'occupied-mag';
+                    else if (type === 'spedycyjna') slotClass = 'occupied-sped';
+                    else slotClass = 'occupied-other';
+                }
+                
+                const productNames = [...new Set(batches.map(b => b.productName).filter(n => n))];
+                if (productNames.length === 0 && data?.productName) productNames.push(data.productName);
+                const mainProduct = productNames[0] || '—';
+                const productShort = mainProduct.substring(0, 12) + (mainProduct.length>12?'…':'');
+                const productCount = productNames.length;
+                
+                let totalCartons = 0, totalPieces = 0;
+                batches.forEach(b => { totalCartons += b.cartons || 0; totalPieces += b.pieces || 0; });
+                const qtyStr = (totalCartons > 0 || totalPieces > 0) ? `${totalCartons}k ${totalPieces}szt` : (data?.quantity ? `${data.quantity} szt` : '');
+                
+                html += `<div class="slot ${slotClass}" data-location-id="${locId}">`;
+                html += `<div class="slot-code">${level}-${col}</div>`;
+                if (isOccupied) {
+                    html += `<div class="slot-data" style="font-weight:700;">${productShort}</div>`;
+                    if (batches.length > 0) {
+                        const firstDate = batches[0].prodDate?.toDate();
+                        if (firstDate) html += `<div class="slot-data" style="font-size:9px;">${firstDate.toLocaleDateString('pl-PL')}</div>`;
+                        if (batches.length > 1 || productCount > 1) {
+                            html += `<div class="slot-data">📦${batches.length>1? '+'+ (batches.length-1):''}${productCount>1? ' ('+productCount+' prod)':''}</div>`;
+                        }
+                    } else if (data?.prodDate) {
+                        const d = data.prodDate.toDate ? data.prodDate.toDate() : new Date(data.prodDate);
+                        html += `<div class="slot-data" style="font-size:9px;">${d.toLocaleDateString('pl-PL')}</div>`;
+                    }
+                    if (qtyStr) html += `<div class="slot-data">${qtyStr}</div>`;
+                } else {
+                    html += `<div class="slot-data" style="opacity:0.5;">puste</div>`;
+                }
+                html += `</div>`;
+            }
+            html += `</div></div>`;
+        }
+        rackView.innerHTML = html;
+    }
+
+    // ========== WYSZUKIWANIE (z czarnym podświetleniem) ==========
+    function applySearchHighlight() {
+        const productQuery = searchProductInput.value.trim().toLowerCase();
+        const dateQuery = searchDateInput.value.trim();
+        document.querySelectorAll('.slot').forEach(s => { s.style.outline = 'none'; s.style.boxShadow = ''; });
+        if (!productQuery && !dateQuery) return;
+        Object.entries(allSlotsData).forEach(([locId, data]) => {
+            const batches = slotBatches[locId] || [];
+            let productMatch = true, dateMatch = true;
+            if (productQuery) {
+                if (batches.length > 0) {
+                    productMatch = batches.some(b => 
+                        (b.productName || '').toLowerCase().includes(productQuery) ||
+                        (b.productCode || '').toLowerCase().includes(productQuery)
+                    );
+                } else if (data) {
+                    const name = (data.productName || '').toLowerCase();
+                    const code = (data.productCode || '').toLowerCase();
+                    productMatch = name.includes(productQuery) || code.includes(productQuery);
+                } else productMatch = false;
+            }
+            if (dateQuery) {
+                if (batches.length === 0 && data?.prodDate) {
+                    const d = data.prodDate.toDate ? data.prodDate.toDate() : new Date(data.prodDate);
+                    const dateStr = `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
+                    dateMatch = dateStr.includes(dateQuery);
+                } else {
+                    dateMatch = batches.some(b => {
+                        if (!b.prodDate) return false;
+                        const d = b.prodDate.toDate();
+                        const dateStr = `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
+                        return dateStr.includes(dateQuery);
+                    });
+                }
+            }
+            if (productMatch && dateMatch) {
+                const el = document.querySelector(`.slot[data-location-id="${locId}"]`);
+                if (el) {
+                    el.style.outline = '4px solid #000000';
+                    el.style.boxShadow = '0 0 0 4px rgba(0, 0, 0, 0.5)';
+                    if (!window._firstHighlightScrolled) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        window._firstHighlightScrolled = true;
+                    }
+                }
+            }
+        });
+        window._firstHighlightScrolled = false;
+    }
+
+    searchProductInput.addEventListener('input', applySearchHighlight);
+    searchDateInput.addEventListener('input', applySearchHighlight);
+    clearSearchBtn.addEventListener('click', () => {
+        searchProductInput.value = '';
+        searchDateInput.value = '';
+        applySearchHighlight();
+    });
+
+    // ========== OBSŁUGA WIELU PRODUKTÓW (z inputem + datalist) ==========
+    function filterProducts(inputEl, datalistEl, hiddenIdEl) {
+        const query = inputEl.value.toLowerCase();
+        const filtered = productsList.filter(p => 
+            p.name.toLowerCase().includes(query) || (p.code && p.code.toLowerCase().includes(query))
+        );
+        datalistEl.innerHTML = '';
+        filtered.forEach(prod => {
+            const option = document.createElement('option');
+            option.value = prod.name + (prod.code ? ` (${prod.code})` : '');
+            option.setAttribute('data-id', prod.id);
+            datalistEl.appendChild(option);
+        });
+    }
+
+    function renderBatchesList() {
+        let html = '';
+        currentBatches.forEach((batch, index) => {
+            let dateStr = '';
+            if (batch.prodDate) {
+                if (batch.prodDate.toDate) dateStr = batch.prodDate.toDate().toISOString().split('T')[0];
+                else if (batch.prodDate instanceof Date) dateStr = batch.prodDate.toISOString().split('T')[0];
+                else if (typeof batch.prodDate === 'string') dateStr = batch.prodDate;
+            }
+            html += `<div class="batch-item" data-index="${index}">
+                <div class="batch-header">
+                    <span>Produkt ${index+1}</span>
+                    <button class="batch-remove" data-index="${index}">🗑️</button>
+                </div>
+                <div class="batch-fields">
+                    <div style="grid-column: span 2; position: relative;">
+                        <input type="text" class="batch-product-input" data-index="${index}" placeholder="Wpisz nazwę lub kod" value="${batch.productName || ''}" autocomplete="off" style="width:100%; padding:12px; border-radius:16px; border:1px solid #cbd5e1;">
+                        <input type="hidden" class="batch-product-id" data-index="${index}" value="${batch.productId || ''}">
+                        <datalist id="productList_${index}" class="product-datalist"></datalist>
+                    </div>
+                    <input type="date" class="batch-date" value="${dateStr}" placeholder="Data">
+                    <input type="number" class="batch-cartons" placeholder="Kartony" min="0" value="${batch.cartons || 0}">
+                    <input type="number" class="batch-pieces" placeholder="Sztuki" min="0" value="${batch.pieces || 0}">
+                </div>
+            </div>`;
+        });
+        batchesContainer.innerHTML = html || '<div style="color:#64748b; text-align:center;">Brak produktów. Kliknij "Dodaj produkt".</div>';
+        
+        // Podpinanie zdarzeń dla inputów
+        document.querySelectorAll('.batch-product-input').forEach(input => {
+            const index = input.dataset.index;
+            const datalist = document.getElementById(`productList_${index}`);
+            const hiddenId = document.querySelector(`.batch-product-id[data-index="${index}"]`);
+            
+            filterProducts(input, datalist, hiddenId);
+            
+            input.addEventListener('input', () => filterProducts(input, datalist, hiddenId));
+            
+            input.addEventListener('change', () => {
+                const val = input.value;
+                const selectedProd = productsList.find(p => p.name + (p.code ? ` (${p.code})` : '') === val);
+                if (selectedProd) {
+                    hiddenId.value = selectedProd.id;
+                    currentBatches[index].productId = selectedProd.id;
+                    currentBatches[index].productName = selectedProd.name;
+                    currentBatches[index].productCode = selectedProd.code;
+                } else {
+                    // Jeśli nie znaleziono dokładnie, czyścimy ID
+                    hiddenId.value = '';
+                    currentBatches[index].productId = null;
+                    currentBatches[index].productName = input.value;
+                    currentBatches[index].productCode = '';
+                }
+            });
+        });
+
+        document.querySelectorAll('.batch-remove').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const idx = parseInt(btn.dataset.index);
+                currentBatches.splice(idx, 1);
+                renderBatchesList();
+            });
+        });
+    }
+
+    function collectBatchesFromForm() {
+        const batches = [];
+        document.querySelectorAll('.batch-item').forEach(item => {
+            const inputEl = item.querySelector('.batch-product-input');
+            const hiddenIdEl = item.querySelector('.batch-product-id');
+            const dateInput = item.querySelector('.batch-date');
+            const cartonsInput = item.querySelector('.batch-cartons');
+            const piecesInput = item.querySelector('.batch-pieces');
+            
+            const prodId = hiddenIdEl.value;
+            const prodName = inputEl.value.trim();
+            if (!prodName) return; // pomijamy puste
+            
+            let finalProdId = prodId;
+            let finalProdCode = '';
+            if (!finalProdId) {
+                // spróbuj znaleźć produkt po nazwie
+                const found = productsList.find(p => p.name === prodName);
+                if (found) {
+                    finalProdId = found.id;
+                    finalProdCode = found.code || '';
+                }
+            } else {
+                const found = productsList.find(p => p.id === finalProdId);
+                if (found) finalProdCode = found.code || '';
+            }
+            
+            if (dateInput.value) {
+                batches.push({
+                    productId: finalProdId || null,
+                    productName: prodName,
+                    productCode: finalProdCode,
+                    prodDate: firebase.firestore.Timestamp.fromDate(new Date(dateInput.value)),
+                    cartons: parseInt(cartonsInput.value) || 0,
+                    pieces: parseInt(piecesInput.value) || 0
+                });
+            }
+        });
+        return batches;
+    }
+
+    addBatchBtn.addEventListener('click', () => {
+        currentBatches.push({ cartons: 0, pieces: 0 });
+        renderBatchesList();
+    });
+
+    // ========== MODAL EDYCJI ==========
+    function openEditModal(locId) {
+        currentEditingLocation = locId;
+        locCodeSpan.textContent = locId;
+        const data = allSlotsData[locId] || {};
+        palletType.value = data.palletType || 'magazynowa';
+        const batches = slotBatches[locId] || [];
+        currentBatches = batches.map(b => ({
+            id: b.id,
+            productId: b.productId || null,
+            productName: b.productName || '',
+            productCode: b.productCode || '',
+            prodDate: b.prodDate,
+            cartons: b.cartons || 0,
+            pieces: b.pieces || 0
+        }));
+        if (currentBatches.length === 0 && data.productName) {
+            currentBatches.push({
+                productId: data.productId || null,
+                productName: data.productName,
+                productCode: data.productCode,
+                prodDate: data.prodDate,
+                cartons: 0,
+                pieces: data.quantity || 0
+            });
+        }
+        renderBatchesList();
+        editModal.style.display = 'flex';
+    }
+
+    saveSlotBtn.addEventListener('click', async () => {
+        if (!currentEditingLocation) return;
+        const type = palletType.value;
+        const newBatches = collectBatchesFromForm();
+        if (newBatches.length === 0) { alert('Dodaj przynajmniej jeden produkt z datą!'); return; }
+        const mainProduct = newBatches[0];
+        const slotData = {
+            productId: mainProduct.productId,
+            productName: mainProduct.productName,
+            productCode: mainProduct.productCode,
+            palletType: type,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        try {
+            const slotRef = db.collection("slots").doc(currentEditingLocation);
+            await slotRef.set(slotData, { merge: true });
+            const oldBatchesSnapshot = await slotRef.collection("batches").get();
+            await Promise.all(oldBatchesSnapshot.docs.map(doc => doc.ref.delete()));
+            for (const b of newBatches) {
+                await slotRef.collection("batches").add({
+                    productId: b.productId, productName: b.productName, productCode: b.productCode,
+                    prodDate: b.prodDate, cartons: b.cartons, pieces: b.pieces
+                });
+            }
+            showToast('✅ Zapisano');
+            editModal.style.display = 'none';
+        } catch (err) { alert('Błąd zapisu: ' + err.message); }
+    });
+
+    clearSlotBtn.addEventListener('click', async () => {
+        if (!currentEditingLocation) return;
+        if (!confirm('Na pewno wyczyścić to pole?')) return;
+        try {
+            const slotRef = db.collection("slots").doc(currentEditingLocation);
+            const batchesSnapshot = await slotRef.collection("batches").get();
+            await Promise.all(batchesSnapshot.docs.map(d => d.ref.delete()));
+            await slotRef.delete();
+            showToast('🗑️ Pole wyczyszczone');
+            editModal.style.display = 'none';
+        } catch (err) { alert('Błąd: ' + err.message); }
+    });
+
+    cancelEditBtn.addEventListener('click', () => editModal.style.display = 'none');
+
+    // ========== PRZENOSZENIE I KOPIOWANIE (bez zmian) ==========
+    function isSlotAvailable(locId) {
+        const data = allSlotsData[locId];
+        return !data || !data.productName;
+    }
+
+    async function movePalette(sourceLocId, targetLocId) {
+        const sourceData = allSlotsData[sourceLocId];
+        if (!sourceData || !sourceData.productName) { alert('Slot źródłowy jest pusty.'); return false; }
+        if (!isSlotAvailable(targetLocId)) { alert('Slot docelowy jest zajęty.'); return false; }
+        try {
+            const targetSlotRef = db.collection("slots").doc(targetLocId);
+            const newSlotData = {
+                productId: sourceData.productId,
+                productName: sourceData.productName,
+                productCode: sourceData.productCode,
+                palletType: sourceData.palletType,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            await targetSlotRef.set(newSlotData);
+            const sourceBatches = slotBatches[sourceLocId] || [];
+            for (const b of sourceBatches) {
+                await targetSlotRef.collection("batches").add({
+                    productId: b.productId, productName: b.productName, productCode: b.productCode,
+                    prodDate: b.prodDate, cartons: b.cartons || 0, pieces: b.pieces || 0
+                });
+            }
+            const sourceRef = db.collection("slots").doc(sourceLocId);
+            const sourceBatchesSnapshot = await sourceRef.collection("batches").get();
+            await Promise.all(sourceBatchesSnapshot.docs.map(d => d.ref.delete()));
+            await sourceRef.delete();
+            showToast('✅ Paleta przeniesiona');
+            return true;
+        } catch (err) { alert('Błąd przenoszenia: ' + err.message); return false; }
+    }
+
+    async function copyPalette(sourceLocId, targetLocId) {
+        const sourceData = allSlotsData[sourceLocId];
+        if (!sourceData || !sourceData.productName) { alert('Slot źródłowy jest pusty.'); return false; }
+        if (!isSlotAvailable(targetLocId)) { alert('Slot docelowy jest zajęty.'); return false; }
+        try {
+            const targetSlotRef = db.collection("slots").doc(targetLocId);
+            const newSlotData = {
+                productId: sourceData.productId,
+                productName: sourceData.productName,
+                productCode: sourceData.productCode,
+                palletType: sourceData.palletType,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            await targetSlotRef.set(newSlotData);
+            const sourceBatches = slotBatches[sourceLocId] || [];
+            for (const b of sourceBatches) {
+                await targetSlotRef.collection("batches").add({
+                    productId: b.productId, productName: b.productName, productCode: b.productCode,
+                    prodDate: b.prodDate, cartons: b.cartons || 0, pieces: b.pieces || 0
+                });
+            }
+            showToast('✅ Paleta skopiowana');
+            return true;
+        } catch (err) { alert('Błąd kopiowania: ' + err.message); return false; }
+    }
+
+    moveSlotBtn.addEventListener('click', () => {
+        if (!currentEditingLocation) return;
+        const data = allSlotsData[currentEditingLocation];
+        if (!data || !data.productName) { alert('Slot jest pusty.'); return; }
+        moveSourceLocation = currentEditingLocation;
+        editModal.style.display = 'none';
+        moveModeIndicator.style.display = 'block';
+        copyModeIndicator.style.display = 'none';
+        showToast('🎯 Kliknij na pusty slot, aby przenieść paletę');
+    });
+    cancelMoveBtn.addEventListener('click', () => { moveSourceLocation = null; moveModeIndicator.style.display = 'none'; });
+
+    copySlotBtn.addEventListener('click', () => {
+        if (!currentEditingLocation) return;
+        const data = allSlotsData[currentEditingLocation];
+        if (!data || !data.productName) { alert('Slot jest pusty.'); return; }
+        copySourceLocation = currentEditingLocation;
+        editModal.style.display = 'none';
+        copyModeIndicator.style.display = 'block';
+        moveModeIndicator.style.display = 'none';
+        showToast('📋 Kliknij na pusty slot, aby skopiować paletę');
+    });
+    cancelCopyBtn.addEventListener('click', () => { copySourceLocation = null; copyModeIndicator.style.display = 'none'; });
+
+    rackView.addEventListener('click', async (e) => {
+        const slot = e.target.closest('.slot');
+        if (!slot) return;
+        const locId = slot.dataset.locationId;
+        if (moveSourceLocation) {
+            e.stopPropagation();
+            if (locId === moveSourceLocation) { alert('Nie można przenieść palety w to samo miejsce.'); return; }
+            const success = await movePalette(moveSourceLocation, locId);
+            if (success) { moveSourceLocation = null; moveModeIndicator.style.display = 'none'; }
+        } else if (copySourceLocation) {
+            e.stopPropagation();
+            if (locId === copySourceLocation) { alert('Nie można skopiować palety w to samo miejsce.'); return; }
+            const success = await copyPalette(copySourceLocation, locId);
+            if (success) { copySourceLocation = null; copyModeIndicator.style.display = 'none'; }
+        } else {
+            if (locId) openEditModal(locId);
+        }
+    });
+
+    // ========== PRODUKTY (bez zmian) ==========
+    function renderProductsList() {
+        if (productsList.length === 0) {
+            productsListContainer.innerHTML = '<div style="text-align:center; color:#64748b;">Brak produktów.</div>';
+            return;
+        }
+        let html = '';
+        productsList.forEach(prod => {
+            html += `<div class="product-item">
+                <div class="product-info"><strong>${prod.name}</strong><br><span style="font-size:12px; color:#64748b;">Kod: ${prod.code || '—'}</span></div>
+                <div class="product-actions">
+                    <button class="icon-btn edit-product" data-id="${prod.id}">✏️</button>
+                    <button class="icon-btn delete-product" data-id="${prod.id}">🗑️</button>
+                </div>
+            </div>`;
+        });
+        productsListContainer.innerHTML = html;
+        document.querySelectorAll('.edit-product').forEach(btn => btn.addEventListener('click', () => editProduct(btn.dataset.id)));
+        document.querySelectorAll('.delete-product').forEach(btn => btn.addEventListener('click', () => deleteProduct(btn.dataset.id)));
+    }
+    async function addProduct() {
+        const name = newProductName.value.trim();
+        if (!name) { alert('Podaj nazwę'); return; }
+        try {
+            await db.collection("products").add({
+                name, code: newProductCode.value.trim() || null,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            newProductName.value = newProductCode.value = '';
+            showToast('✅ Produkt dodany');
+        } catch (err) { alert('Błąd: ' + err.message); }
+    }
+    async function editProduct(id) {
+        const prod = productsList.find(p => p.id === id);
+        if (!prod) return;
+        const newName = prompt('Nowa nazwa:', prod.name); if (newName === null) return;
+        const newCode = prompt('Nowy kod:', prod.code || '');
+        if (!newName.trim()) { alert('Nazwa wymagana'); return; }
+        try {
+            await db.collection("products").doc(id).update({ name: newName.trim(), code: newCode.trim() || null });
+            showToast('✅ Zaktualizowano');
+        } catch (err) { alert('Błąd: ' + err.message); }
+    }
+    async function deleteProduct(id) {
+        if (!confirm('Usunąć produkt?')) return;
+        try { await db.collection("products").doc(id).delete(); showToast('🗑️ Usunięto'); }
+        catch (err) { alert('Błąd: ' + err.message); }
+    }
+    addProductBtn.addEventListener('click', addProduct);
+    manageProductsBtn.addEventListener('click', () => productsModal.style.display = 'flex');
+    closeProductsBtn.addEventListener('click', () => productsModal.style.display = 'none');
+
+    // ========== MODAL FIFO (bez zmian) ==========
+    function updateProductFilterSelect() {
+        productFilterSelect.innerHTML = '<option value="">-- Wybierz produkt --</option>';
+        productsList.forEach(prod => {
+            const option = document.createElement('option');
+            option.value = prod.id;
+            option.textContent = `${prod.name} (${prod.code || 'brak kodu'})`;
+            productFilterSelect.appendChild(option);
+        });
+    }
+    function renderBatchesForProduct(productId) {
+        const product = productsList.find(p => p.id === productId);
+        if (!product) { batchesTableBody.innerHTML = '<tr><td colspan="5">Nie znaleziono produktu</td></tr>'; return; }
+        const allBatches = [];
+        for (const [locId, batches] of Object.entries(slotBatches)) {
+            const slotData = allSlotsData[locId] || {};
+            batches.forEach(batch => {
+                if (batch.productId === productId) {
+                    allBatches.push({
+                        locationId: locId, palletType: slotData.palletType || 'magazynowa',
+                        prodDate: batch.prodDate, cartons: batch.cartons || 0, pieces: batch.pieces || 0
+                    });
+                }
+            });
+        }
+        allBatches.sort((a,b) => (a.prodDate?.seconds || 0) - (b.prodDate?.seconds || 0));
+        if (allBatches.length === 0) {
+            batchesTableBody.innerHTML = `<tr><td colspan="5">Brak partii dla "${product.name}"</td></tr>`;
+            return;
+        }
+        let html = '';
+        allBatches.forEach(b => {
+            const loc = b.locationId;
+            const date = b.prodDate?.toDate().toLocaleDateString('pl-PL') || '—';
+            const type = b.palletType === 'magazynowa' ? '🔴 Magazyn' : '🟢 Spedycja';
+            html += `<tr data-location-id="${loc}"><td>${loc}</td><td>${date}</td><td>${b.cartons}</td><td>${b.pieces}</td><td>${type}</td></tr>`;
+        });
+        batchesTableBody.innerHTML = html;
+        document.querySelectorAll('#batchesTableBody tr').forEach(row => {
+            row.addEventListener('click', () => {
+                const locId = row.dataset.locationId;
+                if (!locId) return;
+                const rack = locId.charAt(1);
+                if (RACKS.includes(rack)) {
+                    currentRack = rack;
+                    tabs.forEach(t => t.classList.toggle('active', t.dataset.rack === rack));
+                    renderCurrentRack();
+                }
+                productBatchesModal.style.display = 'none';
+                openEditModal(locId);
+            });
+        });
+    }
+    productFilterSelect.addEventListener('change', () => {
+        const id = productFilterSelect.value;
+        id ? renderBatchesForProduct(id) : batchesTableBody.innerHTML = '<tr><td colspan="5">Wybierz produkt</td></tr>';
+    });
+    batchesByProductBtn.addEventListener('click', () => {
+        updateProductFilterSelect();
+        productBatchesModal.style.display = 'flex';
+    });
+    closeProductBatchesBtn.addEventListener('click', () => productBatchesModal.style.display = 'none');
+
+    // ========== EKSPORT CSV (bez zmian) ==========
+    function doExportCsv(rackChoice) {
+        const rows = [];
+        rows.push(['Lokalizacja', 'Produkt', 'Kod', 'Data produkcji', 'Kartony', 'Sztuki', 'Typ palety'].join(';'));
+        for (const [locId, data] of Object.entries(allSlotsData)) {
+            const rack = locId.charAt(1);
+            if (rackChoice && rack !== rackChoice) continue;
+            const batches = slotBatches[locId] || [];
+            if (batches.length === 0 && !data.productName) continue;
+            if (batches.length > 0) {
+                batches.forEach(b => {
+                    const date = b.prodDate?.toDate().toLocaleDateString('pl-PL') || '';
+                    rows.push([locId, b.productName || '', b.productCode || '', date, b.cartons || 0, b.pieces || 0, data.palletType || 'magazynowa'].join(';'));
+                });
+            } else {
+                const date = data.prodDate?.toDate().toLocaleDateString('pl-PL') || '';
+                rows.push([locId, data.productName || '', data.productCode || '', date, '0', data.quantity || 0, data.palletType || 'magazynowa'].join(';'));
+            }
+        }
+        if (rows.length === 1) { alert('Brak danych do eksportu dla wybranego zakresu.'); return; }
+        const csvContent = rows.join('\n');
+        const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `eksport_${rackChoice || 'wszystkie'}_${new Date().toISOString().slice(0,10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('✅ Eksport zakończony');
+    }
+    exportCsvBtn.addEventListener('click', () => {
+        exportCsvModal.style.display = 'flex';
+        exportRackSelect.value = '';
+    });
+    confirmExportCsvBtn.addEventListener('click', () => {
+        const rackChoice = exportRackSelect.value;
+        exportCsvModal.style.display = 'none';
+        doExportCsv(rackChoice);
+    });
+    cancelExportCsvBtn.addEventListener('click', () => exportCsvModal.style.display = 'none');
+
+    // ========== INICJALIZACJA ==========
+    tabs.forEach(tab => tab.addEventListener('click', () => {
+        currentRack = tab.dataset.rack;
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        renderCurrentRack();
+        applySearchHighlight();
+    }));
+    window.addEventListener('click', (e) => {
+        if (e.target === editModal) editModal.style.display = 'none';
+        if (e.target === productsModal) productsModal.style.display = 'none';
+        if (e.target === productBatchesModal) productBatchesModal.style.display = 'none';
+        if (e.target === exportCsvModal) exportCsvModal.style.display = 'none';
+    });
+    subscribeToSlots();
+    subscribeToBatches();
+    subscribeToProducts();
+</script>
+</body>
+</html>
