@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generator etykiet PDF 100x150 mm + kopie + większa czcionka</title>
+    <title>Generator etykiet PDF 100x150 mm + BOLD</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         * { box-sizing: border-box; font-family: 'Arial', sans-serif; }
@@ -37,16 +37,16 @@
             justify-content: space-between; 
             align-items: center; 
         }
-        /* ZWIĘKSZONE CZCIONKI W PODGLĄDZIE */
-        .label .code { font-size: 100px; font-weight: 700; line-height: 1.2; text-align: center; }
-        .label .quantity { font-size: 80px; font-weight: 600; text-align: center; }
-        .label .date { font-size: 75px; font-weight: 400; text-align: center; color: #1e293b; }
+        /* BOLD w podglądzie */
+        .label .code { font-size: 90px; font-weight: 700; line-height: 1.2; text-align: center; }
+        .label .quantity { font-size: 70px; font-weight: 700; text-align: center; }
+        .label .date { font-size: 50px; font-weight: 700; text-align: center; color: #1e293b; }
         .total-badge { background: #e2e8f0; padding: 2px 10px; border-radius: 20px; font-size: 14px; margin-left: 10px; }
     </style>
 </head>
 <body>
 <div class="app">
-    <h1>🏷️ Generator etykiet PDF (100x150 mm)</h1>
+    <h1>🏷️ Generator etykiet PDF (100x150 mm) – BOLD</h1>
     
     <div class="input-row">
         <input type="text" id="productCode" placeholder="Kod (np. 896)" autocomplete="off">
@@ -97,12 +97,12 @@
     const deleteAllBtn = document.getElementById('deleteAllBtn');
 
     try {
-        const saved = localStorage.getItem('etykiety_bigfont_items');
+        const saved = localStorage.getItem('etykiety_bold_items');
         if (saved) items = JSON.parse(saved);
     } catch(e) {}
 
     function saveToStorage() {
-        localStorage.setItem('etykiety_bigfont_items', JSON.stringify(items));
+        localStorage.setItem('etykiety_bold_items', JSON.stringify(items));
     }
 
     function renderTable() {
@@ -229,16 +229,16 @@
                 pdf.addPage([pageWidth, pageHeight]);
             }
 
-            // ZWIĘKSZONE CZCIONKI W PDF – MOŻESZ ZMIENIAĆ TE LICZBY
+            // Wszystkie teksty BOLD
             pdf.setFont('Helvetica', 'bold');
-            pdf.setFontSize(100);        // kod – zmień tutaj
+            
+            pdf.setFontSize(80);
             pdf.text(item.code, pageWidth / 2, 65, { align: 'center' });
             
-            pdf.setFontSize(80);        // ilość – zmień tutaj
+            pdf.setFontSize(60);
             pdf.text(item.qty, pageWidth / 2, 100, { align: 'center' });
             
-            pdf.setFont('Helvetica', 'normal');
-            pdf.setFontSize(75);        // data – zmień tutaj
+            pdf.setFontSize(46);
             pdf.text(item.date, pageWidth / 2, 130, { align: 'center' });
         }
 
