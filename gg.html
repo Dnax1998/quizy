@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generator etykiet termicznych</title>
+    <title>Generator etykiet 100x150 mm (bez stopki)</title>
     <style>
-        * { box-sizing: border-box; font-family: 'Arial', sans-serif; }
+        * { box-sizing: border-box; font-family: 'Arial', 'Helvetica', sans-serif; }
         body { background: #f3f4f6; margin: 0; padding: 20px; }
         .app { max-width: 800px; margin: 0 auto; background: white; border-radius: 24px; padding: 24px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
         h1 { margin-top: 0; color: #1e293b; display: flex; align-items: center; gap: 8px; }
@@ -23,28 +23,50 @@
         .action-btn { background: none; border: none; font-size: 18px; cursor: pointer; margin: 0 4px; }
         .preview { margin-top: 24px; border-top: 2px dashed #cbd5e1; padding-top: 20px; }
         .label-preview { display: flex; flex-direction: column; align-items: center; }
-        .label { width: 100mm; height: 150mm; border: 1px solid #ccc; margin-bottom: 12px; padding: 8mm; background: white; display: flex; flex-direction: column; page-break-after: always; }
-        .label .code { font-size: 48px; font-weight: 700; text-align: center; margin-bottom: 10px; line-height: 1.2; }
-        .label .quantity { font-size: 36px; font-weight: 600; text-align: center; margin: 15px 0; }
-        .label .date { font-size: 28px; text-align: center; color: #334155; }
-        .label .footer { margin-top: auto; text-align: center; font-size: 12px; color: #94a3b8; }
+        .label { 
+            width: 100mm; 
+            height: 150mm; 
+            border: 1px solid #ccc; 
+            margin-bottom: 12px; 
+            padding: 8mm; 
+            background: white; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            page-break-after: always;
+            break-inside: avoid;
+        }
+        .label .content { text-align: center; width: 100%; }
+        .label .code { font-size: 72px; font-weight: 700; line-height: 1.2; margin-bottom: 30px; word-break: break-word; }
+        .label .quantity { font-size: 64px; font-weight: 600; margin: 30px 0; word-break: break-word; }
+        .label .date { font-size: 48px; color: #1e293b; margin-top: 30px; word-break: break-word; }
+
+        @page { size: 100mm 150mm; margin: 0; }
         @media print {
-            body { background: white; padding: 0; }
-            .app { box-shadow: none; padding: 0; }
-            .no-print, .btn, .input-row, h1, .table-container, .preview h2 { display: none !important; }
-            .label-preview { margin: 0; }
-            .label { border: none; margin: 0; box-shadow: none; page-break-after: always; }
+            body { background: white; padding: 0; margin: 0; }
+            .app, .no-print, .btn, .input-row, h1, .table-container, .preview h2 { display: none !important; }
+            .label-preview { margin: 0; padding: 0; }
+            .label { 
+                border: none; 
+                margin: 0; 
+                box-shadow: none; 
+                page-break-after: always; 
+                break-inside: avoid;
+                width: 100mm;
+                height: 150mm;
+            }
         }
     </style>
 </head>
 <body>
 <div class="app">
-    <h1>🏷️ Generator etykiet termicznych</h1>
+    <h1>🏷️ Generator etykiet 100x150 mm</h1>
     
     <div class="input-row">
-        <input type="text" id="productCode" placeholder="Kod produktu (np. 896)" autocomplete="off">
-        <input type="text" id="quantity" placeholder="Ilość (np. 101)" autocomplete="off">
-        <input type="text" id="prodDate" placeholder="Data (np. 26.02.26)" autocomplete="off">
+        <input type="text" id="productCode" placeholder="Kod produktu (np. 152)" autocomplete="off">
+        <input type="text" id="quantity" placeholder="Ilość (np. 156)" autocomplete="off">
+        <input type="text" id="prodDate" placeholder="Data (np. 21.01.2025)" autocomplete="off">
         <button class="btn btn-primary" id="addBtn">➕ Dodaj</button>
     </div>
 
@@ -72,7 +94,6 @@
 </div>
 
 <script>
-    // Dane przechowywane w localStorage
     let items = [];
 
     const productCodeInp = document.getElementById('productCode');
@@ -85,14 +106,13 @@
     const clearBtn = document.getElementById('clearBtn');
     const deleteAllBtn = document.getElementById('deleteAllBtn');
 
-    // Wczytaj z localStorage
     try {
-        const saved = localStorage.getItem('etykiety_items');
+        const saved = localStorage.getItem('etykiety_100x150_nofooter');
         if (saved) items = JSON.parse(saved);
-    } catch(e) { /* ignoruj */ }
+    } catch(e) {}
 
     function saveToStorage() {
-        localStorage.setItem('etykiety_items', JSON.stringify(items));
+        localStorage.setItem('etykiety_100x150_nofooter', JSON.stringify(items));
     }
 
     function renderTable() {
@@ -116,21 +136,20 @@
         });
         itemsBody.innerHTML = html;
 
-        // Podgląd etykiet
         let previewHtml = '';
         items.forEach(item => {
             previewHtml += `
                 <div class="label">
-                    <div class="code">${item.code || ''}</div>
-                    <div class="quantity">${item.qty || ''}</div>
-                    <div class="date">${item.date || ''}</div>
-                    <div class="footer">www.twojafirma.pl</div>
+                    <div class="content">
+                        <div class="code">${item.code || ''}</div>
+                        <div class="quantity">${item.qty || ''}</div>
+                        <div class="date">${item.date || ''}</div>
+                    </div>
                 </div>
             `;
         });
         labelPreview.innerHTML = previewHtml;
 
-        // Podpięcie akcji
         document.querySelectorAll('[data-action="edit"]').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const index = e.target.dataset.index;
@@ -194,14 +213,12 @@
         window.print();
     });
 
-    // Szybkie dodawanie Enterem w ostatnim polu
     prodDateInp.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
             addBtn.click();
         }
     });
 
-    // Render początkowy
     renderTable();
 </script>
 </body>
