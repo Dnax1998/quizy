@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generator etykiet termicznych</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Arial', sans-serif; }
+        body { background: #f3f4f6; margin: 0; padding: 20px; }
+        .app { max-width: 800px; margin: 0 auto; background: white; border-radius: 24px; padding: 24px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+        h1 { margin-top: 0; color: #1e293b; display: flex; align-items: center; gap: 8px; }
+        .input-row { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+        .input-row input { flex: 1; min-width: 150px; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 40px; font-size: 16px; }
+        .btn { padding: 12px 20px; border-radius: 40px; border: none; font-weight: 600; font-size: 16px; cursor: pointer; background: #e2e8f0; color: #1e293b; }
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-warning { background: #f59e0b; color: white; }
+        .table-container { margin: 20px 0; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        th { background: #f1f5f9; padding: 12px; text-align: left; font-weight: 600; color: #334155; }
+        td { padding: 12px; border-bottom: 1px solid #e2e8f0; }
+        .action-btn { background: none; border: none; font-size: 18px; cursor: pointer; margin: 0 4px; }
+        .preview { margin-top: 24px; border-top: 2px dashed #cbd5e1; padding-top: 20px; }
+        .label-preview { display: flex; flex-direction: column; align-items: center; }
+        .label { width: 100mm; height: 70mm; border: 1px solid #ccc; margin-bottom: 12px; padding: 8mm; background: white; display: flex; flex-direction: column; page-break-after: always; }
+        .label .code { font-size: 48px; font-weight: 700; text-align: center; margin-bottom: 10px; line-height: 1.2; }
+        .label .quantity { font-size: 36px; font-weight: 600; text-align: center; margin: 15px 0; }
+        .label .date { font-size: 28px; text-align: center; color: #334155; }
+        .label .footer { margin-top: auto; text-align: center; font-size: 12px; color: #94a3b8; }
+        @media print {
+            body { background: white; padding: 0; }
+            .app { box-shadow: none; padding: 0; }
+            .no-print, .btn, .input-row, h1, .table-container, .preview h2 { display: none !important; }
+            .label-preview { margin: 0; }
+            .label { border: none; margin: 0; box-shadow: none; page-break-after: always; }
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <h1>🏷️ Generator etykiet termicznych</h1>
+    
+    <div class="input-row">
+        <input type="text" id="productCode" placeholder="Kod produktu (np. 896)" autocomplete="off">
+        <input type="text" id="quantity" placeholder="Ilość (np. 101)" autocomplete="off">
+        <input type="text" id="prodDate" placeholder="Data (np. 26.02.26)" autocomplete="off">
+        <button class="btn btn-primary" id="addBtn">➕ Dodaj</button>
+    </div>
+
+    <div class="table-container">
+        <table id="itemsTable">
+            <thead>
+                <tr><th>Kod</th><th>Ilość</th><th>Data</th><th style="width:80px;">Akcje</th></tr>
+            </thead>
+            <tbody id="itemsBody"></tbody>
+        </table>
+    </div>
+
+    <div style="display: flex; gap: 12px; justify-content: space-between;">
+        <div>
+            <button class="btn btn-success" id="printBtn">🖨️ Drukuj etykiety</button>
+            <button class="btn btn-warning" id="clearBtn">🗑️ Wyczyść listę</button>
+        </div>
+        <button class="btn btn-danger" id="deleteAllBtn">❌ Usuń wszystko</button>
+    </div>
+
+    <div class="preview">
+        <h2>📄 Podgląd etykiet</h2>
+        <div id="labelPreview" class="label-preview"></div>
+    </div>
+</div>
+
+<script>
+    // Dane przechowywane w localStorage
+    let items = [];
+
+    const productCodeInp = document.getElementById('productCode');
+    const quantityInp = document.getElementById('quantity');
+    const prodDateInp = document.getElementById('prodDate');
+    const addBtn = document.getElementById('addBtn');
+    const itemsBody = document.getElementById('itemsBody');
+    const labelPreview = document.getElementById('labelPreview');
+    const printBtn = document.getElementById('printBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const deleteAllBtn = document.getElementById('deleteAllBtn');
+
+    // Wczytaj z localStorage
+    try {
+        const saved = localStorage.getItem('etykiety_items');
+        if (saved) items = JSON.parse(saved);
+    } catch(e) { /* ignoruj */ }
+
+    function saveToStorage() {
+        localStorage.setItem('etykiety_items', JSON.stringify(items));
+    }
+
+    function renderTable() {
+        if (items.length === 0) {
+            itemsBody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#64748b;">Brak pozycji. Dodaj powyżej.</td></tr>';
+            labelPreview.innerHTML = '<p style="color:#64748b;">Dodaj pozycje, aby zobaczyć podgląd etykiet.</p>';
+            return;
+        }
+
+        let html = '';
+        items.forEach((item, index) => {
+            html += `<tr>
+                <td><strong>${item.code || '—'}</strong></td>
+                <td>${item.qty || '—'}</td>
+                <td>${item.date || '—'}</td>
+                <td>
+                    <button class="action-btn" data-index="${index}" data-action="edit">✏️</button>
+                    <button class="action-btn" data-index="${index}" data-action="remove">🗑️</button>
+                </td>
+            </tr>`;
+        });
+        itemsBody.innerHTML = html;
+
+        // Podgląd etykiet
+        let previewHtml = '';
+        items.forEach(item => {
+            previewHtml += `
+                <div class="label">
+                    <div class="code">${item.code || ''}</div>
+                    <div class="quantity">${item.qty || ''}</div>
+                    <div class="date">${item.date || ''}</div>
+                    <div class="footer">www.twojafirma.pl</div>
+                </div>
+            `;
+        });
+        labelPreview.innerHTML = previewHtml;
+
+        // Podpięcie akcji
+        document.querySelectorAll('[data-action="edit"]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const index = e.target.dataset.index;
+                const item = items[index];
+                productCodeInp.value = item.code || '';
+                quantityInp.value = item.qty || '';
+                prodDateInp.value = item.date || '';
+                items.splice(index, 1);
+                saveToStorage();
+                renderTable();
+            });
+        });
+        document.querySelectorAll('[data-action="remove"]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const index = e.target.dataset.index;
+                items.splice(index, 1);
+                saveToStorage();
+                renderTable();
+            });
+        });
+    }
+
+    addBtn.addEventListener('click', () => {
+        const code = productCodeInp.value.trim();
+        const qty = quantityInp.value.trim();
+        const date = prodDateInp.value.trim();
+        if (!code || !qty || !date) {
+            alert('Wypełnij wszystkie pola');
+            return;
+        }
+        items.push({ code, qty, date });
+        productCodeInp.value = '';
+        quantityInp.value = '';
+        prodDateInp.value = '';
+        saveToStorage();
+        renderTable();
+        productCodeInp.focus();
+    });
+
+    clearBtn.addEventListener('click', () => {
+        if (confirm('Czy na pewno wyczyścić całą listę?')) {
+            items = [];
+            saveToStorage();
+            renderTable();
+        }
+    });
+
+    deleteAllBtn.addEventListener('click', () => {
+        if (confirm('Usunąć wszystkie dane (lokalnie)?')) {
+            items = [];
+            saveToStorage();
+            renderTable();
+        }
+    });
+
+    printBtn.addEventListener('click', () => {
+        if (items.length === 0) {
+            alert('Brak etykiet do wydruku.');
+            return;
+        }
+        window.print();
+    });
+
+    // Szybkie dodawanie Enterem w ostatnim polu
+    prodDateInp.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            addBtn.click();
+        }
+    });
+
+    // Render początkowy
+    renderTable();
+</script>
+</body>
+</html>
