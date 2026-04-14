@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>Magazyn Regały 4x5x21 + PRZENOSZENIE + KOPIOWANIE</title>
+    <title>Magazyn Regały + OKLEJENIE</title>
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -15,6 +15,7 @@
         .top-bar { display: flex; gap: 12px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
         .search-group { display: flex; gap: 8px; flex: 2; min-width: 250px; }
         .search-box { flex: 1; padding: 12px 16px; font-size: 16px; border: 1px solid #cbd5e1; border-radius: 40px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
+        .filter-select { padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 40px; font-size: 16px; background: white; }
         .btn-secondary { background: white; border: 1px solid #cbd5e1; padding: 10px 18px; border-radius: 40px; font-weight: 600; color: #1e293b; cursor: pointer; white-space: nowrap; }
         .racks-tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; flex-wrap: wrap; }
         .rack-tab { padding: 12px 24px; background: none; border: none; font-size: 18px; font-weight: 600; color: #64748b; cursor: pointer; border-radius: 20px 20px 0 0; transition: 0.2s; }
@@ -30,6 +31,7 @@
         .slot:hover { background: #e2e8f0; transform: scale(0.98); }
         .slot-code { font-size: 9px; opacity: 0.7; margin-bottom: 2px; }
         .slot-data { font-size: 10px; }
+        .oklejony-badge { background: #fbbf24; color: #000; border-radius: 4px; padding: 1px 3px; font-size: 8px; margin-top: 2px; }
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 1000; }
         .modal-card { background: white; max-width: 700px; width: 90%; max-height: 85vh; overflow-y: auto; border-radius: 28px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
@@ -51,6 +53,9 @@
         .batch-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         .batch-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .batch-product-select { grid-column: span 2; }
+        .filter-input { margin-bottom: 6px; padding: 8px 12px; border-radius: 12px; border: 1px solid #cbd5e1; width: 100%; font-size: 14px; }
+        .batch-checkbox { grid-column: span 2; display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+        .batch-checkbox input { width: 18px; height: 18px; }
         .batch-remove { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 18px; padding: 0 4px; }
         .add-batch-btn { margin-top: 8px; width: 100%; }
 
@@ -79,6 +84,11 @@
         <div class="search-group">
             <input type="text" id="searchProductInput" class="search-box" placeholder="🔍 Produkt / kod" autocomplete="off">
             <input type="text" id="searchDateInput" class="search-box" placeholder="📅 Data (np. 1.04.2026)" autocomplete="off">
+            <select id="oklejonyFilterSelect" class="filter-select">
+                <option value="">Wszystkie</option>
+                <option value="oklejony">Tylko oklejone</option>
+                <option value="nieoklejony">Tylko nieoklejone</option>
+            </select>
         </div>
         <button class="btn-secondary" id="clearSearchBtn">✖ Wyczyść</button>
         <button class="btn-secondary" id="batchesByProductBtn">📊 Partie wg produktu</button>
@@ -156,8 +166,8 @@
         </div>
         <div style="max-height:400px; overflow-y:auto;">
             <table class="product-batches-table">
-                <thead><tr><th>Lokalizacja</th><th>Data prod.</th><th>Kartony</th><th>Sztuki</th><th>Typ</th></tr></thead>
-                <tbody id="batchesTableBody"><tr><td colspan="5">Wybierz produkt</td></tr></tbody>
+                <thead><tr><th>Lokalizacja</th><th>Data prod.</th><th>Kartony</th><th>Sztuki</th><th>Typ</th><th>Oklejony</th></tr></thead>
+                <tbody id="batchesTableBody"><tr><td colspan="6">Wybierz produkt</td></tr></tbody>
             </table>
         </div>
         <div class="flex-row"><button class="btn" id="closeProductBatchesBtn">Zamknij</button></div>
@@ -215,6 +225,7 @@
     const rackView = document.getElementById('rackView');
     const searchProductInput = document.getElementById('searchProductInput');
     const searchDateInput = document.getElementById('searchDateInput');
+    const oklejonyFilterSelect = document.getElementById('oklejonyFilterSelect');
     const clearSearchBtn = document.getElementById('clearSearchBtn');
     const tabs = document.querySelectorAll('.rack-tab');
     const editModal = document.getElementById('editModal');
@@ -332,6 +343,9 @@
                 batches.forEach(b => { totalCartons += b.cartons || 0; totalPieces += b.pieces || 0; });
                 const qtyStr = (totalCartons > 0 || totalPieces > 0) ? `${totalCartons}k ${totalPieces}szt` : (data?.quantity ? `${data.quantity} szt` : '');
                 
+                // Sprawdzenie, czy jakakolwiek partia jest oklejona
+                const hasOklejony = batches.some(b => b.oklejony === true);
+                
                 html += `<div class="slot ${slotClass}" data-location-id="${locId}">`;
                 html += `<div class="slot-code">${level}-${col}</div>`;
                 if (isOccupied) {
@@ -347,6 +361,7 @@
                         html += `<div class="slot-data" style="font-size:9px;">${d.toLocaleDateString('pl-PL')}</div>`;
                     }
                     if (qtyStr) html += `<div class="slot-data">${qtyStr}</div>`;
+                    if (hasOklejony) html += `<div class="oklejony-badge">OKL</div>`;
                 } else {
                     html += `<div class="slot-data" style="opacity:0.5;">puste</div>`;
                 }
@@ -357,15 +372,18 @@
         rackView.innerHTML = html;
     }
 
-    // ========== WYSZUKIWANIE ==========
+    // ========== WYSZUKIWANIE (czarne podświetlenie + filtr oklejenia) ==========
     function applySearchHighlight() {
         const productQuery = searchProductInput.value.trim().toLowerCase();
         const dateQuery = searchDateInput.value.trim();
+        const oklejonyFilter = oklejonyFilterSelect.value;
         document.querySelectorAll('.slot').forEach(s => { s.style.outline = 'none'; s.style.boxShadow = ''; });
-        if (!productQuery && !dateQuery) return;
+        if (!productQuery && !dateQuery && !oklejonyFilter) return;
+        
         Object.entries(allSlotsData).forEach(([locId, data]) => {
             const batches = slotBatches[locId] || [];
-            let productMatch = true, dateMatch = true;
+            let productMatch = true, dateMatch = true, oklejonyMatch = true;
+            
             if (productQuery) {
                 if (batches.length > 0) {
                     productMatch = batches.some(b => 
@@ -378,6 +396,7 @@
                     productMatch = name.includes(productQuery) || code.includes(productQuery);
                 } else productMatch = false;
             }
+            
             if (dateQuery) {
                 if (batches.length === 0 && data?.prodDate) {
                     const d = data.prodDate.toDate ? data.prodDate.toDate() : new Date(data.prodDate);
@@ -392,11 +411,18 @@
                     });
                 }
             }
-            if (productMatch && dateMatch) {
+            
+            if (oklejonyFilter) {
+                const hasOklejony = batches.some(b => b.oklejony === true);
+                if (oklejonyFilter === 'oklejony') oklejonyMatch = hasOklejony;
+                else if (oklejonyFilter === 'nieoklejony') oklejonyMatch = !hasOklejony;
+            }
+            
+            if (productMatch && dateMatch && oklejonyMatch) {
                 const el = document.querySelector(`.slot[data-location-id="${locId}"]`);
                 if (el) {
-                    el.style.outline = '4px solid #000000';               // czarna ramka
-                    el.style.boxShadow = '0 0 0 4px rgba(0, 0, 0, 0.5)'; // czarny cień
+                    el.style.outline = '4px solid #000000';
+                    el.style.boxShadow = '0 0 0 4px rgba(0, 0, 0, 0.5)';
                     if (!window._firstHighlightScrolled) {
                         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         window._firstHighlightScrolled = true;
@@ -409,13 +435,15 @@
 
     searchProductInput.addEventListener('input', applySearchHighlight);
     searchDateInput.addEventListener('input', applySearchHighlight);
+    oklejonyFilterSelect.addEventListener('change', applySearchHighlight);
     clearSearchBtn.addEventListener('click', () => {
         searchProductInput.value = '';
         searchDateInput.value = '';
+        oklejonyFilterSelect.value = '';
         applySearchHighlight();
     });
 
-    // ========== OBSŁUGA WIELU PRODUKTÓW ==========
+    // ========== OBSŁUGA WIELU PRODUKTÓW (select + filtr + checkbox oklejony) ==========
     function renderBatchesList() {
         let html = '';
         currentBatches.forEach((batch, index) => {
@@ -431,38 +459,75 @@
                     <button class="batch-remove" data-index="${index}">🗑️</button>
                 </div>
                 <div class="batch-fields">
-                    <select class="batch-product-select" data-index="${index}">
-                        <option value="">-- Wybierz produkt --</option>
-                        ${productsList.map(p => `<option value="${p.id}" ${p.id === batch.productId ? 'selected' : ''}>${p.name} (${p.code || ''})</option>`).join('')}
-                    </select>
+                    <div style="grid-column: span 2;">
+                        <input type="text" class="filter-input" data-index="${index}" placeholder="🔍 Filtruj produkty..." autocomplete="off" style="margin-bottom:6px;">
+                        <select class="batch-product-select" data-index="${index}" style="width:100%;">
+                            <option value="">-- Wybierz produkt --</option>
+                            ${productsList.map(p => `<option value="${p.id}" ${p.id === batch.productId ? 'selected' : ''}>${p.name} (${p.code || ''})</option>`).join('')}
+                        </select>
+                    </div>
                     <input type="date" class="batch-date" value="${dateStr}" placeholder="Data">
                     <input type="number" class="batch-cartons" placeholder="Kartony" min="0" value="${batch.cartons || 0}">
                     <input type="number" class="batch-pieces" placeholder="Sztuki" min="0" value="${batch.pieces || 0}">
+                    <div class="batch-checkbox">
+                        <input type="checkbox" class="batch-oklejony" data-index="${index}" ${batch.oklejony ? 'checked' : ''}> 
+                        <label>Oklejony</label>
+                    </div>
                 </div>
             </div>`;
         });
         batchesContainer.innerHTML = html || '<div style="color:#64748b; text-align:center;">Brak produktów. Kliknij "Dodaj produkt".</div>';
+        
+        // Podpinanie filtrów i selectów
+        document.querySelectorAll('.filter-input').forEach(filterInput => {
+            const index = filterInput.dataset.index;
+            const selectEl = document.querySelector(`.batch-product-select[data-index="${index}"]`);
+            const originalOptions = Array.from(selectEl.options);
+            
+            filterInput.addEventListener('input', () => {
+                const query = filterInput.value.toLowerCase();
+                selectEl.innerHTML = '<option value="">-- Wybierz produkt --</option>';
+                originalOptions.forEach(opt => {
+                    if (opt.value === '') return;
+                    const text = opt.textContent.toLowerCase();
+                    if (text.includes(query)) {
+                        selectEl.appendChild(opt.cloneNode(true));
+                    }
+                });
+                const selectedId = currentBatches[index]?.productId;
+                if (selectedId) selectEl.value = selectedId;
+            });
+        });
+
+        document.querySelectorAll('.batch-product-select').forEach(sel => {
+            const index = sel.dataset.index;
+            sel.addEventListener('change', (e) => {
+                const prodId = sel.value;
+                const prod = productsList.find(p => p.id === prodId);
+                if (prod) {
+                    currentBatches[index].productId = prod.id;
+                    currentBatches[index].productName = prod.name;
+                    currentBatches[index].productCode = prod.code;
+                } else {
+                    currentBatches[index].productId = null;
+                    currentBatches[index].productName = '';
+                    currentBatches[index].productCode = '';
+                }
+            });
+        });
+
+        document.querySelectorAll('.batch-oklejony').forEach(cb => {
+            const index = cb.dataset.index;
+            cb.addEventListener('change', () => {
+                currentBatches[index].oklejony = cb.checked;
+            });
+        });
+
         document.querySelectorAll('.batch-remove').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const idx = parseInt(btn.dataset.index);
                 currentBatches.splice(idx, 1);
                 renderBatchesList();
-            });
-        });
-        document.querySelectorAll('.batch-product-select').forEach(sel => {
-            sel.addEventListener('change', (e) => {
-                const idx = parseInt(sel.dataset.index);
-                const prodId = sel.value;
-                const prod = productsList.find(p => p.id === prodId);
-                if (prod) {
-                    currentBatches[idx].productId = prod.id;
-                    currentBatches[idx].productName = prod.name;
-                    currentBatches[idx].productCode = prod.code;
-                } else {
-                    currentBatches[idx].productId = null;
-                    currentBatches[idx].productName = null;
-                    currentBatches[idx].productCode = null;
-                }
             });
         });
     }
@@ -474,6 +539,7 @@
             const dateInput = item.querySelector('.batch-date');
             const cartonsInput = item.querySelector('.batch-cartons');
             const piecesInput = item.querySelector('.batch-pieces');
+            const oklejonyCb = item.querySelector('.batch-oklejony');
             const prodId = selectEl.value;
             const prod = productsList.find(p => p.id === prodId);
             if (prodId && dateInput.value) {
@@ -483,7 +549,8 @@
                     productCode: prod?.code || '',
                     prodDate: firebase.firestore.Timestamp.fromDate(new Date(dateInput.value)),
                     cartons: parseInt(cartonsInput.value) || 0,
-                    pieces: parseInt(piecesInput.value) || 0
+                    pieces: parseInt(piecesInput.value) || 0,
+                    oklejony: oklejonyCb ? oklejonyCb.checked : false
                 });
             }
         });
@@ -491,7 +558,7 @@
     }
 
     addBatchBtn.addEventListener('click', () => {
-        currentBatches.push({ cartons: 0, pieces: 0 });
+        currentBatches.push({ cartons: 0, pieces: 0, oklejony: false });
         renderBatchesList();
     });
 
@@ -509,7 +576,8 @@
             productCode: b.productCode || '',
             prodDate: b.prodDate,
             cartons: b.cartons || 0,
-            pieces: b.pieces || 0
+            pieces: b.pieces || 0,
+            oklejony: b.oklejony || false
         }));
         if (currentBatches.length === 0 && data.productName) {
             currentBatches.push({
@@ -518,7 +586,8 @@
                 productCode: data.productCode,
                 prodDate: data.prodDate,
                 cartons: 0,
-                pieces: data.quantity || 0
+                pieces: data.quantity || 0,
+                oklejony: false
             });
         }
         renderBatchesList();
@@ -546,7 +615,7 @@
             for (const b of newBatches) {
                 await slotRef.collection("batches").add({
                     productId: b.productId, productName: b.productName, productCode: b.productCode,
-                    prodDate: b.prodDate, cartons: b.cartons, pieces: b.pieces
+                    prodDate: b.prodDate, cartons: b.cartons, pieces: b.pieces, oklejony: b.oklejony
                 });
             }
             showToast('✅ Zapisano');
@@ -569,7 +638,7 @@
 
     cancelEditBtn.addEventListener('click', () => editModal.style.display = 'none');
 
-    // ========== PRZENOSZENIE PALETY ==========
+    // ========== PRZENOSZENIE I KOPIOWANIE (bez zmian, tylko z oklejony) ==========
     function isSlotAvailable(locId) {
         const data = allSlotsData[locId];
         return !data || !data.productName;
@@ -579,7 +648,6 @@
         const sourceData = allSlotsData[sourceLocId];
         if (!sourceData || !sourceData.productName) { alert('Slot źródłowy jest pusty.'); return false; }
         if (!isSlotAvailable(targetLocId)) { alert('Slot docelowy jest zajęty.'); return false; }
-        
         try {
             const targetSlotRef = db.collection("slots").doc(targetLocId);
             const newSlotData = {
@@ -590,26 +658,46 @@
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
             await targetSlotRef.set(newSlotData);
-
             const sourceBatches = slotBatches[sourceLocId] || [];
             for (const b of sourceBatches) {
                 await targetSlotRef.collection("batches").add({
                     productId: b.productId, productName: b.productName, productCode: b.productCode,
-                    prodDate: b.prodDate, cartons: b.cartons || 0, pieces: b.pieces || 0
+                    prodDate: b.prodDate, cartons: b.cartons || 0, pieces: b.pieces || 0, oklejony: b.oklejony || false
                 });
             }
-
             const sourceRef = db.collection("slots").doc(sourceLocId);
             const sourceBatchesSnapshot = await sourceRef.collection("batches").get();
             await Promise.all(sourceBatchesSnapshot.docs.map(d => d.ref.delete()));
             await sourceRef.delete();
-
             showToast('✅ Paleta przeniesiona');
             return true;
-        } catch (err) {
-            alert('Błąd przenoszenia: ' + err.message);
-            return false;
-        }
+        } catch (err) { alert('Błąd przenoszenia: ' + err.message); return false; }
+    }
+
+    async function copyPalette(sourceLocId, targetLocId) {
+        const sourceData = allSlotsData[sourceLocId];
+        if (!sourceData || !sourceData.productName) { alert('Slot źródłowy jest pusty.'); return false; }
+        if (!isSlotAvailable(targetLocId)) { alert('Slot docelowy jest zajęty.'); return false; }
+        try {
+            const targetSlotRef = db.collection("slots").doc(targetLocId);
+            const newSlotData = {
+                productId: sourceData.productId,
+                productName: sourceData.productName,
+                productCode: sourceData.productCode,
+                palletType: sourceData.palletType,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            await targetSlotRef.set(newSlotData);
+            const sourceBatches = slotBatches[sourceLocId] || [];
+            for (const b of sourceBatches) {
+                await targetSlotRef.collection("batches").add({
+                    productId: b.productId, productName: b.productName, productCode: b.productCode,
+                    prodDate: b.prodDate, cartons: b.cartons || 0, pieces: b.pieces || 0, oklejony: b.oklejony || false
+                });
+            }
+            showToast('✅ Paleta skopiowana');
+            return true;
+        } catch (err) { alert('Błąd kopiowania: ' + err.message); return false; }
     }
 
     moveSlotBtn.addEventListener('click', () => {
@@ -622,44 +710,7 @@
         copyModeIndicator.style.display = 'none';
         showToast('🎯 Kliknij na pusty slot, aby przenieść paletę');
     });
-
-    cancelMoveBtn.addEventListener('click', () => {
-        moveSourceLocation = null;
-        moveModeIndicator.style.display = 'none';
-    });
-
-    // ========== KOPIOWANIE PALETY ==========
-    async function copyPalette(sourceLocId, targetLocId) {
-        const sourceData = allSlotsData[sourceLocId];
-        if (!sourceData || !sourceData.productName) { alert('Slot źródłowy jest pusty.'); return false; }
-        if (!isSlotAvailable(targetLocId)) { alert('Slot docelowy jest zajęty.'); return false; }
-        
-        try {
-            const targetSlotRef = db.collection("slots").doc(targetLocId);
-            const newSlotData = {
-                productId: sourceData.productId,
-                productName: sourceData.productName,
-                productCode: sourceData.productCode,
-                palletType: sourceData.palletType,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            };
-            await targetSlotRef.set(newSlotData);
-
-            const sourceBatches = slotBatches[sourceLocId] || [];
-            for (const b of sourceBatches) {
-                await targetSlotRef.collection("batches").add({
-                    productId: b.productId, productName: b.productName, productCode: b.productCode,
-                    prodDate: b.prodDate, cartons: b.cartons || 0, pieces: b.pieces || 0
-                });
-            }
-
-            showToast('✅ Paleta skopiowana');
-            return true;
-        } catch (err) {
-            alert('Błąd kopiowania: ' + err.message);
-            return false;
-        }
-    }
+    cancelMoveBtn.addEventListener('click', () => { moveSourceLocation = null; moveModeIndicator.style.display = 'none'; });
 
     copySlotBtn.addEventListener('click', () => {
         if (!currentEditingLocation) return;
@@ -671,34 +722,22 @@
         moveModeIndicator.style.display = 'none';
         showToast('📋 Kliknij na pusty slot, aby skopiować paletę');
     });
+    cancelCopyBtn.addEventListener('click', () => { copySourceLocation = null; copyModeIndicator.style.display = 'none'; });
 
-    cancelCopyBtn.addEventListener('click', () => {
-        copySourceLocation = null;
-        copyModeIndicator.style.display = 'none';
-    });
-
-    // ========== DELEGACJA KLIKNIĘĆ ==========
     rackView.addEventListener('click', async (e) => {
         const slot = e.target.closest('.slot');
         if (!slot) return;
         const locId = slot.dataset.locationId;
-
         if (moveSourceLocation) {
             e.stopPropagation();
             if (locId === moveSourceLocation) { alert('Nie można przenieść palety w to samo miejsce.'); return; }
             const success = await movePalette(moveSourceLocation, locId);
-            if (success) {
-                moveSourceLocation = null;
-                moveModeIndicator.style.display = 'none';
-            }
+            if (success) { moveSourceLocation = null; moveModeIndicator.style.display = 'none'; }
         } else if (copySourceLocation) {
             e.stopPropagation();
             if (locId === copySourceLocation) { alert('Nie można skopiować palety w to samo miejsce.'); return; }
             const success = await copyPalette(copySourceLocation, locId);
-            if (success) {
-                copySourceLocation = null;
-                copyModeIndicator.style.display = 'none';
-            }
+            if (success) { copySourceLocation = null; copyModeIndicator.style.display = 'none'; }
         } else {
             if (locId) openEditModal(locId);
         }
@@ -724,7 +763,6 @@
         document.querySelectorAll('.edit-product').forEach(btn => btn.addEventListener('click', () => editProduct(btn.dataset.id)));
         document.querySelectorAll('.delete-product').forEach(btn => btn.addEventListener('click', () => deleteProduct(btn.dataset.id)));
     }
-
     async function addProduct() {
         const name = newProductName.value.trim();
         if (!name) { alert('Podaj nazwę'); return; }
@@ -737,7 +775,6 @@
             showToast('✅ Produkt dodany');
         } catch (err) { alert('Błąd: ' + err.message); }
     }
-
     async function editProduct(id) {
         const prod = productsList.find(p => p.id === id);
         if (!prod) return;
@@ -749,18 +786,16 @@
             showToast('✅ Zaktualizowano');
         } catch (err) { alert('Błąd: ' + err.message); }
     }
-
     async function deleteProduct(id) {
         if (!confirm('Usunąć produkt?')) return;
         try { await db.collection("products").doc(id).delete(); showToast('🗑️ Usunięto'); }
         catch (err) { alert('Błąd: ' + err.message); }
     }
-
     addProductBtn.addEventListener('click', addProduct);
     manageProductsBtn.addEventListener('click', () => productsModal.style.display = 'flex');
     closeProductsBtn.addEventListener('click', () => productsModal.style.display = 'none');
 
-    // ========== MODAL FIFO ==========
+    // ========== MODAL FIFO (z kolumną Oklejony) ==========
     function updateProductFilterSelect() {
         productFilterSelect.innerHTML = '<option value="">-- Wybierz produkt --</option>';
         productsList.forEach(prod => {
@@ -770,10 +805,9 @@
             productFilterSelect.appendChild(option);
         });
     }
-
     function renderBatchesForProduct(productId) {
         const product = productsList.find(p => p.id === productId);
-        if (!product) { batchesTableBody.innerHTML = '<tr><td colspan="5">Nie znaleziono produktu</td></tr>'; return; }
+        if (!product) { batchesTableBody.innerHTML = '<tr><td colspan="6">Nie znaleziono produktu</td></tr>'; return; }
         const allBatches = [];
         for (const [locId, batches] of Object.entries(slotBatches)) {
             const slotData = allSlotsData[locId] || {};
@@ -781,14 +815,15 @@
                 if (batch.productId === productId) {
                     allBatches.push({
                         locationId: locId, palletType: slotData.palletType || 'magazynowa',
-                        prodDate: batch.prodDate, cartons: batch.cartons || 0, pieces: batch.pieces || 0
+                        prodDate: batch.prodDate, cartons: batch.cartons || 0, pieces: batch.pieces || 0,
+                        oklejony: batch.oklejony || false
                     });
                 }
             });
         }
         allBatches.sort((a,b) => (a.prodDate?.seconds || 0) - (b.prodDate?.seconds || 0));
         if (allBatches.length === 0) {
-            batchesTableBody.innerHTML = `<tr><td colspan="5">Brak partii dla "${product.name}"</td></tr>`;
+            batchesTableBody.innerHTML = `<tr><td colspan="6">Brak partii dla "${product.name}"</td></tr>`;
             return;
         }
         let html = '';
@@ -796,7 +831,8 @@
             const loc = b.locationId;
             const date = b.prodDate?.toDate().toLocaleDateString('pl-PL') || '—';
             const type = b.palletType === 'magazynowa' ? '🔴 Magazyn' : '🟢 Spedycja';
-            html += `<tr data-location-id="${loc}"><td>${loc}</td><td>${date}</td><td>${b.cartons}</td><td>${b.pieces}</td><td>${type}</td></tr>`;
+            const oklejonyStr = b.oklejony ? '✅' : '❌';
+            html += `<tr data-location-id="${loc}"><td>${loc}</td><td>${date}</td><td>${b.cartons}</td><td>${b.pieces}</td><td>${type}</td><td>${oklejonyStr}</td></tr>`;
         });
         batchesTableBody.innerHTML = html;
         document.querySelectorAll('#batchesTableBody tr').forEach(row => {
@@ -814,22 +850,20 @@
             });
         });
     }
-
     productFilterSelect.addEventListener('change', () => {
         const id = productFilterSelect.value;
-        id ? renderBatchesForProduct(id) : batchesTableBody.innerHTML = '<tr><td colspan="5">Wybierz produkt</td></tr>';
+        id ? renderBatchesForProduct(id) : batchesTableBody.innerHTML = '<tr><td colspan="6">Wybierz produkt</td></tr>';
     });
-
     batchesByProductBtn.addEventListener('click', () => {
         updateProductFilterSelect();
         productBatchesModal.style.display = 'flex';
     });
     closeProductBatchesBtn.addEventListener('click', () => productBatchesModal.style.display = 'none');
 
-    // ========== EKSPORT CSV ==========
+    // ========== EKSPORT CSV (dodana kolumna Oklejony) ==========
     function doExportCsv(rackChoice) {
         const rows = [];
-        rows.push(['Lokalizacja', 'Produkt', 'Kod', 'Data produkcji', 'Kartony', 'Sztuki', 'Typ palety'].join(';'));
+        rows.push(['Lokalizacja', 'Produkt', 'Kod', 'Data produkcji', 'Kartony', 'Sztuki', 'Typ palety', 'Oklejony'].join(';'));
         for (const [locId, data] of Object.entries(allSlotsData)) {
             const rack = locId.charAt(1);
             if (rackChoice && rack !== rackChoice) continue;
@@ -838,11 +872,12 @@
             if (batches.length > 0) {
                 batches.forEach(b => {
                     const date = b.prodDate?.toDate().toLocaleDateString('pl-PL') || '';
-                    rows.push([locId, b.productName || '', b.productCode || '', date, b.cartons || 0, b.pieces || 0, data.palletType || 'magazynowa'].join(';'));
+                    const oklejonyStr = b.oklejony ? 'Tak' : 'Nie';
+                    rows.push([locId, b.productName || '', b.productCode || '', date, b.cartons || 0, b.pieces || 0, data.palletType || 'magazynowa', oklejonyStr].join(';'));
                 });
             } else {
                 const date = data.prodDate?.toDate().toLocaleDateString('pl-PL') || '';
-                rows.push([locId, data.productName || '', data.productCode || '', date, '0', data.quantity || 0, data.palletType || 'magazynowa'].join(';'));
+                rows.push([locId, data.productName || '', data.productCode || '', date, '0', data.quantity || 0, data.palletType || 'magazynowa', 'Nie'].join(';'));
             }
         }
         if (rows.length === 1) { alert('Brak danych do eksportu dla wybranego zakresu.'); return; }
@@ -856,21 +891,16 @@
         URL.revokeObjectURL(url);
         showToast('✅ Eksport zakończony');
     }
-
     exportCsvBtn.addEventListener('click', () => {
         exportCsvModal.style.display = 'flex';
         exportRackSelect.value = '';
     });
-
     confirmExportCsvBtn.addEventListener('click', () => {
         const rackChoice = exportRackSelect.value;
         exportCsvModal.style.display = 'none';
         doExportCsv(rackChoice);
     });
-
-    cancelExportCsvBtn.addEventListener('click', () => {
-        exportCsvModal.style.display = 'none';
-    });
+    cancelExportCsvBtn.addEventListener('click', () => exportCsvModal.style.display = 'none');
 
     // ========== INICJALIZACJA ==========
     tabs.forEach(tab => tab.addEventListener('click', () => {
@@ -880,14 +910,12 @@
         renderCurrentRack();
         applySearchHighlight();
     }));
-
     window.addEventListener('click', (e) => {
         if (e.target === editModal) editModal.style.display = 'none';
         if (e.target === productsModal) productsModal.style.display = 'none';
         if (e.target === productBatchesModal) productBatchesModal.style.display = 'none';
         if (e.target === exportCsvModal) exportCsvModal.style.display = 'none';
     });
-
     subscribeToSlots();
     subscribeToBatches();
     subscribeToProducts();
