@@ -38,9 +38,9 @@
             align-items: center; 
         }
         /* ZWIĘKSZONE CZCIONKI W PODGLĄDZIE */
-        .label .code { font-size: 90px; font-weight: 700; line-height: 1.2; text-align: center; }
-        .label .quantity { font-size: 70px; font-weight: 600; text-align: center; }
-        .label .date { font-size: 50px; font-weight: 400; text-align: center; color: #1e293b; }
+        .label .code { font-size: 100px; font-weight: 700; line-height: 1.2; text-align: center; }
+        .label .quantity { font-size: 80px; font-weight: 600; text-align: center; }
+        .label .date { font-size: 75px; font-weight: 400; text-align: center; color: #1e293b; }
         .total-badge { background: #e2e8f0; padding: 2px 10px; border-radius: 20px; font-size: 14px; margin-left: 10px; }
     </style>
 </head>
@@ -231,14 +231,14 @@
 
             // ZWIĘKSZONE CZCIONKI W PDF – MOŻESZ ZMIENIAĆ TE LICZBY
             pdf.setFont('Helvetica', 'bold');
-            pdf.setFontSize(80);        // kod – zmień tutaj
+            pdf.setFontSize(100);        // kod – zmień tutaj
             pdf.text(item.code, pageWidth / 2, 65, { align: 'center' });
             
-            pdf.setFontSize(60);        // ilość – zmień tutaj
+            pdf.setFontSize(80);        // ilość – zmień tutaj
             pdf.text(item.qty, pageWidth / 2, 100, { align: 'center' });
             
             pdf.setFont('Helvetica', 'normal');
-            pdf.setFontSize(46);        // data – zmień tutaj
+            pdf.setFontSize(75);        // data – zmień tutaj
             pdf.text(item.date, pageWidth / 2, 130, { align: 'center' });
         }
 
