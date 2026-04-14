@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generator etykiet PDF 100x150 mm (poziomo)</title>
+    <title>Generator etykiet PDF 100x150 mm + kopie</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         * { box-sizing: border-box; font-family: 'Arial', sans-serif; }
         body { background: #f3f4f6; margin: 0; padding: 20px; }
-        .app { max-width: 800px; margin: 0 auto; background: white; border-radius: 24px; padding: 24px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+        .app { max-width: 900px; margin: 0 auto; background: white; border-radius: 24px; padding: 24px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
         h1 { margin-top: 0; color: #1e293b; display: flex; align-items: center; gap: 8px; }
-        .input-row { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
-        .input-row input { flex: 1; min-width: 150px; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 40px; font-size: 16px; }
+        .input-row { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+        .input-row input { flex: 1; min-width: 120px; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 40px; font-size: 16px; }
+        .input-row .copies-input { max-width: 100px; }
         .btn { padding: 12px 20px; border-radius: 40px; border: none; font-weight: 600; font-size: 16px; cursor: pointer; background: #e2e8f0; color: #1e293b; }
         .btn-primary { background: #2563eb; color: white; }
         .btn-pdf { background: #8b5cf6; color: white; }
@@ -39,6 +40,7 @@
         .label .code { font-size: 80px; font-weight: 700; line-height: 1.2; text-align: center; }
         .label .quantity { font-size: 60px; font-weight: 600; text-align: center; }
         .label .date { font-size: 45px; font-weight: 400; text-align: center; color: #1e293b; }
+        .total-badge { background: #e2e8f0; padding: 2px 10px; border-radius: 20px; font-size: 14px; margin-left: 10px; }
     </style>
 </head>
 <body>
@@ -46,9 +48,10 @@
     <h1>🏷️ Generator etykiet PDF (100x150 mm)</h1>
     
     <div class="input-row">
-        <input type="text" id="productCode" placeholder="Kod produktu (np. 896)" autocomplete="off">
+        <input type="text" id="productCode" placeholder="Kod (np. 896)" autocomplete="off">
         <input type="text" id="quantity" placeholder="Ilość (np. 101)" autocomplete="off">
         <input type="text" id="prodDate" placeholder="Data (np. 26.02.26)" autocomplete="off">
+        <input type="number" id="copies" class="copies-input" placeholder="Kopie" min="1" max="50" value="1" style="text-align:center;">
         <button class="btn btn-primary" id="addBtn">➕ Dodaj</button>
     </div>
 
@@ -72,7 +75,7 @@
     </div>
 
     <div class="preview">
-        <h2>📄 Podgląd etykiet</h2>
+        <h2>📄 Podgląd etykiet <span id="totalCount" class="total-badge"></span></h2>
         <div id="labelPreview" class="label-preview"></div>
     </div>
 </div>
@@ -83,28 +86,33 @@
     const productCodeInp = document.getElementById('productCode');
     const quantityInp = document.getElementById('quantity');
     const prodDateInp = document.getElementById('prodDate');
+    const copiesInp = document.getElementById('copies');
     const addBtn = document.getElementById('addBtn');
     const itemsBody = document.getElementById('itemsBody');
     const labelPreview = document.getElementById('labelPreview');
+    const totalCount = document.getElementById('totalCount');
     const downloadPdfBtn = document.getElementById('downloadPdfBtn');
     const clearBtn = document.getElementById('clearBtn');
     const deleteAllBtn = document.getElementById('deleteAllBtn');
 
     try {
-        const saved = localStorage.getItem('etykiety_poziome_items');
+        const saved = localStorage.getItem('etykiety_kopie_items');
         if (saved) items = JSON.parse(saved);
     } catch(e) {}
 
     function saveToStorage() {
-        localStorage.setItem('etykiety_poziome_items', JSON.stringify(items));
+        localStorage.setItem('etykiety_kopie_items', JSON.stringify(items));
     }
 
     function renderTable() {
         if (items.length === 0) {
             itemsBody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#64748b;">Brak pozycji. Dodaj powyżej.</td></tr>';
             labelPreview.innerHTML = '<p style="color:#64748b;">Dodaj pozycje, aby zobaczyć podgląd etykiet.</p>';
+            totalCount.textContent = '';
             return;
         }
+
+        totalCount.textContent = `Łącznie: ${items.length} etykiet`;
 
         let html = '';
         items.forEach((item, index) => {
@@ -139,6 +147,7 @@
                 productCodeInp.value = item.code || '';
                 quantityInp.value = item.qty || '';
                 prodDateInp.value = item.date || '';
+                copiesInp.value = 1;
                 items.splice(index, 1);
                 saveToStorage();
                 renderTable();
@@ -158,14 +167,24 @@
         const code = productCodeInp.value.trim();
         const qty = quantityInp.value.trim();
         const date = prodDateInp.value.trim();
+        let copies = parseInt(copiesInp.value);
+        if (isNaN(copies) || copies < 1) copies = 1;
+        if (copies > 50) copies = 50;
+
         if (!code || !qty || !date) {
             alert('Wypełnij wszystkie pola');
             return;
         }
-        items.push({ code, qty, date });
+
+        for (let i = 0; i < copies; i++) {
+            items.push({ code, qty, date });
+        }
+
         productCodeInp.value = '';
         quantityInp.value = '';
         prodDateInp.value = '';
+        copiesInp.value = 1;
+
         saveToStorage();
         renderTable();
         productCodeInp.focus();
@@ -209,16 +228,13 @@
                 pdf.addPage([pageWidth, pageHeight]);
             }
 
-            // Kod – duży, u góry
             pdf.setFont('Helvetica', 'bold');
             pdf.setFontSize(72);
             pdf.text(item.code, pageWidth / 2, 65, { align: 'center' });
             
-            // Ilość – pośrodku
             pdf.setFontSize(54);
             pdf.text(item.qty, pageWidth / 2, 100, { align: 'center' });
             
-            // Data – na dole
             pdf.setFont('Helvetica', 'normal');
             pdf.setFontSize(40);
             pdf.text(item.date, pageWidth / 2, 130, { align: 'center' });
