@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>Magazyn Regały + OKLEJENIE</title>
+    <title>Magazyn Regały + WIDOK MOBILNY</title>
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -24,7 +24,10 @@
         .shelf { margin-bottom: 16px; }
         .shelf-label { font-weight: 700; margin-bottom: 6px; color: #334155; font-size: 14px; display: flex; justify-content: space-between; }
         .slots { display: grid; grid-template-columns: repeat(21, 1fr); gap: 6px; }
+        /* Tryb mobilny – 7 kolumn zamiast 21 */
+        .rack-container.mobile-view .slots { grid-template-columns: repeat(7, 1fr); }
         .slot { aspect-ratio: 1 / 1.2; background: #f1f5f9; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #1e293b; cursor: pointer; border: 2px solid transparent; transition: all 0.15s; padding: 4px 2px; text-align: center; line-height: 1.2; box-shadow: inset 0 1px 3px rgba(0,0,0,0.03); }
+        .rack-container.mobile-view .slot { font-size: 14px; padding: 8px 4px; }
         .slot.occupied-mag { background: #fee2e2; border-color: #ef4444; color: #991b1b; }
         .slot.occupied-sped { background: #dcfce7; border-color: #22c55e; color: #166534; }
         .slot.occupied-other { background: #dbeafe; border-color: #3b82f6; color: #1e3a8a; }
@@ -91,6 +94,7 @@
             </select>
         </div>
         <button class="btn-secondary" id="clearSearchBtn">✖ Wyczyść</button>
+        <button class="btn-secondary" id="toggleMobileViewBtn">📱 Widok mobilny</button>
         <button class="btn-secondary" id="batchesByProductBtn">📊 Partie wg produktu</button>
         <button class="btn-secondary" id="exportCsvBtn">📥 Eksportuj CSV</button>
         <button class="btn-secondary" id="manageProductsBtn">📋 Produkty</button>
@@ -221,8 +225,10 @@
     let unsubscribeSlots = null;
     let unsubscribeProducts = null;
     let unsubscribeBatches = null;
+    let mobileView = false;
 
     const rackView = document.getElementById('rackView');
+    const toggleMobileViewBtn = document.getElementById('toggleMobileViewBtn');
     const searchProductInput = document.getElementById('searchProductInput');
     const searchDateInput = document.getElementById('searchDateInput');
     const oklejonyFilterSelect = document.getElementById('oklejonyFilterSelect');
@@ -315,59 +321,74 @@
         }, err => console.error("Products error:", err));
     }
 
+    // ========== PRZEŁĄCZANIE WIDOKU MOBILNEGO ==========
+    toggleMobileViewBtn.addEventListener('click', () => {
+        mobileView = !mobileView;
+        rackView.classList.toggle('mobile-view', mobileView);
+        toggleMobileViewBtn.textContent = mobileView ? '🖥️ Widok normalny' : '📱 Widok mobilny';
+        renderCurrentRack(); // odśwież, aby dostosować zawartość
+        applySearchHighlight();
+    });
+
     // ========== RENDER REGAŁÓW ==========
     function renderCurrentRack() {
         let html = '';
+        const columnsPerRow = mobileView ? 7 : 21;
+        const rowsPerLevel = mobileView ? 3 : 1;
+        
         for (let level = 1; level <= LEVELS; level++) {
-            html += `<div class="shelf"><div class="shelf-label"><span>📌 Poziom ${level}</span><span class="status-badge">${COLUMNS} pól</span></div><div class="slots">`;
-            for (let col = 1; col <= COLUMNS; col++) {
-                const locId = getLocationId(currentRack, level, col);
-                const data = allSlotsData[locId] || null;
-                const batches = slotBatches[locId] || [];
-                const isOccupied = batches.length > 0 || (data && data.productName);
-                let slotClass = '';
-                if (isOccupied) {
-                    const type = data?.palletType || 'magazynowa';
-                    if (type === 'magazynowa') slotClass = 'occupied-mag';
-                    else if (type === 'spedycyjna') slotClass = 'occupied-sped';
-                    else slotClass = 'occupied-other';
-                }
-                
-                const productNames = [...new Set(batches.map(b => b.productName).filter(n => n))];
-                if (productNames.length === 0 && data?.productName) productNames.push(data.productName);
-                const mainProduct = productNames[0] || '—';
-                const productShort = mainProduct.substring(0, 12) + (mainProduct.length>12?'…':'');
-                const productCount = productNames.length;
-                
-                let totalCartons = 0, totalPieces = 0;
-                batches.forEach(b => { totalCartons += b.cartons || 0; totalPieces += b.pieces || 0; });
-                const qtyStr = (totalCartons > 0 || totalPieces > 0) ? `${totalCartons}k ${totalPieces}szt` : (data?.quantity ? `${data.quantity} szt` : '');
-                
-                // Sprawdzenie, czy jakakolwiek partia jest oklejona
-                const hasOklejony = batches.some(b => b.oklejony === true);
-                
-                html += `<div class="slot ${slotClass}" data-location-id="${locId}">`;
-                html += `<div class="slot-code">${level}-${col}</div>`;
-                if (isOccupied) {
-                    html += `<div class="slot-data" style="font-weight:700;">${productShort}</div>`;
-                    if (batches.length > 0) {
-                        const firstDate = batches[0].prodDate?.toDate();
-                        if (firstDate) html += `<div class="slot-data" style="font-size:9px;">${firstDate.toLocaleDateString('pl-PL')}</div>`;
-                        if (batches.length > 1 || productCount > 1) {
-                            html += `<div class="slot-data">📦${batches.length>1? '+'+ (batches.length-1):''}${productCount>1? ' ('+productCount+' prod)':''}</div>`;
-                        }
-                    } else if (data?.prodDate) {
-                        const d = data.prodDate.toDate ? data.prodDate.toDate() : new Date(data.prodDate);
-                        html += `<div class="slot-data" style="font-size:9px;">${d.toLocaleDateString('pl-PL')}</div>`;
+            for (let row = 0; row < rowsPerLevel; row++) {
+                const startCol = row * columnsPerRow + 1;
+                const endCol = Math.min(startCol + columnsPerRow - 1, COLUMNS);
+                html += `<div class="shelf"><div class="shelf-label"><span>📌 Poziom ${level} ${mobileView ? `(kol. ${startCol}-${endCol})` : ''}</span><span class="status-badge">${endCol - startCol + 1} pól</span></div><div class="slots">`;
+                for (let col = startCol; col <= endCol; col++) {
+                    const locId = getLocationId(currentRack, level, col);
+                    const data = allSlotsData[locId] || null;
+                    const batches = slotBatches[locId] || [];
+                    const isOccupied = batches.length > 0 || (data && data.productName);
+                    let slotClass = '';
+                    if (isOccupied) {
+                        const type = data?.palletType || 'magazynowa';
+                        if (type === 'magazynowa') slotClass = 'occupied-mag';
+                        else if (type === 'spedycyjna') slotClass = 'occupied-sped';
+                        else slotClass = 'occupied-other';
                     }
-                    if (qtyStr) html += `<div class="slot-data">${qtyStr}</div>`;
-                    if (hasOklejony) html += `<div class="oklejony-badge">OKL</div>`;
-                } else {
-                    html += `<div class="slot-data" style="opacity:0.5;">puste</div>`;
+                    
+                    const productNames = [...new Set(batches.map(b => b.productName).filter(n => n))];
+                    if (productNames.length === 0 && data?.productName) productNames.push(data.productName);
+                    const mainProduct = productNames[0] || '—';
+                    const productShort = mobileView ? mainProduct.substring(0, 20) + (mainProduct.length>20?'…':'') : mainProduct.substring(0, 12) + (mainProduct.length>12?'…':'');
+                    const productCount = productNames.length;
+                    
+                    let totalCartons = 0, totalPieces = 0;
+                    batches.forEach(b => { totalCartons += b.cartons || 0; totalPieces += b.pieces || 0; });
+                    const qtyStr = (totalCartons > 0 || totalPieces > 0) ? `${totalCartons}k ${totalPieces}szt` : (data?.quantity ? `${data.quantity} szt` : '');
+                    
+                    const hasOklejony = batches.some(b => b.oklejony === true);
+                    
+                    html += `<div class="slot ${slotClass}" data-location-id="${locId}">`;
+                    html += `<div class="slot-code">${level}-${col}</div>`;
+                    if (isOccupied) {
+                        html += `<div class="slot-data" style="font-weight:700;">${productShort}</div>`;
+                        if (batches.length > 0) {
+                            const firstDate = batches[0].prodDate?.toDate();
+                            if (firstDate) html += `<div class="slot-data" style="font-size:${mobileView?'12px':'9px'};">${firstDate.toLocaleDateString('pl-PL')}</div>`;
+                            if (batches.length > 1 || productCount > 1) {
+                                html += `<div class="slot-data">📦${batches.length>1? '+'+ (batches.length-1):''}${productCount>1? ' ('+productCount+' prod)':''}</div>`;
+                            }
+                        } else if (data?.prodDate) {
+                            const d = data.prodDate.toDate ? data.prodDate.toDate() : new Date(data.prodDate);
+                            html += `<div class="slot-data" style="font-size:${mobileView?'12px':'9px'};">${d.toLocaleDateString('pl-PL')}</div>`;
+                        }
+                        if (qtyStr) html += `<div class="slot-data">${qtyStr}</div>`;
+                        if (hasOklejony) html += `<div class="oklejony-badge">OKL</div>`;
+                    } else {
+                        html += `<div class="slot-data" style="opacity:0.5;">puste</div>`;
+                    }
+                    html += `</div>`;
                 }
-                html += `</div>`;
+                html += `</div></div>`;
             }
-            html += `</div></div>`;
         }
         rackView.innerHTML = html;
     }
@@ -478,7 +499,6 @@
         });
         batchesContainer.innerHTML = html || '<div style="color:#64748b; text-align:center;">Brak produktów. Kliknij "Dodaj produkt".</div>';
         
-        // Podpinanie filtrów i selectów
         document.querySelectorAll('.filter-input').forEach(filterInput => {
             const index = filterInput.dataset.index;
             const selectEl = document.querySelector(`.batch-product-select[data-index="${index}"]`);
@@ -638,7 +658,7 @@
 
     cancelEditBtn.addEventListener('click', () => editModal.style.display = 'none');
 
-    // ========== PRZENOSZENIE I KOPIOWANIE (bez zmian, tylko z oklejony) ==========
+    // ========== PRZENOSZENIE I KOPIOWANIE ==========
     function isSlotAvailable(locId) {
         const data = allSlotsData[locId];
         return !data || !data.productName;
