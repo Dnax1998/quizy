@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generator etykiet 100x150 mm (bez stopki)</title>
+    <title>Generator etykiet PDF 100x150 mm (poziomo)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        * { box-sizing: border-box; font-family: 'Arial', 'Helvetica', sans-serif; }
+        * { box-sizing: border-box; font-family: 'Arial', sans-serif; }
         body { background: #f3f4f6; margin: 0; padding: 20px; }
         .app { max-width: 800px; margin: 0 auto; background: white; border-radius: 24px; padding: 24px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
         h1 { margin-top: 0; color: #1e293b; display: flex; align-items: center; gap: 8px; }
@@ -13,9 +14,9 @@
         .input-row input { flex: 1; min-width: 150px; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 40px; font-size: 16px; }
         .btn { padding: 12px 20px; border-radius: 40px; border: none; font-weight: 600; font-size: 16px; cursor: pointer; background: #e2e8f0; color: #1e293b; }
         .btn-primary { background: #2563eb; color: white; }
-        .btn-success { background: #10b981; color: white; }
-        .btn-danger { background: #ef4444; color: white; }
+        .btn-pdf { background: #8b5cf6; color: white; }
         .btn-warning { background: #f59e0b; color: white; }
+        .btn-danger { background: #ef4444; color: white; }
         .table-container { margin: 20px 0; }
         table { width: 100%; border-collapse: collapse; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         th { background: #f1f5f9; padding: 12px; text-align: left; font-weight: 600; color: #334155; }
@@ -28,45 +29,26 @@
             height: 150mm; 
             border: 1px solid #ccc; 
             margin-bottom: 12px; 
-            padding: 8mm; 
+            padding: 15mm 8mm; 
             background: white; 
             display: flex; 
             flex-direction: column; 
-            justify-content: center; 
+            justify-content: space-between; 
             align-items: center; 
-            page-break-after: always;
-            break-inside: avoid;
         }
-        .label .content { text-align: center; width: 100%; }
-        .label .code { font-size: 72px; font-weight: 700; line-height: 1.2; margin-bottom: 30px; word-break: break-word; }
-        .label .quantity { font-size: 64px; font-weight: 600; margin: 30px 0; word-break: break-word; }
-        .label .date { font-size: 48px; color: #1e293b; margin-top: 30px; word-break: break-word; }
-
-        @page { size: 100mm 150mm; margin: 0; }
-        @media print {
-            body { background: white; padding: 0; margin: 0; }
-            .app, .no-print, .btn, .input-row, h1, .table-container, .preview h2 { display: none !important; }
-            .label-preview { margin: 0; padding: 0; }
-            .label { 
-                border: none; 
-                margin: 0; 
-                box-shadow: none; 
-                page-break-after: always; 
-                break-inside: avoid;
-                width: 100mm;
-                height: 150mm;
-            }
-        }
+        .label .code { font-size: 80px; font-weight: 700; line-height: 1.2; text-align: center; }
+        .label .quantity { font-size: 60px; font-weight: 600; text-align: center; }
+        .label .date { font-size: 45px; font-weight: 400; text-align: center; color: #1e293b; }
     </style>
 </head>
 <body>
 <div class="app">
-    <h1>🏷️ Generator etykiet 100x150 mm</h1>
+    <h1>🏷️ Generator etykiet PDF (100x150 mm)</h1>
     
     <div class="input-row">
-        <input type="text" id="productCode" placeholder="Kod produktu (np. 152)" autocomplete="off">
-        <input type="text" id="quantity" placeholder="Ilość (np. 156)" autocomplete="off">
-        <input type="text" id="prodDate" placeholder="Data (np. 21.01.2025)" autocomplete="off">
+        <input type="text" id="productCode" placeholder="Kod produktu (np. 896)" autocomplete="off">
+        <input type="text" id="quantity" placeholder="Ilość (np. 101)" autocomplete="off">
+        <input type="text" id="prodDate" placeholder="Data (np. 26.02.26)" autocomplete="off">
         <button class="btn btn-primary" id="addBtn">➕ Dodaj</button>
     </div>
 
@@ -79,12 +61,14 @@
         </table>
     </div>
 
-    <div style="display: flex; gap: 12px; justify-content: space-between;">
+    <div style="display: flex; gap: 12px; justify-content: space-between; flex-wrap: wrap;">
         <div>
-            <button class="btn btn-success" id="printBtn">🖨️ Drukuj etykiety</button>
-            <button class="btn btn-warning" id="clearBtn">🗑️ Wyczyść listę</button>
+            <button class="btn btn-pdf" id="downloadPdfBtn">📥 Pobierz PDF</button>
         </div>
-        <button class="btn btn-danger" id="deleteAllBtn">❌ Usuń wszystko</button>
+        <div style="display: flex; gap: 8px;">
+            <button class="btn btn-warning" id="clearBtn">🗑️ Wyczyść listę</button>
+            <button class="btn btn-danger" id="deleteAllBtn">❌ Usuń wszystko</button>
+        </div>
     </div>
 
     <div class="preview">
@@ -102,17 +86,17 @@
     const addBtn = document.getElementById('addBtn');
     const itemsBody = document.getElementById('itemsBody');
     const labelPreview = document.getElementById('labelPreview');
-    const printBtn = document.getElementById('printBtn');
+    const downloadPdfBtn = document.getElementById('downloadPdfBtn');
     const clearBtn = document.getElementById('clearBtn');
     const deleteAllBtn = document.getElementById('deleteAllBtn');
 
     try {
-        const saved = localStorage.getItem('etykiety_100x150_nofooter');
+        const saved = localStorage.getItem('etykiety_poziome_items');
         if (saved) items = JSON.parse(saved);
     } catch(e) {}
 
     function saveToStorage() {
-        localStorage.setItem('etykiety_100x150_nofooter', JSON.stringify(items));
+        localStorage.setItem('etykiety_poziome_items', JSON.stringify(items));
     }
 
     function renderTable() {
@@ -140,11 +124,9 @@
         items.forEach(item => {
             previewHtml += `
                 <div class="label">
-                    <div class="content">
-                        <div class="code">${item.code || ''}</div>
-                        <div class="quantity">${item.qty || ''}</div>
-                        <div class="date">${item.date || ''}</div>
-                    </div>
+                    <div class="code">${item.code || ''}</div>
+                    <div class="quantity">${item.qty || ''}</div>
+                    <div class="date">${item.date || ''}</div>
                 </div>
             `;
         });
@@ -205,18 +187,48 @@
         }
     });
 
-    printBtn.addEventListener('click', () => {
+    downloadPdfBtn.addEventListener('click', () => {
         if (items.length === 0) {
-            alert('Brak etykiet do wydruku.');
+            alert('Brak etykiet do wygenerowania PDF.');
             return;
         }
-        window.print();
+
+        const { jsPDF } = window.jspdf;
+        const pageWidth = 100;
+        const pageHeight = 150;
+
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: [pageWidth, pageHeight]
+        });
+
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            if (i > 0) {
+                pdf.addPage([pageWidth, pageHeight]);
+            }
+
+            // Kod – duży, u góry
+            pdf.setFont('Helvetica', 'bold');
+            pdf.setFontSize(72);
+            pdf.text(item.code, pageWidth / 2, 65, { align: 'center' });
+            
+            // Ilość – pośrodku
+            pdf.setFontSize(54);
+            pdf.text(item.qty, pageWidth / 2, 100, { align: 'center' });
+            
+            // Data – na dole
+            pdf.setFont('Helvetica', 'normal');
+            pdf.setFontSize(40);
+            pdf.text(item.date, pageWidth / 2, 130, { align: 'center' });
+        }
+
+        pdf.save(`etykiety_${new Date().toISOString().slice(0,10)}.pdf`);
     });
 
     prodDateInp.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            addBtn.click();
-        }
+        if (e.key === 'Enter') addBtn.click();
     });
 
     renderTable();
