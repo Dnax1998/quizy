@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>Magazyn Regały + OKLEJENIE</title>
+    <title>Magazyn Regały + OKLEJENIE + ETYKIETY</title>
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -94,6 +94,7 @@
         <button class="btn-secondary" id="batchesByProductBtn">📊 Partie wg produktu</button>
         <button class="btn-secondary" id="exportCsvBtn">📥 Eksportuj CSV</button>
         <button class="btn-secondary" id="manageProductsBtn">📋 Produkty</button>
+        <button class="btn-secondary" id="openLabelGeneratorBtn">🏷️ Etykiety</button>
     </div>
 
     <div class="racks-tabs">
@@ -260,6 +261,7 @@
     const cancelMoveBtn = document.getElementById('cancelMoveBtn');
     const copyModeIndicator = document.getElementById('copyModeIndicator');
     const cancelCopyBtn = document.getElementById('cancelCopyBtn');
+    const openLabelGeneratorBtn = document.getElementById('openLabelGeneratorBtn');
     
     let currentEditingLocation = null;
     let currentBatches = [];
@@ -343,7 +345,6 @@
                 batches.forEach(b => { totalCartons += b.cartons || 0; totalPieces += b.pieces || 0; });
                 const qtyStr = (totalCartons > 0 || totalPieces > 0) ? `${totalCartons}k ${totalPieces}szt` : (data?.quantity ? `${data.quantity} szt` : '');
                 
-                // Sprawdzenie, czy jakakolwiek partia jest oklejona
                 const hasOklejony = batches.some(b => b.oklejony === true);
                 
                 html += `<div class="slot ${slotClass}" data-location-id="${locId}">`;
@@ -478,7 +479,6 @@
         });
         batchesContainer.innerHTML = html || '<div style="color:#64748b; text-align:center;">Brak produktów. Kliknij "Dodaj produkt".</div>';
         
-        // Podpinanie filtrów i selectów
         document.querySelectorAll('.filter-input').forEach(filterInput => {
             const index = filterInput.dataset.index;
             const selectEl = document.querySelector(`.batch-product-select[data-index="${index}"]`);
@@ -638,7 +638,7 @@
 
     cancelEditBtn.addEventListener('click', () => editModal.style.display = 'none');
 
-    // ========== PRZENOSZENIE I KOPIOWANIE (bez zmian, tylko z oklejony) ==========
+    // ========== PRZENOSZENIE I KOPIOWANIE ==========
     function isSlotAvailable(locId) {
         const data = allSlotsData[locId];
         return !data || !data.productName;
@@ -901,6 +901,11 @@
         doExportCsv(rackChoice);
     });
     cancelExportCsvBtn.addEventListener('click', () => exportCsvModal.style.display = 'none');
+
+    // ========== PRZYCISK ETYKIETY ==========
+    openLabelGeneratorBtn.addEventListener('click', () => {
+        window.open('etykieta.html', '_blank');
+    });
 
     // ========== INICJALIZACJA ==========
     tabs.forEach(tab => tab.addEventListener('click', () => {
