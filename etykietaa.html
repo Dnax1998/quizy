@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generator etykiet PDF 100x150 mm + BOLD + KOD Z LEWEJ</title>
+    <title>Generator etykiet PDF 100x150 mm + BOLD + KOD Z LEWEJ + 20% WIĘKSZE</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         * { box-sizing: border-box; font-family: 'Arial', sans-serif; }
@@ -40,7 +40,7 @@
             align-items: flex-start; 
         }
         .label .code { 
-            font-size: 100px; 
+            font-size: 120px;        /* 100 + 20% */
             font-weight: 700; 
             line-height: 1.2; 
             text-align: left; 
@@ -48,13 +48,13 @@
             padding-left: 5mm; 
         }
         .label .quantity { 
-            font-size: 80px; 
+            font-size: 96px;         /* 80 + 20% */
             font-weight: 700; 
             text-align: center; 
             width: 100%; 
         }
         .label .date { 
-            font-size: 75px; 
+            font-size: 90px;         /* 75 + 20% */
             font-weight: 700; 
             text-align: center; 
             color: #1e293b; 
@@ -66,7 +66,7 @@
 <body>
 <div class="app">
     <div class="header">
-        <h1>🏷️ Generator etykiet PDF (100x150 mm) – BOLD</h1>
+        <h1>🏷️ Generator etykiet PDF (100x150 mm) – BOLD +20%</h1>
         <button class="btn-back" id="backToWarehouseBtn">⬅️ Powrót do magazynu</button>
     </div>
     
@@ -120,12 +120,12 @@
     const backToWarehouseBtn = document.getElementById('backToWarehouseBtn');
 
     try {
-        const saved = localStorage.getItem('etykiety_bold_left_items');
+        const saved = localStorage.getItem('etykiety_bold_120_items');
         if (saved) items = JSON.parse(saved);
     } catch(e) {}
 
     function saveToStorage() {
-        localStorage.setItem('etykiety_bold_left_items', JSON.stringify(items));
+        localStorage.setItem('etykiety_bold_120_items', JSON.stringify(items));
     }
 
     function renderTable() {
@@ -254,14 +254,16 @@
 
             pdf.setFont('Helvetica', 'bold');
             
-            // KOD PRODUKTU – przesunięty w lewo (pozycja X = 15 mm od lewej)
-            pdf.setFontSize(100);
+            // KOD – 120 (o 20% więcej niż 100)
+            pdf.setFontSize(120);
             pdf.text(item.code, 15, 65, { align: 'left' });
             
-            pdf.setFontSize(80);
+            // ILOŚĆ – 96 (o 20% więcej niż 80)
+            pdf.setFontSize(96);
             pdf.text(item.qty, pageWidth / 2, 100, { align: 'center' });
             
-            pdf.setFontSize(75);
+            // DATA – 90 (o 20% więcej niż 75)
+            pdf.setFontSize(90);
             pdf.text(item.date, pageWidth / 2, 130, { align: 'center' });
         }
 
