@@ -347,8 +347,8 @@
                 if (isOccupied) {
                     html += `<div class="slot-data" style="font-weight:700;">${productShort}</div>`;
                     if (batches.length > 0) {
-                        const firstDate = batches[0].prodDate?.toDate();
-                        if (firstDate) html += `<div class="slot-data" style="font-size:9px;">${firstDate.toLocaleDateString('pl-PL')}</div>`;
+                        const firstLabel = batches[0].dateLabel || batches[0].prodDate?.toDate().toLocaleDateString('pl-PL');
+                        if (firstLabel) html += `<div class="slot-data" style="font-size:9px;">${firstLabel}</div>`;
                         if (batches.length > 1 || productCount > 1) {
                             html += `<div class="slot-data">📦${batches.length>1? '+'+ (batches.length-1):''}${productCount>1? ' ('+productCount+' prod)':''}</div>`;
                         }
@@ -368,11 +368,10 @@
         rackView.innerHTML = html;
     }
 
-    // ========== WYSZUKIWANIE (czarne podświetlenie + filtr oklejenia) ==========
+    // ========== WYSZUKIWANIE ==========
     function applySearchHighlight() {
         const productQuery = searchProductInput.value.trim().toLowerCase();
         const dateQuery = searchDateInput.value.trim();
-        const dateQuerySearch = dateQuery.replace(/[^0-9.]/g, ''); // Ignoruj litery w dacie
         const oklejonyFilter = oklejonyFilterSelect.value;
         document.querySelectorAll('.slot').forEach(s => { s.style.outline = 'none'; s.style.boxShadow = ''; });
         if (!productQuery && !dateQuery && !oklejonyFilter) return;
@@ -395,18 +394,11 @@
             }
             
             if (dateQuery) {
-                if (batches.length === 0 && data?.prodDate) {
-                    const d = data.prodDate.toDate ? data.prodDate.toDate() : new Date(data.prodDate);
-                    const dateStr = `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
-                    dateMatch = dateStr.includes(dateQuerySearch);
-                } else {
-                    dateMatch = batches.some(b => {
-                        if (!b.prodDate) return false;
-                        const d = b.prodDate.toDate();
-                        const dateStr = `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
-                        return dateStr.includes(dateQuerySearch);
-                    });
-                }
+                dateMatch = batches.some(b => {
+                    const label = (b.dateLabel || '').toLowerCase();
+                    const dateStr = b.prodDate ? b.prodDate.toDate().toLocaleDateString('pl-PL') : '';
+                    return label.includes(dateQuery.toLowerCase()) || dateStr.includes(dateQuery);
+                });
             }
             
             if (oklejonyFilter) {
@@ -440,16 +432,12 @@
         applySearchHighlight();
     });
 
-    // ========== OBSŁUGA WIELU PRODUKTÓW (select + filtr + checkbox oklejony) ==========
+    // ========== OBSŁUGA WIELU PRODUKTÓW ==========
     function renderBatchesList() {
         let html = '';
         currentBatches.forEach((batch, index) => {
-            let dateStr = '';
-            if (batch.prodDate) {
-                if (batch.prodDate.toDate) dateStr = batch.prodDate.toDate().toISOString().split('T')[0];
-                else if (batch.prodDate instanceof Date) dateStr = batch.prodDate.toISOString().split('T')[0];
-                else if (typeof batch.prodDate === 'string') dateStr = batch.prodDate;
-            }
+            // Używamy zapisanej etykiety lub fallback do daty
+            const displayDate = batch.dateLabel || '';
             html += `<div class="batch-item" data-index="${index}">
                 <div class="batch-header">
                     <span>Produkt ${index+1}</span>
@@ -463,7 +451,7 @@
                             ${productsList.map(p => `<option value="${p.id}" ${p.id === batch.productId ? 'selected' : ''}>${p.name} (${p.code || ''})</option>`).join('')}
                         </select>
                     </div>
-                    <input type="date" class="batch-date" value="${dateStr}" placeholder="Data">
+                    <input type="text" class="batch-date" value="${displayDate}" placeholder="np. 12.12.2025A" style="width:100%; padding:12px 16px; border:1px solid #cbd5e1; border-radius:16px;">
                     <input type="number" class="batch-cartons" placeholder="Kartony" min="0" value="${batch.cartons || 0}">
                     <input type="number" class="batch-pieces" placeholder="Sztuki" min="0" value="${batch.pieces || 0}">
                     <div class="batch-checkbox">
@@ -538,12 +526,25 @@
             const oklejonyCb = item.querySelector('.batch-oklejony');
             const prodId = selectEl.value;
             const prod = productsList.find(p => p.id === prodId);
-            if (prodId && dateInput.value) {
+            
+            // Parsowanie daty
+            const rawDate = dateInput.value;
+            const match = rawDate.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+            let dateObj;
+            if(match) {
+                // match[1]=day, match[2]=month, match[3]=year
+                dateObj = new Date(match[3], match[2]-1, match[1]);
+            } else {
+                dateObj = new Date();
+            }
+
+            if (prodId) {
                 batches.push({
                     productId: prodId,
                     productName: prod?.name || '',
                     productCode: prod?.code || '',
-                    prodDate: firebase.firestore.Timestamp.fromDate(new Date(dateInput.value)),
+                    dateLabel: rawDate, // Zapisujemy pełny tekst z literą
+                    prodDate: firebase.firestore.Timestamp.fromDate(dateObj),
                     cartons: parseInt(cartonsInput.value) || 0,
                     pieces: parseInt(piecesInput.value) || 0,
                     oklejony: oklejonyCb ? oklejonyCb.checked : false
@@ -577,7 +578,7 @@
 
     cancelEditBtn.addEventListener('click', closeEditModal);
 
-    // ========== ZAPIS, USUWANIE, PRZENOSZENIE ==========
+    // ========== ZAPIS, USUWANIE ==========
     saveSlotBtn.addEventListener('click', async () => {
         if (!currentEditingLocation) return;
         const batches = collectBatchesFromForm();
@@ -615,25 +616,24 @@
         closeEditModal();
     });
 
-    // ========== TRYB PRZENOSZENIA ==========
+    // ========== TRYB PRZENOSZENIA / KOPIOWANIA ==========
     moveSlotBtn.addEventListener('click', () => {
         moveSourceLocation = currentEditingLocation;
         closeEditModal();
         moveModeIndicator.style.display = 'block';
     });
-
+    
     cancelMoveBtn.addEventListener('click', () => {
         moveSourceLocation = null;
         moveModeIndicator.style.display = 'none';
     });
 
-    // ========== TRYB KOPIOWANIA ==========
     copySlotBtn.addEventListener('click', () => {
         copySourceLocation = currentEditingLocation;
         closeEditModal();
         copyModeIndicator.style.display = 'block';
     });
-
+    
     cancelCopyBtn.addEventListener('click', () => {
         copySourceLocation = null;
         copyModeIndicator.style.display = 'none';
@@ -751,7 +751,7 @@
         batchesTableBody.innerHTML = batches.map(b => `
             <tr>
                 <td>${b.locId}</td>
-                <td>${b.prodDate?.toDate().toLocaleDateString('pl-PL')}</td>
+                <td>${b.dateLabel || b.prodDate?.toDate().toLocaleDateString('pl-PL')}</td>
                 <td>${b.cartons}</td>
                 <td>${b.pieces}</td>
                 <td>${allSlotsData[b.locId]?.palletType || 'magazynowa'}</td>
@@ -773,7 +773,7 @@
             if (batches.length === 0) continue;
             
             batches.forEach(b => {
-                const date = b.prodDate?.toDate().toLocaleDateString('pl-PL') || '';
+                const date = b.dateLabel || b.prodDate?.toDate().toLocaleDateString('pl-PL') || '';
                 csv += `"${locId}","${data.palletType || 'magazynowa'}","${b.productName}","${b.productCode}","${date}","${b.cartons}","${b.pieces}","${b.oklejony ? 'TAK' : 'NIE'}"\n`;
             });
         }
@@ -800,7 +800,7 @@
 
     // Etykiety
     openLabelGeneratorBtn.addEventListener('click', () => {
-        window.open('https://etikietki.web.app', '_blank'); // Przykładowy link
+        window.open('https://etikietki.web.app', '_blank');
     });
 
     subscribeToSlots();
