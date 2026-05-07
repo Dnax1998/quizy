@@ -199,7 +199,7 @@
 <div id="toast" class="toast-msg">Zapisano</div>
 
 <script>
-    // ========== KONFIGURACJA FIREBASE ==========
+ // ========== KONFIGURACJA FIREBASE ==========
     const firebaseConfig = {
         apiKey: "AIzaSyAbMTVozOhIXesvF59REYnIOtmo-V5qimk",
         authDomain: "forevermagazyn.firebaseapp.com",
@@ -209,9 +209,25 @@
         appId: "1:251843942343:web:2c81227b12ab4ad0052be2"
     };
 
+    // Inicjalizacja
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    
+
+    // Funkcja pomocnicza do obsługi daty z literkami (np. 12.12.2025A)
+    function parseDateWithSuffix(str) {
+        if (!str) return new Date();
+        // Szuka formatu DD.MM.RRRR
+        const cleanDateMatch = str.match(/(\d{1,2})[./-](\d{1,2})[./-](\d{4})/);
+        if (cleanDateMatch) {
+            const day = parseInt(cleanDateMatch[1]);
+            const month = parseInt(cleanDateMatch[2]) - 1;
+            const year = parseInt(cleanDateMatch[3]);
+            return new Date(year, month, day);
+        }
+        return new Date();
+    }
+
+    // ========== ZMIENNE GLOBALNE I ELEMENTY UI ==========
     const RACKS = ['A', 'B', 'C', 'D'];
     const LEVELS = 5;
     const COLUMNS = 21;
@@ -277,7 +293,7 @@
         toast.style.opacity = 1;
         setTimeout(() => toast.style.opacity = 0, 2000);
     }
-
+    
     // ========== SUBSKRYPCJE ==========
     function subscribeToSlots() {
         if (unsubscribeSlots) unsubscribeSlots();
