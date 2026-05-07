@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>Magazyn Regały + OKLEJENIE + ETYKIETY</title>
-    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <style>
@@ -118,7 +117,6 @@
     </div>
 </div>
 
-<!-- Modal edycji pola -->
 <div class="modal" id="editModal">
     <div class="modal-card">
         <h3>Pole <span id="locationCodeDisplay"></span></h3>
@@ -143,7 +141,6 @@
     </div>
 </div>
 
-<!-- Modal produktów -->
 <div class="modal" id="productsModal">
     <div class="modal-card">
         <h3>📋 Baza produktów</h3>
@@ -157,7 +154,6 @@
     </div>
 </div>
 
-<!-- Modal FIFO -->
 <div class="modal" id="productBatchesModal">
     <div class="modal-card" style="max-width:800px;">
         <h3>📊 Wszystkie partie produktu (FIFO)</h3>
@@ -175,7 +171,6 @@
     </div>
 </div>
 
-<!-- Modal wyboru regału dla CSV -->
 <div class="modal" id="exportCsvModal">
     <div class="modal-card small-modal-card">
         <h3>📥 Eksportuj dane do CSV</h3>
@@ -199,7 +194,7 @@
 <div id="toast" class="toast-msg">Zapisano</div>
 
 <script>
- // ========== KONFIGURACJA FIREBASE ==========
+    // ========== KONFIGURACJA FIREBASE ==========
     const firebaseConfig = {
         apiKey: "AIzaSyAbMTVozOhIXesvF59REYnIOtmo-V5qimk",
         authDomain: "forevermagazyn.firebaseapp.com",
@@ -209,14 +204,11 @@
         appId: "1:251843942343:web:2c81227b12ab4ad0052be2"
     };
 
-    // Inicjalizacja
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // Funkcja pomocnicza do obsługi daty z literkami (np. 12.12.2025A)
     function parseDateWithSuffix(str) {
         if (!str) return new Date();
-        // Szuka formatu DD.MM.RRRR
         const cleanDateMatch = str.match(/(\d{1,2})[./-](\d{1,2})[./-](\d{4})/);
         if (cleanDateMatch) {
             const day = parseInt(cleanDateMatch[1]);
@@ -226,8 +218,7 @@
         }
         return new Date();
     }
-
-    // ========== ZMIENNE GLOBALNE I ELEMENTY UI ==========
+    
     const RACKS = ['A', 'B', 'C', 'D'];
     const LEVELS = 5;
     const COLUMNS = 21;
@@ -293,7 +284,7 @@
         toast.style.opacity = 1;
         setTimeout(() => toast.style.opacity = 0, 2000);
     }
-    
+
     // ========== SUBSKRYPCJE ==========
     function subscribeToSlots() {
         if (unsubscribeSlots) unsubscribeSlots();
@@ -367,24 +358,15 @@
                 html += `<div class="slot-code">${level}-${col}</div>`;
                 if (isOccupied) {
                     html += `<div class="slot-data" style="font-weight:700;">${productShort}</div>`;
-                    if (isOccupied) {
-                        html += `<div class="slot-data" style="font-weight:700;">${productShort}</div>`;
-                        if (batches.length > 0) {
-                            // Tu jest kluczowa zmiana: najpierw sprawdza, czy jest tekstowy zapis prodDateString
-                            const dateDisplay = batches[0].prodDateString || (batches[0].prodDate?.toDate().toLocaleDateString('pl-PL') || '');
-        
-                            if (dateDisplay) html += `<div class="slot-data" style="font-size:9px;">${dateDisplay}</div>`;
-        
-                            if (batches.length > 1 || productCount > 1) {
-                                html += `<div class="slot-data">📦${batches.length>1? '+'+ (batches.length-1):''}${productCount>1? ' ('+productCount+' prod)':''}</div>`;
-                           }
-                        } 
+                    if (batches.length > 0) {
+                        const dateDisplay = batches[0].prodDateString || (batches[0].prodDate?.toDate().toLocaleDateString('pl-PL') || '');
+                        if (dateDisplay) html += `<div class="slot-data" style="font-size:9px;">${dateDisplay}</div>`;
                         if (batches.length > 1 || productCount > 1) {
                             html += `<div class="slot-data">📦${batches.length>1? '+'+ (batches.length-1):''}${productCount>1? ' ('+productCount+' prod)':''}</div>`;
                         }
-                    } else if (data?.prodDate) {
-                        const d = data.prodDate.toDate ? data.prodDate.toDate() : new Date(data.prodDate);
-                        html += `<div class="slot-data" style="font-size:9px;">${d.toLocaleDateString('pl-PL')}</div>`;
+                    } else if (data?.prodDateString || data?.prodDate) {
+                        const dStr = data.prodDateString || (data.prodDate.toDate ? data.prodDate.toDate().toLocaleDateString('pl-PL') : new Date(data.prodDate).toLocaleDateString('pl-PL'));
+                        html += `<div class="slot-data" style="font-size:9px;">${dStr}</div>`;
                     }
                     if (qtyStr) html += `<div class="slot-data">${qtyStr}</div>`;
                     if (hasOklejony) html += `<div class="oklejony-badge">OKL</div>`;
@@ -398,7 +380,7 @@
         rackView.innerHTML = html;
     }
 
-    // ========== WYSZUKIWANIE (czarne podświetlenie + filtr oklejenia) ==========
+    // ========== WYSZUKIWANIE ==========
     function applySearchHighlight() {
         const productQuery = searchProductInput.value.trim().toLowerCase();
         const dateQuery = searchDateInput.value.trim();
@@ -424,16 +406,13 @@
             }
             
             if (dateQuery) {
-                if (batches.length === 0 && data?.prodDate) {
-                    const d = data.prodDate.toDate ? data.prodDate.toDate() : new Date(data.prodDate);
-                    const dateStr = `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
-                    dateMatch = dateStr.includes(dateQuery);
+                if (batches.length === 0 && (data?.prodDateString || data?.prodDate)) {
+                    const dStr = data.prodDateString || (data.prodDate.toDate ? data.prodDate.toDate().toLocaleDateString('pl-PL') : new Date(data.prodDate).toLocaleDateString('pl-PL'));
+                    dateMatch = dStr.includes(dateQuery);
                 } else {
                     dateMatch = batches.some(b => {
-                        if (!b.prodDate) return false;
-                        const d = b.prodDate.toDate();
-                        const dateStr = `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
-                        return dateStr.includes(dateQuery);
+                        const dStr = b.prodDateString || (b.prodDate ? b.prodDate.toDate().toLocaleDateString('pl-PL') : '');
+                        return dStr.includes(dateQuery);
                     });
                 }
             }
@@ -469,16 +448,11 @@
         applySearchHighlight();
     });
 
-    // ========== OBSŁUGA WIELU PRODUKTÓW (select + filtr + checkbox oklejony) ==========
+    // ========== OBSŁUGA WIELU PRODUKTÓW ==========
     function renderBatchesList() {
         let html = '';
         currentBatches.forEach((batch, index) => {
-            let dateStr = '';
-            if (batch.prodDate) {
-                if (batch.prodDate.toDate) dateStr = batch.prodDate.toDate().toISOString().split('T')[0];
-                else if (batch.prodDate instanceof Date) dateStr = batch.prodDate.toISOString().split('T')[0];
-                else if (typeof batch.prodDate === 'string') dateStr = batch.prodDate;
-            }
+            const dateVal = batch.prodDateString || (batch.prodDate?.toDate ? batch.prodDate.toDate().toLocaleDateString('pl-PL') : '');
             html += `<div class="batch-item" data-index="${index}">
                 <div class="batch-header">
                     <span>Produkt ${index+1}</span>
@@ -557,34 +531,38 @@
         });
     }
 
-function collectBatchesFromForm() {
-    const batches = [];
-    document.querySelectorAll('.batch-item').forEach(item => {
-        const selectEl = item.querySelector('.batch-product-select');
-        const dateInput = item.querySelector('.batch-date');
-        const cartonsInput = item.querySelector('.batch-cartons');
-        const piecesInput = item.querySelector('.batch-pieces');
-        const oklejonyCb = item.querySelector('.batch-oklejony');
-        const prodId = selectEl.value;
-        const prod = productsList.find(p => p.id === prodId);
-        
-        if (prodId && dateInput.value) {
-            const rawValue = dateInput.value;
-            batches.push({
-                productId: prodId,
-                productName: prod?.name || '',
-                productCode: prod?.code || '',
-                prodDateString: rawValue, // Tu zapisujemy Twój tekst z literką
-                prodDate: firebase.firestore.Timestamp.fromDate(parseDateWithSuffix(rawValue)), // To służy do sortowania FIFO
-                cartons: parseInt(cartonsInput.value) || 0,
-                pieces: parseInt(piecesInput.value) || 0,
-                oklejony: oklejonyCb ? oklejonyCb.checked : false
-            });
-        }
+    function collectBatchesFromForm() {
+        const batches = [];
+        document.querySelectorAll('.batch-item').forEach(item => {
+            const selectEl = item.querySelector('.batch-product-select');
+            const dateInput = item.querySelector('.batch-date');
+            const cartonsInput = item.querySelector('.batch-cartons');
+            const piecesInput = item.querySelector('.batch-pieces');
+            const oklejonyCb = item.querySelector('.batch-oklejony');
+            const prodId = selectEl.value;
+            const prod = productsList.find(p => p.id === prodId);
+            if (prodId && dateInput.value) {
+                const rawValue = dateInput.value;
+                batches.push({
+                    productId: prodId,
+                    productName: prod?.name || '',
+                    productCode: prod?.code || '',
+                    prodDateString: rawValue,
+                    prodDate: firebase.firestore.Timestamp.fromDate(parseDateWithSuffix(rawValue)),
+                    cartons: parseInt(cartonsInput.value) || 0,
+                    pieces: parseInt(piecesInput.value) || 0,
+                    oklejony: oklejonyCb ? oklejonyCb.checked : false
+                });
+            }
+        });
+        return batches;
+    }
+
+    addBatchBtn.addEventListener('click', () => {
+        currentBatches.push({ cartons: 0, pieces: 0, oklejony: false });
+        renderBatchesList();
     });
-    return batches;
-}
-    
+
     // ========== MODAL EDYCJI ==========
     function openEditModal(locId) {
         currentEditingLocation = locId;
@@ -597,6 +575,7 @@ function collectBatchesFromForm() {
             productId: b.productId || null,
             productName: b.productName || '',
             productCode: b.productCode || '',
+            prodDateString: b.prodDateString || '',
             prodDate: b.prodDate,
             cartons: b.cartons || 0,
             pieces: b.pieces || 0,
@@ -607,6 +586,7 @@ function collectBatchesFromForm() {
                 productId: data.productId || null,
                 productName: data.productName,
                 productCode: data.productCode,
+                prodDateString: data.prodDateString || '',
                 prodDate: data.prodDate,
                 cartons: 0,
                 pieces: data.quantity || 0,
@@ -628,6 +608,7 @@ function collectBatchesFromForm() {
             productName: mainProduct.productName,
             productCode: mainProduct.productCode,
             palletType: type,
+            prodDateString: mainProduct.prodDateString || '',
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         };
         try {
@@ -638,7 +619,7 @@ function collectBatchesFromForm() {
             for (const b of newBatches) {
                 await slotRef.collection("batches").add({
                     productId: b.productId, productName: b.productName, productCode: b.productCode,
-                    prodDate: b.prodDate, cartons: b.cartons, pieces: b.pieces, oklejony: b.oklejony
+                    prodDateString: b.prodDateString, prodDate: b.prodDate, cartons: b.cartons, pieces: b.pieces, oklejony: b.oklejony
                 });
             }
             showToast('✅ Zapisano');
@@ -678,6 +659,7 @@ function collectBatchesFromForm() {
                 productName: sourceData.productName,
                 productCode: sourceData.productCode,
                 palletType: sourceData.palletType,
+                prodDateString: sourceData.prodDateString || '',
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
             await targetSlotRef.set(newSlotData);
@@ -685,7 +667,7 @@ function collectBatchesFromForm() {
             for (const b of sourceBatches) {
                 await targetSlotRef.collection("batches").add({
                     productId: b.productId, productName: b.productName, productCode: b.productCode,
-                    prodDate: b.prodDate, cartons: b.cartons || 0, pieces: b.pieces || 0, oklejony: b.oklejony || false
+                    prodDateString: b.prodDateString || '', prodDate: b.prodDate, cartons: b.cartons || 0, pieces: b.pieces || 0, oklejony: b.oklejony || false
                 });
             }
             const sourceRef = db.collection("slots").doc(sourceLocId);
@@ -708,6 +690,7 @@ function collectBatchesFromForm() {
                 productName: sourceData.productName,
                 productCode: sourceData.productCode,
                 palletType: sourceData.palletType,
+                prodDateString: sourceData.prodDateString || '',
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
             await targetSlotRef.set(newSlotData);
@@ -715,7 +698,7 @@ function collectBatchesFromForm() {
             for (const b of sourceBatches) {
                 await targetSlotRef.collection("batches").add({
                     productId: b.productId, productName: b.productName, productCode: b.productCode,
-                    prodDate: b.prodDate, cartons: b.cartons || 0, pieces: b.pieces || 0, oklejony: b.oklejony || false
+                    prodDateString: b.prodDateString || '', prodDate: b.prodDate, cartons: b.cartons || 0, pieces: b.pieces || 0, oklejony: b.oklejony || false
                 });
             }
             showToast('✅ Paleta skopiowana');
@@ -818,7 +801,7 @@ function collectBatchesFromForm() {
     manageProductsBtn.addEventListener('click', () => productsModal.style.display = 'flex');
     closeProductsBtn.addEventListener('click', () => productsModal.style.display = 'none');
 
-    // ========== MODAL FIFO (z kolumną Oklejony) ==========
+    // ========== MODAL FIFO ==========
     function updateProductFilterSelect() {
         productFilterSelect.innerHTML = '<option value="">-- Wybierz produkt --</option>';
         productsList.forEach(prod => {
@@ -838,6 +821,7 @@ function collectBatchesFromForm() {
                 if (batch.productId === productId) {
                     allBatches.push({
                         locationId: locId, palletType: slotData.palletType || 'magazynowa',
+                        prodDateString: batch.prodDateString || '',
                         prodDate: batch.prodDate, cartons: batch.cartons || 0, pieces: batch.pieces || 0,
                         oklejony: batch.oklejony || false
                     });
@@ -852,7 +836,7 @@ function collectBatchesFromForm() {
         let html = '';
         allBatches.forEach(b => {
             const loc = b.locationId;
-            const date = b.prodDate?.toDate().toLocaleDateString('pl-PL') || '—';
+            const date = b.prodDateString || (b.prodDate?.toDate().toLocaleDateString('pl-PL') || '—');
             const type = b.palletType === 'magazynowa' ? '🔴 Magazyn' : '🟢 Spedycja';
             const oklejonyStr = b.oklejony ? '✅' : '❌';
             html += `<tr data-location-id="${loc}"><td>${loc}</td><td>${date}</td><td>${b.cartons}</td><td>${b.pieces}</td><td>${type}</td><td>${oklejonyStr}</td></tr>`;
@@ -883,7 +867,7 @@ function collectBatchesFromForm() {
     });
     closeProductBatchesBtn.addEventListener('click', () => productBatchesModal.style.display = 'none');
 
-    // ========== EKSPORT CSV (dodana kolumna Oklejony) ==========
+    // ========== EKSPORT CSV ==========
     function doExportCsv(rackChoice) {
         const rows = [];
         rows.push(['Lokalizacja', 'Produkt', 'Kod', 'Data produkcji', 'Kartony', 'Sztuki', 'Typ palety', 'Oklejony'].join(';'));
@@ -894,12 +878,12 @@ function collectBatchesFromForm() {
             if (batches.length === 0 && !data.productName) continue;
             if (batches.length > 0) {
                 batches.forEach(b => {
-                    const date = b.prodDate?.toDate().toLocaleDateString('pl-PL') || '';
+                    const date = b.prodDateString || (b.prodDate?.toDate().toLocaleDateString('pl-PL') || '');
                     const oklejonyStr = b.oklejony ? 'Tak' : 'Nie';
                     rows.push([locId, b.productName || '', b.productCode || '', date, b.cartons || 0, b.pieces || 0, data.palletType || 'magazynowa', oklejonyStr].join(';'));
                 });
             } else {
-                const date = data.prodDate?.toDate().toLocaleDateString('pl-PL') || '';
+                const date = data.prodDateString || (data.prodDate?.toDate().toLocaleDateString('pl-PL') || '');
                 rows.push([locId, data.productName || '', data.productCode || '', date, '0', data.quantity || 0, data.palletType || 'magazynowa', 'Nie'].join(';'));
             }
         }
