@@ -367,9 +367,18 @@
                 html += `<div class="slot-code">${level}-${col}</div>`;
                 if (isOccupied) {
                     html += `<div class="slot-data" style="font-weight:700;">${productShort}</div>`;
-                    if (batches.length > 0) {
-                        const firstDate = batches[0].prodDate?.toDate();
-                        if (firstDate) html += `<div class="slot-data" style="font-size:9px;">${firstDate.toLocaleDateString('pl-PL')}</div>`;
+                    if (isOccupied) {
+                        html += `<div class="slot-data" style="font-weight:700;">${productShort}</div>`;
+                        if (batches.length > 0) {
+                            // Tu jest kluczowa zmiana: najpierw sprawdza, czy jest tekstowy zapis prodDateString
+                            const dateDisplay = batches[0].prodDateString || (batches[0].prodDate?.toDate().toLocaleDateString('pl-PL') || '');
+        
+                            if (dateDisplay) html += `<div class="slot-data" style="font-size:9px;">${dateDisplay}</div>`;
+        
+                            if (batches.length > 1 || productCount > 1) {
+                                html += `<div class="slot-data">📦${batches.length>1? '+'+ (batches.length-1):''}${productCount>1? ' ('+productCount+' prod)':''}</div>`;
+                           }
+                        } 
                         if (batches.length > 1 || productCount > 1) {
                             html += `<div class="slot-data">📦${batches.length>1? '+'+ (batches.length-1):''}${productCount>1? ' ('+productCount+' prod)':''}</div>`;
                         }
