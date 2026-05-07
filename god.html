@@ -532,36 +532,34 @@
         });
     }
 
-    function collectBatchesFromForm() {
-        const batches = [];
-        document.querySelectorAll('.batch-item').forEach(item => {
-            const selectEl = item.querySelector('.batch-product-select');
-            const dateInput = item.querySelector('.batch-date');
-            const cartonsInput = item.querySelector('.batch-cartons');
-            const piecesInput = item.querySelector('.batch-pieces');
-            const oklejonyCb = item.querySelector('.batch-oklejony');
-            const prodId = selectEl.value;
-            const prod = productsList.find(p => p.id === prodId);
-            if (prodId && dateInput.value) {
-                batches.push({
-                    productId: prodId,
-                    productName: prod?.name || '',
-                    productCode: prod?.code || '',
-                    prodDate: firebase.firestore.Timestamp.fromDate(new Date(dateInput.value)),
-                    cartons: parseInt(cartonsInput.value) || 0,
-                    pieces: parseInt(piecesInput.value) || 0,
-                    oklejony: oklejonyCb ? oklejonyCb.checked : false
-                });
-            }
-        });
-        return batches;
-    }
-
-    addBatchBtn.addEventListener('click', () => {
-        currentBatches.push({ cartons: 0, pieces: 0, oklejony: false });
-        renderBatchesList();
+function collectBatchesFromForm() {
+    const batches = [];
+    document.querySelectorAll('.batch-item').forEach(item => {
+        const selectEl = item.querySelector('.batch-product-select');
+        const dateInput = item.querySelector('.batch-date');
+        const cartonsInput = item.querySelector('.batch-cartons');
+        const piecesInput = item.querySelector('.batch-pieces');
+        const oklejonyCb = item.querySelector('.batch-oklejony');
+        const prodId = selectEl.value;
+        const prod = productsList.find(p => p.id === prodId);
+        
+        if (prodId && dateInput.value) {
+            const rawValue = dateInput.value;
+            batches.push({
+                productId: prodId,
+                productName: prod?.name || '',
+                productCode: prod?.code || '',
+                prodDateString: rawValue, // Tu zapisujemy Twój tekst z literką
+                prodDate: firebase.firestore.Timestamp.fromDate(parseDateWithSuffix(rawValue)), // To służy do sortowania FIFO
+                cartons: parseInt(cartonsInput.value) || 0,
+                pieces: parseInt(piecesInput.value) || 0,
+                oklejony: oklejonyCb ? oklejonyCb.checked : false
+            });
+        }
     });
-
+    return batches;
+}
+    
     // ========== MODAL EDYCJI ==========
     function openEditModal(locId) {
         currentEditingLocation = locId;
