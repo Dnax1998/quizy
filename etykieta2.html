@@ -1,0 +1,90 @@
+<div class="input-row">
+    <input type="text" id="productCode" placeholder="Kod (np. 896)" autocomplete="off">
+    <input type="text" id="productSKU" placeholder="SKU (opcjonalnie)" autocomplete="off"> <input type="text" id="quantity" placeholder="Ilość (np. 101)" autocomplete="off">
+    <input type="text" id="prodDate" placeholder="Data (np. 26.02.26)" autocomplete="off">
+    <input type="number" id="copies" class="copies-input" placeholder="Kopie" min="1" max="50" value="1" style="text-align:center;">
+    <button class="btn btn-primary" id="addBtn">➕ Dodaj</button>
+</div>
+
+<script>
+    // Zaktualizowane renderowanie tabeli (dodano kolumnę SKU)
+    function renderTable() {
+        // ... (początek bez zmian)
+        let html = '';
+        items.forEach((item, index) => {
+            html += `<tr>
+                <td><strong>${item.code || '—'}</strong> <br><small>${item.sku || ''}</small></td> <td>${item.qty || '—'}</td>
+                <td>${item.date || '—'}</td>
+                <td>
+                    <button class="action-btn" data-index="${index}" data-action="edit">✏️</button>
+                    <button class="action-btn" data-index="${index}" data-action="remove">🗑️</button>
+                </td>
+            </tr>`;
+        });
+        itemsBody.innerHTML = html;
+
+        // Podgląd wizualny etykiety (dodano SKU)
+        let previewHtml = '';
+        items.forEach(item => {
+            previewHtml += `
+                <div class="label" style="position:relative;">
+                    <div style="position:absolute; top:5mm; right:8mm; font-size:20px; font-weight:bold;">${item.sku || ''}</div>
+                    <div class="code">${item.code || ''}</div>
+                    <div class="quantity">${item.qty || ''}</div>
+                    <div class="date">${item.date || ''}</div>
+                </div>
+            `;
+        });
+        labelPreview.innerHTML = previewHtml;
+        // ... (reszta bez zmian)
+    }
+
+    // Dodawanie nowej pozycji (obsługa SKU)
+    addBtn.addEventListener('click', () => {
+        const code = productCodeInp.value.trim();
+        const sku = document.getElementById('productSKU').value.trim(); // NOWE
+        const qty = quantityInp.value.trim();
+        const date = prodDateInp.value.trim();
+        // ... walidacja i kopie ...
+
+        for (let i = 0; i < copies; i++) {
+            items.push({ code, sku, qty, date }); // DODANO SKU DO OBIEKTU
+        }
+
+        productCodeInp.value = '';
+        document.getElementById('productSKU').value = ''; // CZYSZCZENIE
+        quantityInp.value = '';
+        prodDateInp.value = '';
+        // ...
+    });
+
+    // GENEROWANIE PDF (dodano rysowanie SKU)
+    downloadPdfBtn.addEventListener('click', () => {
+        // ... (początek konfiguracji jspdf)
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            if (i > 0) pdf.addPage([pageWidth, pageHeight]);
+
+            pdf.setFont('Helvetica', 'bold');
+            
+            // SKU - prawy górny róg (mniejsza czcionka)
+            if (item.sku) {
+                pdf.setFontSize(25);
+                pdf.text(item.sku, pageWidth - 10, 15, { align: 'right' });
+            }
+
+            // KOD PRODUKTU
+            pdf.setFontSize(100);
+            pdf.text(item.code, 15, 65, { align: 'left' });
+            
+            // ILOŚĆ
+            pdf.setFontSize(80);
+            pdf.text(item.qty, pageWidth / 2, 100, { align: 'center' });
+            
+            // DATA
+            pdf.setFontSize(60);
+            pdf.text(item.date, pageWidth / 2, 130, { align: 'center' });
+        }
+        pdf.save(`etykiety_${new Date().toISOString().slice(0,10)}.pdf`);
+    });
+</script>
