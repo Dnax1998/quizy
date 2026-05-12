@@ -159,6 +159,7 @@
         <h3>📊 Wszystkie partie produktu (FIFO)</h3>
         <div class="form-group">
             <label>Wybierz produkt</label>
+            <input type="text" id="fifoProductSearch" class="search-box" placeholder="🔍 Wpisz nazwę lub kod produktu..." style="margin-bottom: 10px; width: 100%; border-radius: 12px;">
             <select id="productFilterSelect" style="width:100%;"><option value="">-- Wybierz produkt --</option></select>
         </div>
         <div style="max-height:400px; overflow-y:auto;">
@@ -255,6 +256,7 @@
     const closeProductsBtn = document.getElementById('closeProductsBtn');
     const productBatchesModal = document.getElementById('productBatchesModal');
     const productFilterSelect = document.getElementById('productFilterSelect');
+    const fifoProductSearch = document.getElementById('fifoProductSearch');
     const batchesTableBody = document.getElementById('batchesTableBody');
     const batchesByProductBtn = document.getElementById('batchesByProductBtn');
     const closeProductBatchesBtn = document.getElementById('closeProductBatchesBtn');
@@ -815,14 +817,22 @@
 
     // ========== MODAL FIFO ==========
     function updateProductFilterSelect() {
+        const query = fifoProductSearch.value.toLowerCase();
         productFilterSelect.innerHTML = '<option value="">-- Wybierz produkt --</option>';
         productsList.forEach(prod => {
-            const option = document.createElement('option');
-            option.value = prod.id;
-            option.textContent = `${prod.name} (${prod.code || 'brak kodu'})`;
-            productFilterSelect.appendChild(option);
+            const name = prod.name.toLowerCase();
+            const code = (prod.code || '').toLowerCase();
+            if (name.includes(query) || code.includes(query)) {
+                const option = document.createElement('option');
+                option.value = prod.id;
+                option.textContent = `${prod.name} (${prod.code || 'brak kodu'})`;
+                productFilterSelect.appendChild(option);
+            }
         });
     }
+
+    fifoProductSearch.addEventListener('input', updateProductFilterSelect);
+
     function renderBatchesForProduct(productId) {
         const product = productsList.find(p => p.id === productId);
         if (!product) { batchesTableBody.innerHTML = '<tr><td colspan="7">Nie znaleziono produktu</td></tr>'; return; }
@@ -876,6 +886,7 @@
         id ? renderBatchesForProduct(id) : batchesTableBody.innerHTML = '<tr><td colspan="7">Wybierz produkt</td></tr>';
     });
     batchesByProductBtn.addEventListener('click', () => {
+        fifoProductSearch.value = '';
         updateProductFilterSelect();
         productBatchesModal.style.display = 'flex';
     });
