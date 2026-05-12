@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generator etykiet PDF 100x150 mm + BOLD + KOD Z LEWEJ</title>
+    <title>Generator etykiet PDF 100x150 mm + BOLD + SKU</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         * { box-sizing: border-box; font-family: 'Arial', sans-serif; }
@@ -38,13 +38,21 @@
             flex-direction: column; 
             justify-content: space-between; 
             align-items: flex-start; 
+            position: relative;
+        }
+        .label .sku-box {
+            position: absolute;
+            top: 5mm;
+            right: 8mm;
+            font-size: 24px;
+            font-weight: 700;
         }
         .label .code { 
             font-size: 100px; 
             font-weight: 700; 
             line-height: 1.2; 
             text-align: left; 
-            margin-left: 0; 
+            margin-top: 15mm;
             padding-left: 5mm; 
         }
         .label .quantity { 
@@ -72,6 +80,7 @@
     
     <div class="input-row">
         <input type="text" id="productCode" placeholder="Kod (np. 896)" autocomplete="off">
+        <input type="text" id="productSKU" placeholder="SKU (opcjonalnie)" autocomplete="off">
         <input type="text" id="quantity" placeholder="Ilość (np. 101)" autocomplete="off">
         <input type="text" id="prodDate" placeholder="Data (np. 26.02.26)" autocomplete="off">
         <input type="number" id="copies" class="copies-input" placeholder="Kopie" min="1" max="50" value="1" style="text-align:center;">
@@ -81,7 +90,7 @@
     <div class="table-container">
         <table id="itemsTable">
             <thead>
-                <tr><th>Kod</th><th>Ilość</th><th>Data</th><th style="width:80px;">Akcje</th></tr>
+                <tr><th>Kod/SKU</th><th>Ilość</th><th>Data</th><th style="width:80px;">Akcje</th></tr>
             </thead>
             <tbody id="itemsBody"></tbody>
         </table>
@@ -107,6 +116,7 @@
     let items = [];
 
     const productCodeInp = document.getElementById('productCode');
+    const productSKUInp = document.getElementById('productSKU');
     const quantityInp = document.getElementById('quantity');
     const prodDateInp = document.getElementById('prodDate');
     const copiesInp = document.getElementById('copies');
@@ -120,12 +130,12 @@
     const backToWarehouseBtn = document.getElementById('backToWarehouseBtn');
 
     try {
-        const saved = localStorage.getItem('etykiety_bold_left_items');
+        const saved = localStorage.getItem('etykiety_bold_left_items_v2');
         if (saved) items = JSON.parse(saved);
     } catch(e) {}
 
     function saveToStorage() {
-        localStorage.setItem('etykiety_bold_left_items', JSON.stringify(items));
+        localStorage.setItem('etykiety_bold_left_items_v2', JSON.stringify(items));
     }
 
     function renderTable() {
@@ -141,7 +151,7 @@
         let html = '';
         items.forEach((item, index) => {
             html += `<tr>
-                <td><strong>${item.code || '—'}</strong></td>
+                <td><strong>${item.code || '—'}</strong><br><small>${item.sku || ''}</small></td>
                 <td>${item.qty || '—'}</td>
                 <td>${item.date || '—'}</td>
                 <td>
@@ -156,6 +166,7 @@
         items.forEach(item => {
             previewHtml += `
                 <div class="label">
+                    <div class="sku-box">${item.sku || ''}</div>
                     <div class="code">${item.code || ''}</div>
                     <div class="quantity">${item.qty || ''}</div>
                     <div class="date">${item.date || ''}</div>
@@ -169,6 +180,7 @@
                 const index = e.target.dataset.index;
                 const item = items[index];
                 productCodeInp.value = item.code || '';
+                productSKUInp.value = item.sku || '';
                 quantityInp.value = item.qty || '';
                 prodDateInp.value = item.date || '';
                 copiesInp.value = 1;
@@ -189,6 +201,7 @@
 
     addBtn.addEventListener('click', () => {
         const code = productCodeInp.value.trim();
+        const sku = productSKUInp.value.trim();
         const qty = quantityInp.value.trim();
         const date = prodDateInp.value.trim();
         let copies = parseInt(copiesInp.value);
@@ -196,15 +209,16 @@
         if (copies > 50) copies = 50;
 
         if (!code || !qty || !date) {
-            alert('Wypełnij wszystkie pola');
+            alert('Wypełnij pola Kod, Ilość i Data');
             return;
         }
 
         for (let i = 0; i < copies; i++) {
-            items.push({ code, qty, date });
+            items.push({ code, sku, qty, date });
         }
 
         productCodeInp.value = '';
+        productSKUInp.value = '';
         quantityInp.value = '';
         prodDateInp.value = '';
         copiesInp.value = 1;
@@ -254,13 +268,21 @@
 
             pdf.setFont('Helvetica', 'bold');
             
-            // KOD PRODUKTU – przesunięty w lewo (pozycja X = 15 mm od lewej)
+            // SKU - prawy górny róg
+            if (item.sku) {
+                pdf.setFontSize(24);
+                pdf.text(item.sku, pageWidth - 8, 10, { align: 'right' });
+            }
+
+            // KOD PRODUKTU
             pdf.setFontSize(100);
             pdf.text(item.code, 15, 65, { align: 'left' });
             
+            // ILOŚĆ
             pdf.setFontSize(80);
             pdf.text(item.qty, pageWidth / 2, 100, { align: 'center' });
             
+            // DATA
             pdf.setFontSize(60);
             pdf.text(item.date, pageWidth / 2, 130, { align: 'center' });
         }
@@ -273,7 +295,7 @@
     });
 
     backToWarehouseBtn.addEventListener('click', () => {
-        window.location.href = 'index.html';
+        window.location.href = 'index (1).html';
     });
 
     renderTable();
