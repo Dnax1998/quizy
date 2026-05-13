@@ -329,7 +329,7 @@
     // ========== RENDER REGAŁÓW ==========
     function renderCurrentRack() {
         let html = '';
-        for (let level = 1; level <= LEVELS; level++) {
+        for (let level = 5; level <= LEVELS; level++) {
             html += `<div class="shelf"><div class="shelf-label"><span>📌 Poziom ${level}</span><span class="status-badge">${COLUMNS} pól</span></div><div class="slots">`;
             for (let col = 1; col <= COLUMNS; col++) {
                 const locId = getLocationId(currentRack, level, col);
