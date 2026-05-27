@@ -4,7 +4,7 @@
     <input
         type="number"
         id="piecesInCarton"
-        placeholder="Np. 10">
+        placeholder="Np. 70">
 </div>
 
 <!DOCTYPE html>
@@ -13,8 +13,78 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>Magazyn Regały + OKLEJENIE + ETYKIETY</title>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js">
+// ===== EDYCJA PRODUKTU =====
+
+document.addEventListener('click', async (e) => {
+
+    if (e.target.classList.contains('edit-product-btn')) {
+
+        const id = e.target.dataset.id;
+
+        const doc = await db.collection("products").doc(id).get();
+
+        if (!doc.exists) return;
+
+        const data = doc.data();
+
+        const newPieces = prompt(
+            'Nowa ilość sztuk w kartonie:',
+            data.piecesInCarton || 0
+        );
+
+        if (newPieces === null) return;
+
+        await db.collection("products").doc(id).update({
+
+            piecesInCarton:
+                parseInt(newPieces) || 0
+
+        });
+
+        alert('Zapisano');
+
+    }
+
+});
+
+</script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js">
+// ===== EDYCJA PRODUKTU =====
+
+document.addEventListener('click', async (e) => {
+
+    if (e.target.classList.contains('edit-product-btn')) {
+
+        const id = e.target.dataset.id;
+
+        const doc = await db.collection("products").doc(id).get();
+
+        if (!doc.exists) return;
+
+        const data = doc.data();
+
+        const newPieces = prompt(
+            'Nowa ilość sztuk w kartonie:',
+            data.piecesInCarton || 0
+        );
+
+        if (newPieces === null) return;
+
+        await db.collection("products").doc(id).update({
+
+            piecesInCarton:
+                parseInt(newPieces) || 0
+
+        });
+
+        alert('Zapisano');
+
+    }
+
+});
+
+</script>
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
         body { margin: 0; padding: 16px; background: #f4f6f9; }
@@ -1021,6 +1091,41 @@
     subscribeToSlots();
     subscribeToBatches();
     subscribeToProducts();
+
+// ===== EDYCJA PRODUKTU =====
+
+document.addEventListener('click', async (e) => {
+
+    if (e.target.classList.contains('edit-product-btn')) {
+
+        const id = e.target.dataset.id;
+
+        const doc = await db.collection("products").doc(id).get();
+
+        if (!doc.exists) return;
+
+        const data = doc.data();
+
+        const newPieces = prompt(
+            'Nowa ilość sztuk w kartonie:',
+            data.piecesInCarton || 0
+        );
+
+        if (newPieces === null) return;
+
+        await db.collection("products").doc(id).update({
+
+            piecesInCarton:
+                parseInt(newPieces) || 0
+
+        });
+
+        alert('Zapisano');
+
+    }
+
+});
+
 </script>
 </body>
 </html>
