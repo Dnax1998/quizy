@@ -729,10 +729,31 @@ document.addEventListener('click', async (e) => {
                 // ODEJMOWANIE ETYKIET
                 if (b.oklejony === true) {
 
-                    const labelsQuery = await db
+                    // SZUKAJ PO productId
+                    let labelsQuery = await db
                         .collection("labelsStock")
                         .where("productId", "==", b.productId)
                         .get();
+
+                    // JEŚLI NIE ZNALEZIONO -> SZUKAJ PO KODZIE
+                    if (labelsQuery.empty && b.productCode) {
+
+                        labelsQuery = await db
+                            .collection("labelsStock")
+                            .where("productCode", "==", b.productCode)
+                            .get();
+
+                    }
+
+                    // JEŚLI DALEJ NIC -> SZUKAJ PO NAZWIE
+                    if (labelsQuery.empty && b.productName) {
+
+                        labelsQuery = await db
+                            .collection("labelsStock")
+                            .where("productName", "==", b.productName)
+                            .get();
+
+                    }
 
                     if (!labelsQuery.empty) {
 
@@ -741,10 +762,22 @@ document.addEventListener('click', async (e) => {
                         const currentQty =
                             labelDoc.data().quantity || 0;
 
-                        const usedLabels =
-                            (b.cartons || 0)
-                            *
-                            (b.piecesInCarton || 0);
+                        // LICZENIE ETYKIET
+                        let usedLabels = 0;
+
+                        if ((b.cartons || 0) > 0 && (b.piecesInCarton || 0) > 0) {
+
+                            usedLabels =
+                                (b.cartons || 0)
+                                *
+                                (b.piecesInCarton || 0);
+
+                        } else {
+
+                            usedLabels =
+                                (b.pieces || 0);
+
+                        }
 
                         const newQty =
                             currentQty - usedLabels;
