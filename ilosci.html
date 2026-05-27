@@ -2,62 +2,277 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <title>Stan Etykiet - Wyszukiwanie</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stan Etykiet do Oklejenia (Firebase)</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <style>
-        body { font-family: sans-serif; background: #f4f6f9; padding: 20px; }
-        .app { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; }
-        .search-area { margin-bottom: 20px; }
-        input, select { width: 100%; padding: 12px; margin-top: 8px; border: 1px solid #ccc; border-radius: 8px; }
-        .btn { background: #2563eb; color: white; padding: 12px; border: none; border-radius: 8px; width: 100%; cursor: pointer; margin-top: 10px; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background: #f4f6f9; margin: 0; padding: 20px; }
+        .app { max-width: 1000px; margin: 0 auto; background: white; border-radius: 24px; padding: 24px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
+        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+        h1 { margin: 0; color: #1e293b; display: flex; align-items: center; gap: 8px; font-size: 1.8rem; }
+        .btn-back { background: #e2e8f0; color: #1e293b; padding: 10px 18px; border-radius: 40px; border: none; font-weight: 600; font-size: 16px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-back:hover { background: #cbd5e1; }
+        
+        .form-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 20px; padding: 20px; margin-bottom: 24px; }
+        .form-box h3 { margin-top: 0; margin-bottom: 14px; color: #334155; }
+        .input-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+        .input-group { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 6px; }
+        .input-group label { font-size: 14px; font-weight: 600; color: #475569; }
+        .input-group input, .input-group select { padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 16px; font-size: 16px; width: 100%; background: white; }
+        .filter-input { margin-bottom: 6px; border-radius: 40px !important; padding: 10px 16px !important; }
+        
+        .btn { padding: 12px 24px; border-radius: 40px; border: none; font-weight: 600; font-size: 16px; cursor: pointer; transition: 0.15s; }
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-primary:hover { background: #1d4ed8; }
+        
+        .search-bar { margin-bottom: 16px; }
+        .search-box { width: 100%; padding: 12px 16px; font-size: 16px; border: 1px solid #cbd5e1; border-radius: 40px; }
+
+        .table-container { margin: 20px 0; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
+        th { background: #f1f5f9; padding: 14px; text-align: left; font-weight: 600; color: #334155; font-size: 15px; }
+        td { padding: 14px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; font-size: 15px; }
+        tr:hover { background: #f8fafc; }
+        
+        .qty-badge { background: #fee2e2; color: #991b1b; padding: 6px 12px; border-radius: 40px; font-weight: 700; font-size: 16px; display: inline-block; min-width: 60px; text-align: center; }
+        .qty-badge.good { background: #dcfce7; color: #166534; }
+        
+        .quick-actions { display: flex; gap: 4px; }
+        .btn-adj { padding: 6px 10px; font-size: 12px; font-weight: 700; border: 1px solid #cbd5e1; background: white; border-radius: 6px; cursor: pointer; color: #334155; }
+        .btn-adj:hover { background: #e2e8f0; }
+        .btn-adj.plus { color: #166534; border-color: #bbf7d0; background: #f0fdf4; }
+        .btn-adj.plus:hover { background: #dcfce7; }
+        
+        .total-badge { background: #2563eb; color: white; padding: 4px 12px; border-radius: 40px; font-size: 14px; font-weight: 600; }
+        .alert-row { background: #fff7ed; }
+        .toast-msg { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 10px 20px; border-radius: 40px; opacity: 0; transition: 0.2s; pointer-events: none; z-index: 2000; }
     </style>
 </head>
 <body>
-
 <div class="app">
-    <h1>🏷️ Stan Etykiet</h1>
-    <div class="search-area">
-        <label>Automatyczne wyszukiwanie produktu:</label>
-        <input type="text" id="productFilter" placeholder="Wpisz nazwę produktu..." oninput="filterProducts()">
-        <select id="productSelect"><option value="">-- Wybierz z przefiltrowanych --</option></select>
-        <input type="number" id="labelQty" placeholder="Ilość etykiet">
-        <button class="btn" id="saveBtn">Zapisz stan</button>
+    <div class="header">
+        <h1>🏷️ Stan Etykiet na Oklejenie <span id="totalCount" class="total-badge">Ładowanie...</span></h1>
+        <button class="btn-back" id="backToWarehouseBtn">⬅️ Powrót do magazynu</button>
+    </div>
+    
+    <div class="form-box">
+        <h3>➕ Wprowadź stan etykiet dla produktu</h3>
+        <div class="input-row">
+            <div class="input-group" style="flex: 2;">
+                <label for="productSelectFilter">Wyszukaj i wybierz produkt</label>
+                <input type="text" id="productSelectFilter" class="filter-input" placeholder="🔍 Filtruj listę produktów..." autocomplete="off">
+                <select id="productSelect">
+                    <option value="">-- Wybierz produkt z bazy --</option>
+                </select>
+            </div>
+            <div class="input-group" style="max-width: 180px;">
+                <label for="labelQty">Liczba etykiet</label>
+                <input type="number" id="labelQty" placeholder="np. 500" min="0" value="0" style="text-align: center;">
+            </div>
+            <button class="btn btn-primary" id="saveBtn">Zapisz ilość</button>
+        </div>
+    </div>
+
+    <div class="search-bar">
+        <input type="text" id="searchBar" class="search-box" placeholder="🔍 Filtruj tabelę po kodzie lub nazwie produktu..." autocomplete="off">
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Kod produktu</th>
+                    <th>Nazwa produktu</th>
+                    <th style="width: 130px; text-align: center;">Stan etykiet</th>
+                    <th style="width: 250px; text-align: center;">Szybka zmiana stanu</th>
+                </tr>
+            </thead>
+            <tbody id="labelsTableBody">
+                <tr><td colspan="4" style="text-align:center; color:#64748b; padding: 30px;">Ładowanie danych z bazy Firebase...</td></tr>
+            </tbody>
+        </table>
     </div>
 </div>
 
+<div id="toast" class="toast-msg">Zapisano</div>
+
 <script>
-    const firebaseConfig = { /* Wklej tutaj ponownie swój config */ };
+    // ========== KONFIGURACJA FIREBASE (Taka sama jak w index.html) ==========
+    const firebaseConfig = {
+        apiKey: "AIzaSyAbMTVozOhIXesvF59REYnIOtmo-V5qimk",
+        authDomain: "forevermagazyn.firebaseapp.com",
+        projectId: "forevermagazyn",
+        storageBucket: "forevermagazyn.firebasestorage.app",
+        messagingSenderId: "251843942343",
+        appId: "1:251843942343:web:2c81227b12ab4ad0052be2"
+    };
+
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    let allProducts = [];
+    let productsList = [];
+    let labelStocksData = {}; // Słownik przechowujący stan: { productId: ilość }
+    let originalSelectOptions = [];
 
-    // Pobierz produkty raz przy starcie
-    db.collection("products").get().then(snap => {
-        allProducts = snap.docs.map(doc => ({ id: doc.id, name: doc.data().name }));
-        filterProducts(); // Wyświetl wszystko na starcie
-    });
+    const productSelect = document.getElementById('productSelect');
+    const productSelectFilter = document.getElementById('productSelectFilter');
+    const labelQtyInp = document.getElementById('labelQty');
+    const saveBtn = document.getElementById('saveBtn');
+    const labelsTableBody = document.getElementById('labelsTableBody');
+    const totalCount = document.getElementById('totalCount');
+    const searchBar = document.getElementById('searchBar');
+    const backToWarehouseBtn = document.getElementById('backToWarehouseBtn');
+    const toast = document.getElementById('toast');
 
-    function filterProducts() {
-        const query = document.getElementById('productFilter').value.toLowerCase();
-        const select = document.getElementById('productSelect');
-        select.innerHTML = '<option value="">-- Wybierz produkt --</option>';
-        
-        allProducts.filter(p => p.name.toLowerCase().includes(query)).forEach(p => {
-            const opt = document.createElement('option');
-            opt.value = p.id;
-            opt.textContent = p.name;
-            select.appendChild(opt);
-        });
+    function showToast(msg) {
+        toast.textContent = msg;
+        toast.style.opacity = 1;
+        setTimeout(() => toast.style.opacity = 0, 2000);
     }
 
-    document.getElementById('saveBtn').addEventListener('click', async () => {
-        const id = document.getElementById('productSelect').value;
-        const qty = parseInt(document.getElementById('labelQty').value);
-        if(!id) return alert("Wybierz produkt!");
-        await db.collection("labelStocks").doc(id).set({ qty: qty }, { merge: true });
-        alert("Zapisano!");
+    // ========== SUBSKRYPCJA KOLEKCJI PRODUKTÓW (Z INDEX.HTML) ==========
+    db.collection("products").onSnapshot(snapshot => {
+        productsList = [];
+        snapshot.forEach(doc => {
+            productsList.push({ id: doc.id, ...doc.data() });
+        });
+        productsList.sort((a,b) => (a.name || '').localeCompare(b.name || ''));
+        
+        buildProductSelect();
+        renderTable();
+    }, err => console.error("Błąd pobierania produktów:", err));
+
+    // ========== SUBSKRYPCJA KOLEKCJI STANU ETYKIET ==========
+    db.collection("labelStocks").onSnapshot(snapshot => {
+        labelStocksData = {};
+        snapshot.forEach(doc => {
+            labelStocksData[doc.id] = doc.data().qty || 0;
+        });
+        renderTable();
+    }, err => console.error("Błąd pobierania stanów etykiet:", err));
+
+    // Tworzenie listy rozwijanej (select) produktów
+    function buildProductSelect() {
+        productSelect.innerHTML = '<option value="">-- Wybierz produkt z bazy --</option>';
+        productsList.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = `${p.name} (${p.code || 'brak kodu'})`;
+            productSelect.appendChild(opt);
+        });
+        originalSelectOptions = Array.from(productSelect.options);
+    }
+
+    // Filtrowanie opcji wewnątrz selecta na żywo
+    productSelectFilter.addEventListener('input', () => {
+        const query = productSelectFilter.value.toLowerCase();
+        productSelect.innerHTML = '';
+        originalSelectOptions.forEach(opt => {
+            if (opt.value === '' || opt.textContent.toLowerCase().includes(query)) {
+                productSelect.appendChild(opt.cloneNode(true));
+            }
+        });
+    });
+
+    // ========== RENDEROWANIE GLÓWNEJ TABELI ==========
+    function renderTable() {
+        const query = searchBar.value.trim().toLowerCase();
+        
+        // Filtrujemy bazę produktów pobraną z Firebase
+        const filteredProducts = productsList.filter(p => 
+            (p.name || '').toLowerCase().includes(query) || 
+            (p.code || '').toLowerCase().includes(query)
+        );
+
+        totalCount.textContent = `${productsList.length} produktów`;
+
+        if (filteredProducts.length === 0) {
+            labelsTableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#64748b; padding: 30px;">Brak produktów w bazie spełniających kryteria.</td></tr>`;
+            return;
+        }
+
+        let html = '';
+        filteredProducts.forEach((p) => {
+            const qty = labelStocksData[p.id] || 0; // Jeśli brak dokumentu w labelStocks, stan wynosi 0
+            const isLow = qty <= 50; 
+            const badgeClass = isLow ? 'qty-badge' : 'qty-badge good';
+            const rowClass = isLow ? 'alert-row' : '';
+
+            html += `<tr class="${rowClass}">
+                <td><strong>${p.code || '—'}</strong></td>
+                <td>${p.name || '—'}</td>
+                <td style="text-align: center;"><span class="${badgeClass}">${qty} szt</span></td>
+                <td>
+                    <div class="quick-actions" style="justify-content: center;">
+                        <button class="btn-adj" onclick="adjustQty('${p.id}', -50)">-50</button>
+                        <button class="btn-adj" onclick="adjustQty('${p.id}', -10)">-10</button>
+                        <button class="btn-adj plus" onclick="adjustQty('${p.id}', 10)">+10</button>
+                        <button class="btn-adj plus" onclick="adjustQty('${p.id}', 50)">+50</button>
+                        <button class="btn-adj plus" onclick="adjustQty('${p.id}', 100)">+100</button>
+                    </div>
+                </td>
+            </tr>`;
+        });
+        labelsTableBody.innerHTML = html;
+    }
+
+    // ========== ZAPIS RĘCZNY FORMULARZA ==========
+    saveBtn.addEventListener('click', async () => {
+        const productId = productSelect.value;
+        let qty = parseInt(labelQtyInp.value);
+
+        if (!productId) {
+            alert('Wybierz produkt z listy!');
+            return;
+        }
+        if (isNaN(qty) || qty < 0) qty = 0;
+
+        try {
+            // Zapis do Firebase: ID dokumentu to ID produktu, dzięki czemu są idealnie powiązane
+            await db.collection("labelStocks").doc(productId).set({
+                qty: qty,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+
+            labelQtyInp.value = '0';
+            productSelect.value = '';
+            productSelectFilter.value = '';
+            buildProductSelect();
+            showToast('✅ Stan zapisany w bazie');
+        } catch (err) {
+            alert('Błąd zapisu Firebase: ' + err.message);
+        }
+    });
+
+    // ========== SZYBKA ZMIANA PRZYCISKAMI DO TABELI (+/-) ==========
+    window.adjustQty = async function(productId, amount) {
+        const currentQty = labelStocksData[productId] || 0;
+        const newQty = Math.max(0, currentQty + amount); // Stan nie może spaść poniżej 0
+
+        try {
+            await db.collection("labelStocks").doc(productId).set({
+                qty: newQty,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+            showToast('⚡ Zaktualizowano stan');
+        } catch (err) {
+            alert('Błąd aktualizacji: ' + err.message);
+        }
+    };
+
+    // Filtrowanie tabeli na żywo
+    searchBar.addEventListener('input', renderTable);
+
+    // Powrót do widoku głównego magazynu
+    backToWarehouseBtn.addEventListener('click', () => {
+        window.location.href = 'index.html';
+    });
+
+    // Obsługa kliknięcia Enter na polu ilości
+    labelQtyInp.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') saveBtn.click();
     });
 </script>
 </body>
