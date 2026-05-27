@@ -4,7 +4,7 @@
     <input
         type="number"
         id="piecesInCarton"
-        placeholder="Np. 700">
+        placeholder="Np. 70">
 </div>
 
 <!DOCTYPE html>
@@ -763,19 +763,30 @@ document.addEventListener('click', async (e) => {
                             labelDoc.data().quantity || 0;
 
                         // LICZENIE ETYKIET
+
+                        const cartons =
+                            parseInt(b.cartons) || 0;
+
+                        const piecesInCarton =
+                            parseInt(b.piecesInCarton) || 0;
+
+                        const pieces =
+                            parseInt(b.pieces) || 0;
+
                         let usedLabels = 0;
 
-                        if ((b.cartons || 0) > 0 && (b.piecesInCarton || 0) > 0) {
+                        // JEŚLI SĄ KARTONY
+                        if (cartons > 0 && piecesInCarton > 0) {
 
                             usedLabels =
-                                (b.cartons || 0)
-                                *
-                                (b.piecesInCarton || 0);
+                                cartons * piecesInCarton;
 
-                        } else {
+                        }
 
-                            usedLabels =
-                                (b.pieces || 0);
+                        // JEŚLI SAME SZTUKI
+                        else {
+
+                            usedLabels = pieces;
 
                         }
 
