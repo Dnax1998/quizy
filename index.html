@@ -4,7 +4,7 @@
     <input
         type="number"
         id="piecesInCarton"
-        placeholder="Np. 70">
+        placeholder="Np. 10">
 </div>
 
 <!DOCTYPE html>
@@ -155,7 +155,12 @@
         <h3>📋 Baza produktów</h3>
         <div style="margin-bottom:20px;">
             <div class="form-group"><label>Nazwa produktu</label><input type="text" id="newProductName" placeholder="np. Dezodorant 067"></div>
-            <div class="form-group"><label>Kod produktu</label><input type="text" id="newProductCode" placeholder="IND-12345"></div>
+            <div class="form-group"><label>Kod produktu</label><input type="text" id="newProductCode" placeholder="IND-12345">
+
+            <div class="form-group">
+                <label>Sztuk w kartonie</label>
+                <input type="number" id="newProductPiecesInCarton" placeholder="Np. 30">
+            </div></div>
 
             <div class="form-group">
                 <label>Sztuk w kartonie</label>
@@ -843,10 +848,15 @@
         if (!name) { alert('Podaj nazwę'); return; }
         try {
             await db.collection("products").add({
-                name, code: newProductCode.value.trim() || null,
+                name,
+                code: newProductCode.value.trim() || null,
+
+                piecesInCarton:
+                    parseInt(newProductPiecesInCarton.value) || 0,
+
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
-            newProductName.value = newProductCode.value = '';
+            newProductName.value = newProductCode.value = newProductPiecesInCarton.value = '';
             showToast('✅ Produkt dodany');
         } catch (err) { alert('Błąd: ' + err.message); }
     }
