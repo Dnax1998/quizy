@@ -2,85 +2,63 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <title>Stan Etykiet - Integracja z Magazynem</title>
+    <title>Stan Etykiet - Wyszukiwanie</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <style>
-        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-        body { background: #f4f6f9; margin: 0; padding: 20px; }
-        .app { max-width: 1000px; margin: 0 auto; background: white; border-radius: 20px; padding: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .form-box { background: #f8fafc; padding: 20px; border-radius: 16px; margin-bottom: 20px; }
-        select, input { padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; width: 100%; margin-top: 5px; }
-        .btn { padding: 12px 24px; background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer; margin-top: 10px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+        body { font-family: sans-serif; background: #f4f6f9; padding: 20px; }
+        .app { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; }
+        .search-area { margin-bottom: 20px; }
+        input, select { width: 100%; padding: 12px; margin-top: 8px; border: 1px solid #ccc; border-radius: 8px; }
+        .btn { background: #2563eb; color: white; padding: 12px; border: none; border-radius: 8px; width: 100%; cursor: pointer; margin-top: 10px; }
     </style>
 </head>
 <body>
 
 <div class="app">
     <h1>🏷️ Stan Etykiet</h1>
-    <div class="form-box">
-        <h3>Wybierz produkt i wpisz ilość etykiet</h3>
-        <select id="productSelect"><option value="">Ładowanie produktów...</option></select>
-        <input type="number" id="labelQty" placeholder="Liczba etykiet">
+    <div class="search-area">
+        <label>Automatyczne wyszukiwanie produktu:</label>
+        <input type="text" id="productFilter" placeholder="Wpisz nazwę produktu..." oninput="filterProducts()">
+        <select id="productSelect"><option value="">-- Wybierz z przefiltrowanych --</option></select>
+        <input type="number" id="labelQty" placeholder="Ilość etykiet">
         <button class="btn" id="saveBtn">Zapisz stan</button>
     </div>
-
-    <table>
-        <thead><tr><th>Produkt</th><th>Pozostałe etykiety</th><th>Akcja</th></tr></thead>
-        <tbody id="tableBody"></tbody>
-    </table>
 </div>
 
 <script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyAbMTVozOhIXesvF59REYnIOtmo-V5qimk",
-        authDomain: "forevermagazyn.firebaseapp.com",
-        projectId: "forevermagazyn",
-        storageBucket: "forevermagazyn.firebasestorage.app",
-        messagingSenderId: "251843942343",
-        appId: "1:251843942343:web:2c81227b12ab4ad0052be2"
-    };
-
+    const firebaseConfig = { /* Wklej tutaj ponownie swój config */ };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // 1. POBIERANIE PRODUKTÓW TAK JAK W INDEX.HTML
-    db.collection("products").onSnapshot(snapshot => {
+    let allProducts = [];
+
+    // Pobierz produkty raz przy starcie
+    db.collection("products").get().then(snap => {
+        allProducts = snap.docs.map(doc => ({ id: doc.id, name: doc.data().name }));
+        filterProducts(); // Wyświetl wszystko na starcie
+    });
+
+    function filterProducts() {
+        const query = document.getElementById('productFilter').value.toLowerCase();
         const select = document.getElementById('productSelect');
         select.innerHTML = '<option value="">-- Wybierz produkt --</option>';
-        snapshot.forEach(doc => {
-            const data = doc.data();
+        
+        allProducts.filter(p => p.name.toLowerCase().includes(query)).forEach(p => {
             const opt = document.createElement('option');
-            opt.value = doc.id;
-            opt.textContent = data.name || "Bez nazwy";
+            opt.value = p.id;
+            opt.textContent = p.name;
             select.appendChild(opt);
         });
-    });
+    }
 
-    // 2. POBIERANIE STANU ETYKIET
-    db.collection("labelStocks").onSnapshot(snapshot => {
-        const tbody = document.getElementById('tableBody');
-        tbody.innerHTML = '';
-        snapshot.forEach(doc => {
-            const row = document.createElement('tr');
-            row.innerHTML = `<td>${doc.id}</td><td>${doc.data().qty || 0}</td>
-                             <td><button onclick="deleteDoc('${doc.id}')">Usuń</button></td>`;
-            tbody.appendChild(row);
-        });
-    });
-
-    // 3. ZAPISYWANIE
     document.getElementById('saveBtn').addEventListener('click', async () => {
         const id = document.getElementById('productSelect').value;
         const qty = parseInt(document.getElementById('labelQty').value);
         if(!id) return alert("Wybierz produkt!");
-        await db.collection("labelStocks").doc(id).set({ qty: qty });
+        await db.collection("labelStocks").doc(id).set({ qty: qty }, { merge: true });
         alert("Zapisano!");
     });
-
-    window.deleteDoc = async (id) => await db.collection("labelStocks").doc(id).delete();
 </script>
 </body>
 </html>
