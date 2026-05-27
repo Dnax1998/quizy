@@ -628,11 +628,55 @@
             const oldBatchesSnapshot = await slotRef.collection("batches").get();
             await Promise.all(oldBatchesSnapshot.docs.map(doc => doc.ref.delete()));
             for (const b of newBatches) {
+
                 await slotRef.collection("batches").add({
-                    productId: b.productId, productName: b.productName, productCode: b.productCode,
+
+                    productId: b.productId,
+                    productName: b.productName,
+                    productCode: b.productCode,
                     signature: b.signature || '',
-                    prodDateString: b.prodDateString, prodDate: b.prodDate, cartons: b.cartons, pieces: b.pieces, oklejony: b.oklejony
+                    prodDateString: b.prodDateString,
+                    prodDate: b.prodDate,
+                    cartons: b.cartons,
+                    pieces: b.pieces,
+                    oklejony: b.oklejony
+
                 });
+
+                // ===== ODEJMOWANIE ETYKIET =====
+
+                if (b.oklejony === true) {
+
+                    const labelsQuery = await db
+                        .collection("labelsStock")
+                        .where("productId", "==", b.productId)
+                        .get();
+
+                    if (!labelsQuery.empty) {
+
+                        const labelDoc =
+                            labelsQuery.docs[0];
+
+                        const currentQty =
+                            labelDoc.data().quantity || 0;
+
+                        const newQty =
+                            currentQty - (b.pieces || 0);
+
+                        await db
+                            .collection("labelsStock")
+                            .doc(labelDoc.id)
+                            .update({
+
+                                quantity:
+                                    newQty < 0 ? 0 : newQty
+
+                            });
+
+                    }
+
+                }
+
             }
             showToast('✅ Zapisano');
             editModal.style.display = 'none';
