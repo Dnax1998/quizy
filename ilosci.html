@@ -9,7 +9,7 @@
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
         body { background: #f4f6f9; margin: 0; padding: 20px; }
-        .app { max-width: 1100px; margin: 0 auto; background: white; border-radius: 24px; padding: 24px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
+        .app { max-width: 1000px; margin: 0 auto; background: white; border-radius: 24px; padding: 24px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
         .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
         h1 { margin: 0; color: #1e293b; display: flex; align-items: center; gap: 8px; font-size: 1.8rem; }
         .btn-back { background: #e2e8f0; color: #1e293b; padding: 10px 18px; border-radius: 40px; border: none; font-weight: 600; font-size: 16px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
@@ -18,7 +18,7 @@
         .form-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 20px; padding: 20px; margin-bottom: 24px; }
         .form-box h3 { margin-top: 0; margin-bottom: 14px; color: #334155; }
         .input-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
-        .input-group { flex: 1; min-width: 140px; display: flex; flex-direction: column; gap: 6px; }
+        .input-group { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 6px; }
         .input-group label { font-size: 14px; font-weight: 600; color: #475569; }
         .input-group input, .input-group select { padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 16px; font-size: 16px; width: 100%; background: white; }
         .filter-input { margin-bottom: 6px; border-radius: 40px !important; padding: 10px 16px !important; }
@@ -60,27 +60,16 @@
     <div class="form-box">
         <h3>➕ Wprowadź stan etykiet dla produktu</h3>
         <div class="input-row">
-            <div class="input-group" style="flex: 2; min-width: 250px;">
+            <div class="input-group" style="flex: 2;">
                 <label for="productSelectFilter">Wyszukaj i wybierz produkt</label>
                 <input type="text" id="productSelectFilter" class="filter-input" placeholder="🔍 Filtruj listę produktów..." autocomplete="off">
                 <select id="productSelect">
                     <option value="">-- Wybierz produkt z bazy --</option>
                 </select>
             </div>
-            
-            <div class="input-group" style="max-width: 140px;">
-                <label for="boxCapacity">Sztuk w kartonie</label>
-                <input type="number" id="boxCapacity" placeholder="np. 48" min="0" style="text-align: center;">
-            </div>
-            
-            <div class="input-group" style="max-width: 140px;">
-                <label for="boxCount">Liczba kartonów</label>
-                <input type="number" id="boxCount" placeholder="np. 70" min="0" style="text-align: center;">
-            </div>
-
-            <div class="input-group" style="max-width: 150px;">
-                <label for="labelQty">Razem etykiet</label>
-                <input type="number" id="labelQty" placeholder="np. 500" min="0" value="0" style="text-align: center; font-weight: bold; background: #f0fdf4;">
+            <div class="input-group" style="max-width: 180px;">
+                <label for="labelQty">Liczba etykiet</label>
+                <input type="number" id="labelQty" placeholder="np. 500" min="0" value="0" style="text-align: center;">
             </div>
             <button class="btn btn-primary" id="saveBtn">Zapisz ilość</button>
         </div>
@@ -110,7 +99,7 @@
 <div id="toast" class="toast-msg">Zapisano</div>
 
 <script>
-    // ========== KONFIGURACJA FIREBASE ==========
+    // ========== KONFIGURACJA FIREBASE (Taka sama jak w index.html) ==========
     const firebaseConfig = {
         apiKey: "AIzaSyAbMTVozOhIXesvF59REYnIOtmo-V5qimk",
         authDomain: "forevermagazyn.firebaseapp.com",
@@ -124,13 +113,11 @@
     const db = firebase.firestore();
 
     let productsList = [];
-    let labelStocksData = {}; 
+    let labelStocksData = {}; // Słownik przechowujący stan: { productId: ilość }
     let originalSelectOptions = [];
 
     const productSelect = document.getElementById('productSelect');
     const productSelectFilter = document.getElementById('productSelectFilter');
-    const boxCapacityInp = document.getElementById('boxCapacity');
-    const boxCountInp = document.getElementById('boxCount');
     const labelQtyInp = document.getElementById('labelQty');
     const saveBtn = document.getElementById('saveBtn');
     const labelsTableBody = document.getElementById('labelsTableBody');
@@ -145,21 +132,7 @@
         setTimeout(() => toast.style.opacity = 0, 2000);
     }
 
-    // ========== AUTOMATYCZNE PRZELICZANIE KARTONÓW ==========
-    function autoCalculateLabels() {
-        const capacity = parseInt(boxCapacityInp.value) || 0;
-        const count = parseInt(boxCountInp.value) || 0;
-        
-        // Jeśli podano obie wartości, obliczamy sumę, w innym przypadku zostawiamy to co wpisane
-        if (boxCapacityInp.value !== '' && boxCountInp.value !== '') {
-            labelQtyInp.value = capacity * count;
-        }
-    }
-
-    boxCapacityInp.addEventListener('input', autoCalculateLabels);
-    boxCountInp.addEventListener('input', autoCalculateLabels);
-
-    // ========== SUBSKRYPCJA KOLEKCJI PRODUKTÓW ==========
+    // ========== SUBSKRYPCJA KOLEKCJI PRODUKTÓW (Z INDEX.HTML) ==========
     db.collection("products").onSnapshot(snapshot => {
         productsList = [];
         snapshot.forEach(doc => {
@@ -180,6 +153,7 @@
         renderTable();
     }, err => console.error("Błąd pobierania stanów etykiet:", err));
 
+    // Tworzenie listy rozwijanej (select) produktów
     function buildProductSelect() {
         productSelect.innerHTML = '<option value="">-- Wybierz produkt z bazy --</option>';
         productsList.forEach(p => {
@@ -191,6 +165,7 @@
         originalSelectOptions = Array.from(productSelect.options);
     }
 
+    // Filtrowanie opcji wewnątrz selecta na żywo
     productSelectFilter.addEventListener('input', () => {
         const query = productSelectFilter.value.toLowerCase();
         productSelect.innerHTML = '';
@@ -201,10 +176,11 @@
         });
     });
 
-    // ========== RENDEROWANIE GŁÓWNEJ TABELI ==========
+    // ========== RENDEROWANIE GLÓWNEJ TABELI ==========
     function renderTable() {
         const query = searchBar.value.trim().toLowerCase();
         
+        // Filtrujemy bazę produktów pobraną z Firebase
         const filteredProducts = productsList.filter(p => 
             (p.name || '').toLowerCase().includes(query) || 
             (p.code || '').toLowerCase().includes(query)
@@ -219,7 +195,7 @@
 
         let html = '';
         filteredProducts.forEach((p) => {
-            const qty = labelStocksData[p.id] || 0; 
+            const qty = labelStocksData[p.id] || 0; // Jeśli brak dokumentu w labelStocks, stan wynosi 0
             const isLow = qty <= 50; 
             const badgeClass = isLow ? 'qty-badge' : 'qty-badge good';
             const rowClass = isLow ? 'alert-row' : '';
@@ -242,7 +218,7 @@
         labelsTableBody.innerHTML = html;
     }
 
-    // ========== ZAPIS RĘCZNY / Z KALKULATORA ==========
+    // ========== ZAPIS RĘCZNY FORMULARZA ==========
     saveBtn.addEventListener('click', async () => {
         const productId = productSelect.value;
         let qty = parseInt(labelQtyInp.value);
@@ -254,15 +230,13 @@
         if (isNaN(qty) || qty < 0) qty = 0;
 
         try {
+            // Zapis do Firebase: ID dokumentu to ID produktu, dzięki czemu są idealnie powiązane
             await db.collection("labelStocks").doc(productId).set({
                 qty: qty,
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             }, { merge: true });
 
-            // Resetowanie wszystkich pól formularza
             labelQtyInp.value = '0';
-            boxCapacityInp.value = '';
-            boxCountInp.value = '';
             productSelect.value = '';
             productSelectFilter.value = '';
             buildProductSelect();
@@ -275,7 +249,7 @@
     // ========== SZYBKA ZMIANA PRZYCISKAMI DO TABELI (+/-) ==========
     window.adjustQty = async function(productId, amount) {
         const currentQty = labelStocksData[productId] || 0;
-        const newQty = Math.max(0, currentQty + amount); 
+        const newQty = Math.max(0, currentQty + amount); // Stan nie może spaść poniżej 0
 
         try {
             await db.collection("labelStocks").doc(productId).set({
@@ -288,16 +262,18 @@
         }
     };
 
+    // Filtrowanie tabeli na żywo
     searchBar.addEventListener('input', renderTable);
 
+    // Powrót do widoku głównego magazynu
     backToWarehouseBtn.addEventListener('click', () => {
         window.location.href = 'index.html';
     });
 
-    // Obsługa kliknięcia Enter na polach formularza do szybkiego zapisu
-    labelQtyInp.addEventListener('keypress', (e) => { if (e.key === 'Enter') saveBtn.click(); });
-    boxCapacityInp.addEventListener('keypress', (e) => { if (e.key === 'Enter') saveBtn.click(); });
-    boxCountInp.addEventListener('keypress', (e) => { if (e.key === 'Enter') saveBtn.click(); });
+    // Obsługa kliknięcia Enter na polu ilości
+    labelQtyInp.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') saveBtn.click();
+    });
 </script>
 </body>
 </html>
