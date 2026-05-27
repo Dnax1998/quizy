@@ -1,3 +1,12 @@
+
+<div class="form-group">
+    <label>Sztuk w kartonie</label>
+    <input
+        type="number"
+        id="piecesInCarton"
+        placeholder="Np. 70">
+</div>
+
 <!DOCTYPE html>
 <html lang="pl">
 <head>
@@ -147,6 +156,11 @@
         <div style="margin-bottom:20px;">
             <div class="form-group"><label>Nazwa produktu</label><input type="text" id="newProductName" placeholder="np. Dezodorant 067"></div>
             <div class="form-group"><label>Kod produktu</label><input type="text" id="newProductCode" placeholder="IND-12345"></div>
+
+            <div class="form-group">
+                <label>Sztuk w kartonie</label>
+                <input type="number" id="newProductPiecesInCarton" placeholder="Np. 30">
+            </div>
             <button class="btn btn-primary" id="addProductBtn" style="width:100%;">➕ Dodaj produkt</button>
         </div>
         <div class="product-list" id="productsListContainer">Ładowanie...</div>
