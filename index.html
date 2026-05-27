@@ -1,90 +1,11 @@
-
-<div class="form-group">
-    <label>Sztuk w kartonie</label>
-    <input
-        type="number"
-        id="piecesInCarton"
-        placeholder="Np. 70">
-</div>
-
 <!DOCTYPE html>
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>Magazyn Regały + OKLEJENIE + ETYKIETY</title>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js">
-// ===== EDYCJA PRODUKTU =====
-
-document.addEventListener('click', async (e) => {
-
-    if (e.target.classList.contains('edit-product-btn')) {
-
-        const id = e.target.dataset.id;
-
-        const doc = await db.collection("products").doc(id).get();
-
-        if (!doc.exists) return;
-
-        const data = doc.data();
-
-        const newPieces = prompt(
-            'Nowa ilość sztuk w kartonie:',
-            data.piecesInCarton || 0
-        );
-
-        if (newPieces === null) return;
-
-        await db.collection("products").doc(id).update({
-
-            piecesInCarton:
-                parseInt(newPieces) || 0
-
-        });
-
-        alert('Zapisano');
-
-    }
-
-});
-
-</script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js">
-// ===== EDYCJA PRODUKTU =====
-
-document.addEventListener('click', async (e) => {
-
-    if (e.target.classList.contains('edit-product-btn')) {
-
-        const id = e.target.dataset.id;
-
-        const doc = await db.collection("products").doc(id).get();
-
-        if (!doc.exists) return;
-
-        const data = doc.data();
-
-        const newPieces = prompt(
-            'Nowa ilość sztuk w kartonie:',
-            data.piecesInCarton || 0
-        );
-
-        if (newPieces === null) return;
-
-        await db.collection("products").doc(id).update({
-
-            piecesInCarton:
-                parseInt(newPieces) || 0
-
-        });
-
-        alert('Zapisano');
-
-    }
-
-});
-
-</script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
         body { margin: 0; padding: 16px; background: #f4f6f9; }
@@ -225,17 +146,7 @@ document.addEventListener('click', async (e) => {
         <h3>📋 Baza produktów</h3>
         <div style="margin-bottom:20px;">
             <div class="form-group"><label>Nazwa produktu</label><input type="text" id="newProductName" placeholder="np. Dezodorant 067"></div>
-            <div class="form-group"><label>Kod produktu</label><input type="text" id="newProductCode" placeholder="IND-12345">
-
-            <div class="form-group">
-                <label>Sztuk w kartonie</label>
-                <input type="number" id="newProductPiecesInCarton" placeholder="Np. 30">
-            </div></div>
-
-            <div class="form-group">
-                <label>Sztuk w kartonie</label>
-                <input type="number" id="newProductPiecesInCarton" placeholder="Np. 30">
-            </div>
+            <div class="form-group"><label>Kod produktu</label><input type="text" id="newProductCode" placeholder="IND-12345"></div>
             <button class="btn btn-primary" id="addProductBtn" style="width:100%;">➕ Dodaj produkt</button>
         </div>
         <div class="product-list" id="productsListContainer">Ładowanie...</div>
@@ -649,10 +560,6 @@ document.addEventListener('click', async (e) => {
                     prodDate: firebase.firestore.Timestamp.fromDate(parseDateWithSuffix(rawValue)),
                     cartons: parseInt(cartonsInput.value) || 0,
                     pieces: parseInt(piecesInput.value) || 0,
-
-                    piecesInCarton:
-                        Number(prod?.piecesInCarton || 0),
-                    piecesInCarton: prod?.piecesInCarton || 0,
                     oklejony: oklejonyCb ? oklejonyCb.checked : false
                 });
             }
@@ -682,8 +589,7 @@ document.addEventListener('click', async (e) => {
             prodDate: b.prodDate,
             cartons: b.cartons || 0,
             pieces: b.pieces || 0,
-            oklejony: b.oklejony,
-        piecesInCarton: b.piecesInCarton || 0 || false
+            oklejony: b.oklejony || false
         }));
         if (currentBatches.length === 0 && data.productName) {
             currentBatches.push({
@@ -725,89 +631,8 @@ document.addEventListener('click', async (e) => {
                 await slotRef.collection("batches").add({
                     productId: b.productId, productName: b.productName, productCode: b.productCode,
                     signature: b.signature || '',
-                    prodDateString: b.prodDateString, prodDate: b.prodDate, cartons: b.cartons, pieces: b.pieces, oklejony: b.oklejony,
-        piecesInCarton: b.piecesInCarton || 0
+                    prodDateString: b.prodDateString, prodDate: b.prodDate, cartons: b.cartons, pieces: b.pieces, oklejony: b.oklejony
                 });
-
-                // ODEJMOWANIE ETYKIET
-                if (b.oklejony === true) {
-
-                    // SZUKAJ PO productId
-                    let labelsQuery = await db
-                        .collection("labelsStock")
-                        .where("productId", "==", b.productId)
-                        .get();
-
-                    // JEŚLI NIE ZNALEZIONO -> SZUKAJ PO KODZIE
-                    if (labelsQuery.empty && b.productCode) {
-
-                        labelsQuery = await db
-                            .collection("labelsStock")
-                            .where("productCode", "==", b.productCode)
-                            .get();
-
-                    }
-
-                    // JEŚLI DALEJ NIC -> SZUKAJ PO NAZWIE
-                    if (labelsQuery.empty && b.productName) {
-
-                        labelsQuery = await db
-                            .collection("labelsStock")
-                            .where("productName", "==", b.productName)
-                            .get();
-
-                    }
-
-                    if (!labelsQuery.empty) {
-
-                        const labelDoc = labelsQuery.docs[0];
-
-                        const currentQty =
-                            labelDoc.data().quantity || 0;
-
-                        // LICZENIE ETYKIET
-
-                        const cartons =
-                            Number(b.cartons || 0);
-
-                        const piecesInCarton =
-                            Number(b.piecesInCarton || 0);
-
-                        const pieces =
-                            Number(b.pieces || 0);
-
-                        let usedLabels = 0;
-
-                        // JEŚLI PODANO KARTONY
-                        if (cartons > 0) {
-
-                            usedLabels =
-                                cartons * piecesInCarton;
-
-                        }
-
-                        // JEŚLI SAME SZTUKI
-                        else {
-
-                            usedLabels = pieces;
-
-                        }
-
-                        const newQty =
-                            currentQty - usedLabels;
-
-                        await db
-                            .collection("labelsStock")
-                            .doc(labelDoc.id)
-                            .update({
-                                quantity:
-                                    newQty < 0 ? 0 : newQty
-                            });
-
-                    }
-
-                }
-
             }
             showToast('✅ Zapisano');
             editModal.style.display = 'none';
@@ -855,8 +680,7 @@ document.addEventListener('click', async (e) => {
                 await targetSlotRef.collection("batches").add({
                     productId: b.productId, productName: b.productName, productCode: b.productCode,
                     signature: b.signature || '',
-                    prodDateString: b.prodDateString || '', prodDate: b.prodDate, cartons: b.cartons || 0, pieces: b.pieces || 0, oklejony: b.oklejony,
-        piecesInCarton: b.piecesInCarton || 0 || false
+                    prodDateString: b.prodDateString || '', prodDate: b.prodDate, cartons: b.cartons || 0, pieces: b.pieces || 0, oklejony: b.oklejony || false
                 });
             }
             const sourceRef = db.collection("slots").doc(sourceLocId);
@@ -888,8 +712,7 @@ document.addEventListener('click', async (e) => {
                 await targetSlotRef.collection("batches").add({
                     productId: b.productId, productName: b.productName, productCode: b.productCode,
                     signature: b.signature || '',
-                    prodDateString: b.prodDateString || '', prodDate: b.prodDate, cartons: b.cartons || 0, pieces: b.pieces || 0, oklejony: b.oklejony,
-        piecesInCarton: b.piecesInCarton || 0 || false
+                    prodDateString: b.prodDateString || '', prodDate: b.prodDate, cartons: b.cartons || 0, pieces: b.pieces || 0, oklejony: b.oklejony || false
                 });
             }
             showToast('✅ Paleta skopiowana');
@@ -965,15 +788,10 @@ document.addEventListener('click', async (e) => {
         if (!name) { alert('Podaj nazwę'); return; }
         try {
             await db.collection("products").add({
-                name,
-                code: newProductCode.value.trim() || null,
-
-                piecesInCarton:
-                    parseInt(newProductPiecesInCarton.value) || 0,
-
+                name, code: newProductCode.value.trim() || null,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
-            newProductName.value = newProductCode.value = newProductPiecesInCarton.value = '';
+            newProductName.value = newProductCode.value = '';
             showToast('✅ Produkt dodany');
         } catch (err) { alert('Błąd: ' + err.message); }
     }
@@ -1138,41 +956,6 @@ document.addEventListener('click', async (e) => {
     subscribeToSlots();
     subscribeToBatches();
     subscribeToProducts();
-
-// ===== EDYCJA PRODUKTU =====
-
-document.addEventListener('click', async (e) => {
-
-    if (e.target.classList.contains('edit-product-btn')) {
-
-        const id = e.target.dataset.id;
-
-        const doc = await db.collection("products").doc(id).get();
-
-        if (!doc.exists) return;
-
-        const data = doc.data();
-
-        const newPieces = prompt(
-            'Nowa ilość sztuk w kartonie:',
-            data.piecesInCarton || 0
-        );
-
-        if (newPieces === null) return;
-
-        await db.collection("products").doc(id).update({
-
-            piecesInCarton:
-                parseInt(newPieces) || 0
-
-        });
-
-        alert('Zapisano');
-
-    }
-
-});
-
 </script>
 </body>
 </html>
