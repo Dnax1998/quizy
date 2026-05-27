@@ -298,6 +298,7 @@
         }, err => console.error("Slots error:", err));
     }
 
+    // Zmodyfikowano pobieranie partii: dodano sortowanie i poprawne parsowanie pól
     function subscribeToBatches() {
         if (unsubscribeBatches) unsubscribeBatches();
         unsubscribeBatches = db.collectionGroup("batches").onSnapshot(snapshot => {
@@ -454,12 +455,13 @@
     });
 
     // ========== OBSŁUGA WIELU PRODUKTÓW ==========
+    // Zmodyfikowano: dodano pole batch-pcs-per-carton oraz automatyczną obsługę wprowadzania
     function renderBatchesList() {
         let html = '';
         currentBatches.forEach((batch, index) => {
             const dateVal = batch.prodDateString || (batch.prodDate?.toDate ? batch.prodDate.toDate().toLocaleDateString('pl-PL') : '');
             const signatureVal = batch.signature || '';
-            html += `<div class="batch-item" data-index="${index}" data-id="${batch.id || ''}">
+            html += `<div class="batch-item" data-index="${index}">
                 <div class="batch-header">
                     <span>Produkt ${index+1}</span>
                     <button class="batch-remove" data-index="${index}">🗑️</button>
@@ -475,6 +477,7 @@
                     <input type="text" class="batch-signature" placeholder="Sygnatura (np. sku25.3)" value="${signatureVal}" style="grid-column: span 2; margin-bottom: 4px;">
                     <input type="text" class="batch-date" value="${dateVal}" placeholder="Data (np. 12.05.2026A)">
                     <input type="number" class="batch-cartons" placeholder="Kartony" min="0" value="${batch.cartons || 0}">
+                    <input type="number" class="batch-pcs-per-carton" placeholder="Sztuk w kartonie" min="0" value="${batch.pcsPerCarton || 0}">
                     <input type="number" class="batch-pieces" placeholder="Sztuki" min="0" value="${batch.pieces || 0}">
                     <div class="batch-checkbox">
                         <input type="checkbox" class="batch-oklejony" data-index="${index}" ${batch.oklejony ? 'checked' : ''}> 
@@ -522,6 +525,49 @@
             });
         });
 
+        // NOWOŚĆ: Automatyczne przeliczanie na żywo po zmianie liczby Kartonów lub Sztuk w kartonie
+        document.querySelectorAll('.batch-cartons, .batch-pcs-per-carton').forEach(input => {
+            input.addEventListener('input', (e) => {
+                const item = e.target.closest('.batch-item');
+                const index = parseInt(item.dataset.index);
+                const cartons = parseInt(item.querySelector('.batch-cartons').value) || 0;
+                const pcsPerCarton = parseInt(item.querySelector('.batch-pcs-per-carton').value) || 0;
+                
+                const totalPieces = cartons * pcsPerCarton;
+                item.querySelector('.batch-pieces').value = totalPieces;
+                
+                if (currentBatches[index]) {
+                    currentBatches[index].cartons = cartons;
+                    currentBatches[index].pcsPerCarton = pcsPerCarton;
+                    currentBatches[index].pieces = totalPieces;
+                }
+            });
+        });
+
+        document.querySelectorAll('.batch-pieces').forEach(input => {
+            input.addEventListener('input', (e) => {
+                const item = e.target.closest('.batch-item');
+                const index = parseInt(item.dataset.index);
+                if (currentBatches[index]) {
+                    currentBatches[index].pieces = parseInt(e.target.value) || 0;
+                }
+            });
+        });
+
+        // Synchronizacja sygnatury i daty na żywo (zapobiega resetowaniu przy dodawaniu kolejnego produktu)
+        document.querySelectorAll('.batch-signature').forEach(input => {
+            input.addEventListener('input', (e) => {
+                const index = parseInt(e.target.closest('.batch-item').dataset.index);
+                if (currentBatches[index]) currentBatches[index].signature = e.target.value.trim();
+            });
+        });
+        document.querySelectorAll('.batch-date').forEach(input => {
+            input.addEventListener('input', (e) => {
+                const index = parseInt(e.target.closest('.batch-item').dataset.index);
+                if (currentBatches[index]) currentBatches[index].prodDateString = e.target.value;
+            });
+        });
+
         document.querySelectorAll('.batch-oklejony').forEach(cb => {
             const index = cb.dataset.index;
             cb.addEventListener('change', () => {
@@ -538,6 +584,7 @@
         });
     }
 
+    // Zmodyfikowano: zbieranie nowego pola pcsPerCarton z formularza HTML
     function collectBatchesFromForm() {
         const batches = [];
         document.querySelectorAll('.batch-item').forEach(item => {
@@ -545,6 +592,7 @@
             const signatureInput = item.querySelector('.batch-signature');
             const dateInput = item.querySelector('.batch-date');
             const cartonsInput = item.querySelector('.batch-cartons');
+            const pcsPerCartonInput = item.querySelector('.batch-pcs-per-carton');
             const piecesInput = item.querySelector('.batch-pieces');
             const oklejonyCb = item.querySelector('.batch-oklejony');
             const prodId = selectEl.value;
@@ -552,7 +600,6 @@
             if (prodId && dateInput.value) {
                 const rawValue = dateInput.value;
                 batches.push({
-                    id: item.dataset.id || '',
                     productId: prodId,
                     productName: prod?.name || '',
                     productCode: prod?.code || '',
@@ -560,6 +607,7 @@
                     prodDateString: rawValue,
                     prodDate: firebase.firestore.Timestamp.fromDate(parseDateWithSuffix(rawValue)),
                     cartons: parseInt(cartonsInput.value) || 0,
+                    pcsPerCarton: parseInt(pcsPerCartonInput.value) || 0,
                     pieces: parseInt(piecesInput.value) || 0,
                     oklejony: oklejonyCb ? oklejonyCb.checked : false
                 });
@@ -569,11 +617,12 @@
     }
 
     addBatchBtn.addEventListener('click', () => {
-        currentBatches.push({ signature: '', cartons: 0, pieces: 0, oklejony: false });
+        currentBatches.push({ signature: '', cartons: 0, pcsPerCarton: 0, pieces: 0, oklejony: false });
         renderBatchesList();
     });
 
     // ========== MODAL EDYCJI ==========
+    // Zmodyfikowano: mapowanie nowego parametru pcsPerCarton przy otwieraniu formularza
     function openEditModal(locId) {
         currentEditingLocation = locId;
         locCodeSpan.textContent = locId;
@@ -589,16 +638,10 @@
             prodDateString: b.prodDateString || '',
             prodDate: b.prodDate,
             cartons: b.cartons || 0,
+            pcsPerCarton: b.pcsPerCarton || 0,
             pieces: b.pieces || 0,
             oklejony: b.oklejony || false
         }));
-
-        // ZAPAMIĘTANIE STANU PRZED EDYCJĄ DLA ETYKIET
-        window.originalBatchesState = currentBatches.map(b => ({
-            id: b.id,
-            oklejony: !!b.oklejony
-        }));
-
         if (currentBatches.length === 0 && data.productName) {
             currentBatches.push({
                 productId: data.productId || null,
@@ -608,6 +651,7 @@
                 prodDateString: data.prodDateString || '',
                 prodDate: data.prodDate,
                 cartons: 0,
+                pcsPerCarton: 0,
                 pieces: data.quantity || 0,
                 oklejony: false
             });
@@ -621,37 +665,6 @@
         const type = palletType.value;
         const newBatches = collectBatchesFromForm();
         if (newBatches.length === 0) { alert('Dodaj przynajmniej jeden produkt z datą!'); return; }
-
-        // --- AUTOMATYCZNE ODEJMOWANIE ETYKIET ---
-        for (const b of newBatches) {
-            let jestNowoOklejony = false;
-            if (b.oklejony) {
-                const stareDane = window.originalBatchesState ? window.originalBatchesState.find(o => o.id === b.id && b.id !== '') : null;
-                if (!stareDane || !stareDane.oklejony) {
-                    jestNowoOklejony = true;
-                }
-            }
-            if (jestNowoOklejony && b.productId && b.pieces > 0) {
-                const labelRef = db.collection("labelStocks").doc(b.productId);
-                try {
-                    await db.runTransaction(async (transaction) => {
-                        const labelDoc = await transaction.get(labelRef);
-                        let stanEtykiet = 0;
-                        if (labelDoc.exists) stanEtykiet = labelDoc.data().qty || 0;
-                        let nowyStan = Math.max(0, stanEtykiet - parseInt(b.pieces));
-                        transaction.set(labelRef, {
-                            qty: nowyStan,
-                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                        }, { merge: true });
-                    });
-                    console.log(`⚡ Automatycznie odjęto ${b.pieces} szt. etykiet dla produktu: ${b.productName}`);
-                } catch (e) {
-                    console.error("Błąd aktualizacji stanu etykiet:", e);
-                }
-            }
-        }
-        // --- KONIEC LOGIKI ETYKIET ---
-
         const mainProduct = newBatches[0];
         const slotData = {
             productId: mainProduct.productId,
@@ -670,7 +683,7 @@
                 await slotRef.collection("batches").add({
                     productId: b.productId, productName: b.productName, productCode: b.productCode,
                     signature: b.signature || '',
-                    prodDateString: b.prodDateString, prodDate: b.prodDate, cartons: b.cartons, pieces: b.pieces, oklejony: b.oklejony
+                    prodDateString: b.prodDateString, prodDate: b.prodDate, cartons: b.cartons, pcsPerCarton: b.pcsPerCarton, pieces: b.pieces, oklejony: b.oklejony
                 });
             }
             showToast('✅ Zapisano');
@@ -719,7 +732,7 @@
                 await targetSlotRef.collection("batches").add({
                     productId: b.productId, productName: b.productName, productCode: b.productCode,
                     signature: b.signature || '',
-                    prodDateString: b.prodDateString || '', prodDate: b.prodDate, cartons: b.cartons || 0, pieces: b.pieces || 0, oklejony: b.oklejony || false
+                    prodDateString: b.prodDateString || '', prodDate: b.prodDate, cartons: b.cartons || 0, pcsPerCarton: b.pcsPerCarton || 0, pieces: b.pieces || 0, oklejony: b.oklejony || false
                 });
             }
             const sourceRef = db.collection("slots").doc(sourceLocId);
@@ -751,7 +764,7 @@
                 await targetSlotRef.collection("batches").add({
                     productId: b.productId, productName: b.productName, productCode: b.productCode,
                     signature: b.signature || '',
-                    prodDateString: b.prodDateString || '', prodDate: b.prodDate, cartons: b.cartons || 0, pieces: b.pieces || 0, oklejony: b.oklejony || false
+                    prodDateString: b.prodDateString || '', prodDate: b.prodDate, cartons: b.cartons || 0, pcsPerCarton: b.pcsPerCarton || 0, pieces: b.pieces || 0, oklejony: b.oklejony || false
                 });
             }
             showToast('✅ Paleta skopiowana');
@@ -932,9 +945,10 @@
     closeProductBatchesBtn.addEventListener('click', () => productBatchesModal.style.display = 'none');
 
     // ========== EKSPORT CSV ==========
+    // Zmodyfikowano: dodano kolumnę "Sztuk w kartonie" do eksportowanego pliku CSV
     function doExportCsv(rackChoice) {
         const rows = [];
-        rows.push(['Lokalizacja', 'Produkt', 'Kod', 'Sygnatura', 'Data produkcji', 'Kartony', 'Sztuki', 'Typ palety', 'Oklejony'].join(';'));
+        rows.push(['Lokalizacja', 'Produkt', 'Kod', 'Sygnatura', 'Data produkcji', 'Kartony', 'Sztuk w kartonie', 'Sztuki', 'Typ palety', 'Oklejony'].join(';'));
         for (const [locId, data] of Object.entries(allSlotsData)) {
             const rack = locId.charAt(1);
             if (rackChoice && rack !== rackChoice) continue;
@@ -944,11 +958,11 @@
                 batches.forEach(b => {
                     const date = b.prodDateString || (b.prodDate?.toDate().toLocaleDateString('pl-PL') || '');
                     const oklejonyStr = b.oklejony ? 'Tak' : 'Nie';
-                    rows.push([locId, b.productName || '', b.productCode || '', b.signature || '', date, b.cartons || 0, b.pieces || 0, data.palletType || 'magazynowa', oklejonyStr].join(';'));
+                    rows.push([locId, b.productName || '', b.productCode || '', b.signature || '', date, b.cartons || 0, b.pcsPerCarton || 0, b.pieces || 0, data.palletType || 'magazynowa', oklejonyStr].join(';'));
                 });
             } else {
                 const date = data.prodDateString || (data.prodDate?.toDate().toLocaleDateString('pl-PL') || '');
-                rows.push([locId, data.productName || '', data.productCode || '', '', date, '0', data.quantity || 0, data.palletType || 'magazynowa', 'Nie'].join(';'));
+                rows.push([locId, data.productName || '', data.productCode || '', '', date, '0', '0', data.quantity || 0, data.palletType || 'magazynowa', 'Nie'].join(';'));
             }
         }
         if (rows.length === 1) { alert('Brak danych do eksportu dla wybranego zakresu.'); return; }
