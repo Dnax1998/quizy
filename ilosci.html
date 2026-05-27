@@ -2,8 +2,7 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stan Etykiet - Synchronizacja z Magazynem</title>
+    <title>Stan Etykiet (Synchronizacja z Magazynem)</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <style>
@@ -11,91 +10,92 @@
         body { background: #f4f6f9; margin: 0; padding: 20px; }
         .app { max-width: 1000px; margin: 0 auto; background: white; border-radius: 24px; padding: 24px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
         .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
-        h1 { margin: 0; color: #1e293b; font-size: 1.6rem; }
+        h1 { margin: 0; color: #1e293b; font-size: 1.8rem; }
         .btn-back { background: #e2e8f0; color: #1e293b; padding: 10px 18px; border-radius: 40px; border: none; font-weight: 600; cursor: pointer; }
-        .search-box { width: 100%; padding: 14px; margin-bottom: 20px; border: 1px solid #cbd5e1; border-radius: 40px; }
-        table { width: 100%; border-collapse: collapse; }
-        th { background: #f1f5f9; padding: 15px; text-align: left; }
-        td { padding: 15px; border-bottom: 1px solid #e2e8f0; }
-        .qty-badge { background: #dcfce7; color: #166534; padding: 6px 14px; border-radius: 40px; font-weight: bold; }
-        .alert-row { background: #fff7ed; }
+        .form-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 20px; padding: 20px; margin-bottom: 24px; }
+        .input-row { display: flex; gap: 12px; align-items: flex-end; }
+        .input-group { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+        input, select { padding: 12px; border: 1px solid #cbd5e1; border-radius: 12px; }
+        .btn { padding: 12px 24px; border-radius: 40px; border: none; font-weight: 600; cursor: pointer; background: #2563eb; color: white; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { background: #f1f5f9; padding: 12px; text-align: left; }
+        td { padding: 12px; border-bottom: 1px solid #e2e8f0; }
+        .qty-badge { background: #dcfce7; color: #166534; padding: 6px 12px; border-radius: 20px; font-weight: bold; }
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 12px 24px; border-radius: 40px; opacity: 0; transition: 0.3s; }
     </style>
 </head>
 <body>
 
 <div class="app">
     <div class="header">
-        <h1>🏷️ Stan etykiet (Na podstawie magazynu)</h1>
-        <button class="btn-back" onclick="window.location.href='index.html'">⬅️ Powrót</button>
+        <h1>🏷️ Stan Etykiet</h1>
+        <button class="btn-back" id="backBtn">⬅️ Powrót</button>
     </div>
     
-    <input type="text" id="searchBar" class="search-box" placeholder="🔍 Szukaj produktu...">
+    <div class="form-box">
+        <h3>➕ Dodaj stan początkowy etykiet</h3>
+        <div class="input-row">
+            <div class="input-group">
+                <label>Produkt</label>
+                <select id="productSelect"><option value="">-- Wybierz produkt --</option></select>
+            </div>
+            <div class="input-group" style="max-width: 150px;">
+                <label>Ilość etykiet</label>
+                <input type="number" id="labelQty" value="0">
+            </div>
+            <button class="btn" id="saveBtn">Zapisz</button>
+        </div>
+    </div>
 
     <table>
         <thead>
-            <tr>
-                <th>Kod</th>
-                <th>Nazwa</th>
-                <th>Sztuki do oklejenia</th>
-            </tr>
+            <tr><th>Produkt</th><th>Pozostałe etykiety</th><th>Akcje</th></tr>
         </thead>
         <tbody id="tableBody"></tbody>
     </table>
 </div>
 
-<script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyAbMTVozOhIXesvF59REYnIOtmo-V5qimk",
-        authDomain: "forevermagazyn.firebaseapp.com",
-        projectId: "forevermagazyn",
-        storageBucket: "forevermagazyn.firebasestorage.app",
-        messagingSenderId: "251843942343",
-        appId: "1:251843942343:web:2c81227b12ab4ad0052be2"
-    };
+<div id="toast" class="toast">Zapisano</div>
 
+<script>
+    const firebaseConfig = { /* Wklej tutaj swoje config */ };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // Funkcja ładująca stany z "slots" -> "batches" (tam gdzie Twój magazyn)
-    async function loadData() {
-        const warehouse = {};
-        const slots = await db.collection("slots").get();
-        
-        for (const slot of slots.docs) {
-            const batches = await slot.ref.collection("batches").get();
-            batches.forEach(batch => {
-                const b = batch.data();
-                const name = b.productName || "Nieznany";
-                if (!warehouse[name]) {
-                    warehouse[name] = { code: b.productCode || '-', qty: 0 };
-                }
-                // Tu dodajemy sztuki z każdego kartonu w magazynie
-                warehouse[name].qty += parseInt(b.pieces || 0);
-            });
-        }
-        render(warehouse);
-    }
+    // Ładowanie listy produktów
+    db.collection("products").onSnapshot(snap => {
+        const select = document.getElementById('productSelect');
+        snap.forEach(doc => {
+            const opt = document.createElement('option');
+            opt.value = doc.id;
+            opt.textContent = doc.data().name;
+            select.appendChild(opt);
+        });
+    });
 
-    function render(data) {
-        const query = document.getElementById('searchBar').value.toLowerCase();
+    // Renderowanie stanu etykiet
+    db.collection("labelStocks").onSnapshot(snap => {
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
-        
-        Object.keys(data).forEach(name => {
-            if (name.toLowerCase().includes(query) || data[name].code.toLowerCase().includes(query)) {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${data[name].code}</td>
-                    <td>${name}</td>
-                    <td><span class="qty-badge">${data[name].qty} szt</span></td>
-                `;
-                tbody.appendChild(row);
-            }
+        snap.forEach(doc => {
+            const data = doc.data();
+            const row = document.createElement('tr');
+            row.innerHTML = `<td>${doc.id}</td><td><span class="qty-badge">${data.qty}</span></td>
+                             <td><button onclick="deleteRow('${doc.id}')">❌</button></td>`;
+            tbody.appendChild(row);
         });
-    }
+    });
 
-    document.getElementById('searchBar').addEventListener('input', () => loadData());
-    loadData();
+    document.getElementById('saveBtn').addEventListener('click', async () => {
+        const id = document.getElementById('productSelect').value;
+        const qty = parseInt(document.getElementById('labelQty').value);
+        await db.collection("labelStocks").doc(id).set({ qty: qty }, { merge: true });
+        document.getElementById('toast').style.opacity = 1;
+        setTimeout(() => document.getElementById('toast').style.opacity = 0, 2000);
+    });
+
+    window.deleteRow = (id) => db.collection("labelStocks").doc(id).delete();
+    document.getElementById('backBtn').addEventListener('click', () => window.location.href = 'index.html');
 </script>
 </body>
 </html>
