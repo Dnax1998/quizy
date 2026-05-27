@@ -649,6 +649,9 @@ document.addEventListener('click', async (e) => {
                     prodDate: firebase.firestore.Timestamp.fromDate(parseDateWithSuffix(rawValue)),
                     cartons: parseInt(cartonsInput.value) || 0,
                     pieces: parseInt(piecesInput.value) || 0,
+
+                    piecesInCarton:
+                        Number(prod?.piecesInCarton || 0),
                     piecesInCarton: prod?.piecesInCarton || 0,
                     oklejony: oklejonyCb ? oklejonyCb.checked : false
                 });
@@ -765,18 +768,18 @@ document.addEventListener('click', async (e) => {
                         // LICZENIE ETYKIET
 
                         const cartons =
-                            parseInt(b.cartons) || 0;
+                            Number(b.cartons || 0);
 
                         const piecesInCarton =
-                            parseInt(b.piecesInCarton) || 0;
+                            Number(b.piecesInCarton || 0);
 
                         const pieces =
-                            parseInt(b.pieces) || 0;
+                            Number(b.pieces || 0);
 
                         let usedLabels = 0;
 
-                        // JEŚLI SĄ KARTONY
-                        if (cartons > 0 && piecesInCarton > 0) {
+                        // JEŚLI PODANO KARTONY
+                        if (cartons > 0) {
 
                             usedLabels =
                                 cartons * piecesInCarton;
