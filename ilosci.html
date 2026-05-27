@@ -9,46 +9,93 @@
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
         body { background: #f4f6f9; margin: 0; padding: 20px; }
-        .app { max-width: 1100px; margin: 0 auto; background: white; border-radius: 24px; padding: 24px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
-        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
-        h1 { margin: 0; color: #1e293b; font-size: 1.8rem; }
-        .btn-back { background: #e2e8f0; color: #1e293b; padding: 10px 18px; border-radius: 40px; border: none; font-weight: 600; cursor: pointer; }
-        .search-box { width: 100%; padding: 14px; margin-bottom: 20px; border: 1px solid #cbd5e1; border-radius: 16px; font-size: 16px; }
-        table { width: 100%; border-collapse: collapse; background: white; border-radius: 16px; overflow: hidden; }
-        th { background: #f1f5f9; padding: 15px; text-align: left; }
-        td { padding: 15px; border-bottom: 1px solid #e2e8f0; }
-        .btn-adj { padding: 8px 12px; border: 1px solid #cbd5e1; background: white; border-radius: 8px; cursor: pointer; margin: 2px; }
-        .btn-del { color: #e11d48; border-color: #fecaca; background: #fff1f2; font-weight: bold; }
-        .toast-msg { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 12px 24px; border-radius: 40px; opacity: 0; transition: 0.3s; pointer-events: none; z-index: 9999; }
+        .app { max-width: 1000px; margin: 0 auto; background: white; border-radius: 24px; padding: 24px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
+        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+        h1 { margin: 0; color: #1e293b; display: flex; align-items: center; gap: 8px; font-size: 1.8rem; }
+        .btn-back { background: #e2e8f0; color: #1e293b; padding: 10px 18px; border-radius: 40px; border: none; font-weight: 600; font-size: 16px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-back:hover { background: #cbd5e1; }
+        
+        .form-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 20px; padding: 20px; margin-bottom: 24px; }
+        .form-box h3 { margin-top: 0; margin-bottom: 14px; color: #334155; }
+        .input-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+        .input-group { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 6px; }
+        .input-group label { font-size: 14px; font-weight: 600; color: #475569; }
+        .input-group input, .input-group select { padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 16px; font-size: 16px; width: 100%; background: white; }
+        .filter-input { margin-bottom: 6px; border-radius: 40px !important; padding: 10px 16px !important; }
+        
+        .btn { padding: 12px 24px; border-radius: 40px; border: none; font-weight: 600; font-size: 16px; cursor: pointer; transition: 0.15s; }
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-primary:hover { background: #1d4ed8; }
+        
+        .search-bar { margin-bottom: 16px; }
+        .search-box { width: 100%; padding: 12px 16px; font-size: 16px; border: 1px solid #cbd5e1; border-radius: 40px; }
+
+        .table-container { margin: 20px 0; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
+        th { background: #f1f5f9; padding: 14px; text-align: left; font-weight: 600; color: #334155; font-size: 15px; }
+        td { padding: 14px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; font-size: 15px; }
+        tr:hover { background: #f8fafc; }
+        
+        .qty-badge { background: #fee2e2; color: #991b1b; padding: 6px 12px; border-radius: 40px; font-weight: 700; font-size: 16px; display: inline-block; min-width: 60px; text-align: center; }
+        .qty-badge.good { background: #dcfce7; color: #166534; }
+        
+        .quick-actions { display: flex; gap: 4px; }
+        .btn-adj { padding: 6px 10px; font-size: 12px; font-weight: 700; border: 1px solid #cbd5e1; background: white; border-radius: 6px; cursor: pointer; color: #334155; }
+        .btn-adj:hover { background: #e2e8f0; }
+        .btn-adj.plus { color: #166534; border-color: #bbf7d0; background: #f0fdf4; }
+        .btn-adj.plus:hover { background: #dcfce7; }
+        
+        .btn-del { color: #dc2626 !important; border-color: #fecaca !important; }
+        
+        .total-badge { background: #2563eb; color: white; padding: 4px 12px; border-radius: 40px; font-size: 14px; font-weight: 600; }
+        .toast-msg { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 10px 20px; border-radius: 40px; opacity: 0; transition: 0.2s; pointer-events: none; z-index: 2000; }
     </style>
 </head>
 <body>
-
 <div class="app">
     <div class="header">
-        <h1>📦 Stan Magazynowy (szczytane z index.html)</h1>
+        <h1>🏷️ Stan Etykiet <span id="totalCount" class="total-badge">Ładowanie...</span></h1>
         <button class="btn-back" id="backToWarehouseBtn">⬅️ Powrót</button>
     </div>
     
-    <input type="text" id="searchBar" class="search-box" placeholder="🔍 Szukaj produktu...">
+    <div class="form-box">
+        <h3>➕ Wprowadź stan etykiet</h3>
+        <div class="input-row">
+            <div class="input-group" style="flex: 2;">
+                <label for="productSelectFilter">Wyszukaj i wybierz produkt</label>
+                <input type="text" id="productSelectFilter" class="filter-input" placeholder="🔍 Szukaj..." autocomplete="off">
+                <select id="productSelect">
+                    <option value="">-- Wybierz produkt --</option>
+                </select>
+            </div>
+            <div class="input-group" style="max-width: 180px;">
+                <label for="labelQty">Ilość</label>
+                <input type="number" id="labelQty" value="0">
+            </div>
+            <button class="btn btn-primary" id="saveBtn">Zapisz</button>
+        </div>
+    </div>
 
-    <table id="stocksTable">
-        <thead>
-            <tr>
-                <th>Kod</th>
-                <th>Nazwa produktu</th>
-                <th>Sztuki</th>
-                <th>Kartony</th>
-                <th>Akcje</th>
-            </tr>
-        </thead>
-        <tbody id="labelsTableBody">
-            <tr><td colspan="5" style="text-align:center;">Pobieranie danych z magazynu...</td></tr>
-        </tbody>
-    </table>
+    <div class="search-bar">
+        <input type="text" id="searchBar" class="search-box" placeholder="🔍 Filtruj tabelę...">
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Kod</th>
+                    <th>Nazwa</th>
+                    <th style="text-align: center;">Stan</th>
+                    <th style="text-align: center;">Akcja</th>
+                </tr>
+            </thead>
+            <tbody id="labelsTableBody"></tbody>
+        </table>
+    </div>
 </div>
 
-<div id="toast" class="toast-msg">Zaktualizowano</div>
+<div id="toast" class="toast-msg">Zapisano</div>
 
 <script>
     const firebaseConfig = {
@@ -63,92 +110,90 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    let warehouseData = {}; 
+    let productsList = [];
+    let labelStocksData = {};
+
+    const productSelect = document.getElementById('productSelect');
+    const labelsTableBody = document.getElementById('labelsTableBody');
+    const toast = document.getElementById('toast');
 
     function showToast(msg) {
-        const toast = document.getElementById('toast');
         toast.textContent = msg;
         toast.style.opacity = 1;
         setTimeout(() => toast.style.opacity = 0, 2000);
     }
 
-    // GŁÓWNA LOGIKA: Pobieranie z kolekcji "slots" (tak jak w index.html)
-    async function loadWarehouseData() {
-        const data = {};
-        const slots = await db.collection("slots").get();
-        
-        for (const slot of slots.docs) {
-            const batches = await slot.ref.collection("batches").get();
-            batches.forEach(batch => {
-                const bData = batch.data();
-                const pName = bData.productName || "Brak nazwy";
-                if (!data[pName]) {
-                    data[pName] = { code: bData.productCode || '-', pieces: 0, cartons: 0, ids: [] };
-                }
-                data[pName].pieces += parseInt(bData.pieces || 0);
-                data[pName].cartons += parseInt(bData.cartons || 0);
-                data[pName].ids.push({ slotId: slot.id, batchId: batch.id });
-            });
-        }
-        warehouseData = data;
+    db.collection("products").onSnapshot(snapshot => {
+        productsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        buildProductSelect();
         renderTable();
+    });
+
+    db.collection("labelStocks").onSnapshot(snapshot => {
+        labelStocksData = {};
+        snapshot.forEach(doc => labelStocksData[doc.id] = { id: doc.id, ...doc.data() });
+        renderTable();
+    });
+
+    function buildProductSelect() {
+        productSelect.innerHTML = '<option value="">-- Wybierz produkt --</option>';
+        productsList.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = `${p.name} (${p.code})`;
+            productSelect.appendChild(opt);
+        });
     }
 
     function renderTable() {
         const query = document.getElementById('searchBar').value.toLowerCase();
-        const tbody = document.getElementById('labelsTableBody');
-        tbody.innerHTML = '';
-
-        Object.keys(warehouseData).forEach(name => {
-            const item = warehouseData[name];
-            if (name.toLowerCase().includes(query) || item.code.toLowerCase().includes(query)) {
+        labelsTableBody.innerHTML = '';
+        
+        Object.values(labelStocksData).forEach(item => {
+            const product = productsList.find(p => p.id === item.id);
+            if (!product) return;
+            
+            if (product.name.toLowerCase().includes(query) || product.code.toLowerCase().includes(query)) {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${item.code}</td>
-                    <td>${name}</td>
-                    <td><strong>${item.pieces}</strong></td>
-                    <td>${item.cartons}</td>
-                    <td>
-                        <button class="btn-adj" onclick="adjust('${name}', 10)">+10</button>
-                        <button class="btn-adj" onclick="adjust('${name}', -10)">-10</button>
-                        <button class="btn-adj btn-del" onclick="clearProduct('${name}')">❌ Usuń</button>
+                    <td>${product.code}</td>
+                    <td>${product.name}</td>
+                    <td style="text-align: center;"><span class="qty-badge">${item.qty}</span></td>
+                    <td style="text-align: center;">
+                        <button class="btn-adj" onclick="adjustQty('${item.id}', 10)">+10</button>
+                        <button class="btn-adj" onclick="adjustQty('${item.id}', -10)">-10</button>
+                        <button class="btn-adj btn-del" onclick="deleteStock('${item.id}')">❌ Usuń</button>
                     </td>
                 `;
-                tbody.appendChild(row);
+                labelsTableBody.appendChild(row);
             }
         });
+        document.getElementById('totalCount').textContent = Object.keys(labelStocksData).length + ' poz.';
     }
 
-    // Funkcja modyfikująca dane w bazie (działa na pierwszym znalezionym batchu danego produktu)
-    window.adjust = async function(name, delta) {
-        const target = warehouseData[name].ids[0];
-        if (!target) return;
-        
-        const docRef = db.collection("slots").doc(target.slotId).collection("batches").doc(target.batchId);
-        const doc = await docRef.get();
-        const newPieces = Math.max(0, parseInt(doc.data().pieces || 0) + delta);
-        
-        await docRef.update({ pieces: newPieces });
-        showToast('Zmieniono sztuki');
-        loadWarehouseData(); // Odśwież widok
+    window.adjustQty = async function(id, amount) {
+        const item = labelStocksData[id];
+        const newQty = Math.max(0, (item.qty || 0) + amount);
+        await db.collection("labelStocks").doc(id).update({ qty: newQty });
+        showToast('Zaktualizowano');
     };
 
-    window.clearProduct = async function(name) {
-        if(!confirm('Czy na pewno wyczyścić ten produkt?')) return;
-        // Pętla usuwająca wszystkie batche danego produktu
-        for(let target of warehouseData[name].ids) {
-            await db.collection("slots").doc(target.slotId).collection("batches").doc(target.batchId).delete();
+    window.deleteStock = async function(id) {
+        if(confirm('Czy na pewno usunąć ten produkt z listy?')) {
+            await db.collection("labelStocks").doc(id).delete();
+            showToast('Usunięto');
         }
-        showToast('Usunięto produkt');
-        loadWarehouseData();
     };
 
-    document.getElementById('searchBar').addEventListener('input', renderTable);
+    document.getElementById('saveBtn').addEventListener('click', async () => {
+        const id = productSelect.value;
+        const qty = parseInt(document.getElementById('labelQty').value);
+        if(!id) return alert('Wybierz produkt!');
+        await db.collection("labelStocks").doc(id).set({ qty: qty }, { merge: true });
+        showToast('Zapisano');
+    });
+
     document.getElementById('backToWarehouseBtn').addEventListener('click', () => window.location.href = 'index.html');
-
-    // Start
-    loadWarehouseData();
 </script>
-
 </body>
 </html>
