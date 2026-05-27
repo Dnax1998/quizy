@@ -3,21 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stan Etykiet do Oklejenia (Firebase)</title>
+    <title>Stan Etykiet do Oklejenia</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
         body { background: #f4f6f9; margin: 0; padding: 20px; }
         .app { max-width: 1000px; margin: 0 auto; background: white; border-radius: 24px; padding: 24px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
-        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
-        h1 { margin: 0; color: #1e293b; font-size: 1.8rem; }
-        table { width: 100%; border-collapse: collapse; margin-top: 16px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; }
-        .btn-adj { padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; cursor: pointer; margin: 0 2px; }
-        .btn-adj.plus { background: #dcfce7; border-color: #22c55e; }
-        .qty-badge { font-weight: 700; font-size: 1.2rem; }
-        .toast-msg { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 10px 20px; border-radius: 40px; opacity: 0; transition: 0.2s; pointer-events: none; }
+        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .search-box { width: 100%; padding: 12px; margin-bottom: 20px; border: 1px solid #cbd5e1; border-radius: 40px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #f1f5f9; padding: 12px; text-align: left; }
+        td { padding: 12px; border-bottom: 1px solid #e2e8f0; }
+        .btn-adj { padding: 6px 10px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; border-radius: 6px; }
+        .btn-del { color: #dc2626; border-color: #fecaca; background: #fef2f2; font-weight: bold; }
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 10px 20px; border-radius: 40px; opacity: 0; transition: 0.3s; }
     </style>
 </head>
 <body>
@@ -25,24 +25,25 @@
 <div class="app">
     <div class="header">
         <h1>📦 Stan Etykiet</h1>
-        <button id="backToWarehouseBtn">← Powrót do Magazynu</button>
+        <button onclick="window.location.href='index.html'">⬅️ Powrót</button>
     </div>
 
-    <input type="text" id="searchBar" placeholder="🔍 Szukaj produktu..." style="width:100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1;">
+    <input type="text" id="searchBar" class="search-box" placeholder="🔍 Szukaj produktu...">
 
-    <table id="stocksTable">
+    <table>
         <thead>
             <tr>
                 <th>Kod</th>
-                <th>Nazwa produktu</th>
-                <th style="text-align: center;">Ilość</th>
+                <th>Nazwa</th>
+                <th>Ilość</th>
+                <th>Akcje</th>
             </tr>
         </thead>
         <tbody id="tableBody"></tbody>
     </table>
 </div>
 
-<div id="toast" class="toast-msg">Zaktualizowano</div>
+<div id="toast" class="toast">Zaktualizowano</div>
 
 <script>
     const firebaseConfig = {
@@ -57,42 +58,38 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    let labelStocksData = {};
+    let stocks = {};
 
     function showToast(msg) {
-        const toast = document.getElementById('toast');
-        toast.textContent = msg;
-        toast.style.opacity = 1;
-        setTimeout(() => toast.style.opacity = 0, 2000);
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.style.opacity = 1;
+        setTimeout(() => t.style.opacity = 0, 2000);
     }
 
-    // Pobieranie danych z Firebase
+    // Pobieranie danych
     db.collection("labelStocks").onSnapshot(snapshot => {
-        labelStocksData = {};
-        snapshot.forEach(doc => {
-            labelStocksData[doc.id] = { id: doc.id, ...doc.data() };
-        });
-        renderTable();
+        stocks = {};
+        snapshot.forEach(doc => stocks[doc.id] = { id: doc.id, ...doc.data() });
+        render();
     });
 
-    function renderTable() {
-        const tbody = document.getElementById('tableBody');
+    function render() {
         const query = document.getElementById('searchBar').value.toLowerCase();
+        const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
 
-        Object.values(labelStocksData).forEach(item => {
-            if (item.productName.toLowerCase().includes(query) || (item.productCode || '').toLowerCase().includes(query)) {
+        Object.values(stocks).forEach(item => {
+            if(item.productName?.toLowerCase().includes(query)) {
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${item.productCode || '-'}</td>
                     <td>${item.productName || 'Brak'}</td>
-                    <td style="text-align: center;">
-                        <span class="qty-badge">${item.qty || 0}</span>
-                        <div style="margin-top:8px;">
-                            <button class="btn-adj" onclick="adjustQty('${item.id}', -1)">-1</button>
-                            <button class="btn-adj plus" onclick="adjustQty('${item.id}', 1)">+1</button>
-                            <button class="btn-adj" style="color:red; margin-left:10px;" onclick="deleteStock('${item.id}')">❌ Usuń</button>
-                        </div>
+                    <td><strong>${item.qty || 0}</strong></td>
+                    <td>
+                        <button class="btn-adj" onclick="update('${item.id}', -1)">-1</button>
+                        <button class="btn-adj" onclick="update('${item.id}', 1)">+1</button>
+                        <button class="btn-adj btn-del" onclick="remove('${item.id}')">❌ Usuń</button>
                     </td>
                 `;
                 tbody.appendChild(row);
@@ -100,30 +97,20 @@
         });
     }
 
-    // Funkcja zmiany ilości
-    window.adjustQty = async function(productId, amount) {
-        const currentItem = labelStocksData[productId];
-        const newQty = Math.max(0, (currentItem.qty || 0) + amount);
-        try {
-            await db.collection("labelStocks").doc(productId).set({
-                qty: newQty,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
-            showToast('⚡ Zaktualizowano stan');
-        } catch (err) { alert('Błąd: ' + err.message); }
+    window.update = async (id, delta) => {
+        const current = stocks[id].qty || 0;
+        await db.collection("labelStocks").doc(id).set({ qty: Math.max(0, current + delta) }, { merge: true });
+        showToast('Zmieniono ilość');
     };
 
-    // FUNKCJA USUWANIA (NOWA)
-    window.deleteStock = async function(productId) {
-        if (!confirm('Czy na pewno chcesz całkowicie usunąć ten produkt z listy etykiet?')) return;
-        try {
-            await db.collection("labelStocks").doc(productId).delete();
-            showToast('🗑️ Produkt usunięty');
-        } catch (err) { alert('Błąd usuwania: ' + err.message); }
+    window.remove = async (id) => {
+        if(confirm('Na pewno usunąć?')) {
+            await db.collection("labelStocks").doc(id).delete();
+            showToast('Usunięto rekord');
+        }
     };
 
-    document.getElementById('searchBar').addEventListener('input', renderTable);
-    document.getElementById('backToWarehouseBtn').addEventListener('click', () => window.location.href = 'index.html');
+    document.getElementById('searchBar').addEventListener('input', render);
 </script>
 
 </body>
