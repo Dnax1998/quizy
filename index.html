@@ -7,7 +7,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <style>
-        * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }\n        body { margin: 0; padding: 16px; background: #f4f6f9; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { margin: 0; padding: 16px; background: #f4f6f9; }
         .app { max-width: 1300px; margin: 0 auto; }
         h1 { font-size: 1.8rem; margin: 0 0 8px 0; color: #1e293b; display: flex; align-items: center; gap: 8px; }
         .top-bar { display: flex; gap: 12px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
@@ -80,7 +81,7 @@
     
     <div class="top-bar">
         <div class="search-group">
-            <input type="text" id="searchProductInput" class="search-box" placeholder="🔍 Produkt / kod / sygnatura" autocomplete="off">
+            <input type="text" id="searchProductInput" class="search-box" placeholder="🔍 Produkt / kod" autocomplete="off">
             <input type="text" id="searchDateInput" class="search-box" placeholder="📅 Data (np. 1.04.2026)" autocomplete="off">
             <select id="oklejonyFilterSelect" class="filter-select">
                 <option value="">Wszystkie</option>
@@ -146,6 +147,7 @@
         <div style="margin-bottom:20px;">
             <div class="form-group"><label>Nazwa produktu</label><input type="text" id="newProductName" placeholder="np. Dezodorant 067"></div>
             <div class="form-group"><label>Kod produktu</label><input type="text" id="newProductCode" placeholder="IND-12345"></div>
+            <div class="form-group"><label>Sztuki w kartonie</label><input type="number" id="newProductPiecesPerCarton" placeholder="np. 24" min="1"></div>
             <button class="btn btn-primary" id="addProductBtn" style="width:100%;">➕ Dodaj produkt</button>
         </div>
         <div class="product-list" id="productsListContainer">Ładowanie...</div>
@@ -158,13 +160,12 @@
         <h3>📊 Wszystkie partie produktu (FIFO)</h3>
         <div class="form-group">
             <label>Wybierz produkt</label>
-            <input type="text" id="fifoProductSearch" class="search-box" placeholder="🔍 Wpisz nazwę lub kod produktu..." style="margin-bottom: 10px; width: 100%; border-radius: 12px;">
             <select id="productFilterSelect" style="width:100%;"><option value="">-- Wybierz produkt --</option></select>
         </div>
         <div style="max-height:400px; overflow-y:auto;">
             <table class="product-batches-table">
-                <thead><tr><th>Lokalizacja</th><th>Data prod.</th><th>Sygnatura</th><th>Kartony</th><th>Sztuk w k.</th><th>Sztuki</th><th>Typ</th><th>Oklejony</th></tr></thead>
-                <tbody id="batchesTableBody"><tr><td colspan="8">Wybierz produkt</td></tr></tbody>
+                <thead><tr><th>Lokalizacja</th><th>Data prod.</th><th>Kartony</th><th>Sztuki</th><th>Typ</th><th>Oklejony</th></tr></thead>
+                <tbody id="batchesTableBody"><tr><td colspan="6">Wybierz produkt</td></tr></tbody>
             </table>
         </div>
         <div class="flex-row"><button class="btn" id="closeProductBatchesBtn">Zamknij</button></div>
@@ -218,15 +219,6 @@
         }
         return new Date();
     }
-
-    window.updateCalculatedPieces = function(el) {
-        const fields = el.closest('.batch-fields');
-        const cartons = parseInt(fields.querySelector('.batch-cartons').value) || 0;
-        const pcsPerCarton = parseInt(fields.querySelector('.batch-pcs-per-carton').value) || 0;
-        if (cartons > 0 && pcsPerCarton > 0) {
-            fields.querySelector('.batch-pieces').value = cartons * pcsPerCarton;
-        }
-    };
     
     const RACKS = ['A', 'B', 'C', 'D'];
     const LEVELS = 5;
@@ -258,13 +250,13 @@
     const productsModal = document.getElementById('productsModal');
     const newProductName = document.getElementById('newProductName');
     const newProductCode = document.getElementById('newProductCode');
+    const newProductPiecesPerCarton = document.getElementById('newProductPiecesPerCarton');
     const addProductBtn = document.getElementById('addProductBtn');
     const productsListContainer = document.getElementById('productsListContainer');
     const manageProductsBtn = document.getElementById('manageProductsBtn');
     const closeProductsBtn = document.getElementById('closeProductsBtn');
     const productBatchesModal = document.getElementById('productBatchesModal');
     const productFilterSelect = document.getElementById('productFilterSelect');
-    const fifoProductSearch = document.getElementById('fifoProductSearch');
     const batchesTableBody = document.getElementById('batchesTableBody');
     const batchesByProductBtn = document.getElementById('batchesByProductBtn');
     const closeProductBatchesBtn = document.getElementById('closeProductBatchesBtn');
@@ -337,7 +329,7 @@
     // ========== RENDER REGAŁÓW ==========
     function renderCurrentRack() {
         let html = '';
-        for (let level = LEVELS; level >= 1; level--) { 
+        for (let level = 1; level <= LEVELS; level++) {
             html += `<div class="shelf"><div class="shelf-label"><span>📌 Poziom ${level}</span><span class="status-badge">${COLUMNS} pól</span></div><div class="slots">`;
             for (let col = 1; col <= COLUMNS; col++) {
                 const locId = getLocationId(currentRack, level, col);
@@ -363,7 +355,6 @@
                 const qtyStr = (totalCartons > 0 || totalPieces > 0) ? `${totalCartons}k ${totalPieces}szt` : (data?.quantity ? `${data.quantity} szt` : '');
                 
                 const hasOklejony = batches.some(b => b.oklejony === true);
-                const signature = (batches.length > 0 && batches[0].signature) ? batches[0].signature : '';
                 
                 html += `<div class="slot ${slotClass}" data-location-id="${locId}">`;
                 html += `<div class="slot-code">${level}-${col}</div>`;
@@ -372,7 +363,6 @@
                     if (batches.length > 0) {
                         const dateDisplay = batches[0].prodDateString || (batches[0].prodDate?.toDate().toLocaleDateString('pl-PL') || '');
                         if (dateDisplay) html += `<div class="slot-data" style="font-size:9px;">${dateDisplay}</div>`;
-                        if (signature) html += `<div class="slot-data" style="font-size:9px; font-style:italic;">${signature}</div>`;
                         if (batches.length > 1 || productCount > 1) {
                             html += `<div class="slot-data">📦${batches.length>1? '+'+ (batches.length-1):''}${productCount>1? ' ('+productCount+' prod)':''}</div>`;
                         }
@@ -408,8 +398,7 @@
                 if (batches.length > 0) {
                     productMatch = batches.some(b => 
                         (b.productName || '').toLowerCase().includes(productQuery) ||
-                        (b.productCode || '').toLowerCase().includes(productQuery) ||
-                        (b.signature || '').toLowerCase().includes(productQuery)
+                        (b.productCode || '').toLowerCase().includes(productQuery)
                     );
                 } else if (data) {
                     const name = (data.productName || '').toLowerCase();
@@ -466,7 +455,6 @@
         let html = '';
         currentBatches.forEach((batch, index) => {
             const dateVal = batch.prodDateString || (batch.prodDate?.toDate ? batch.prodDate.toDate().toLocaleDateString('pl-PL') : '');
-            const signatureVal = batch.signature || '';
             html += `<div class="batch-item" data-index="${index}">
                 <div class="batch-header">
                     <span>Produkt ${index+1}</span>
@@ -480,11 +468,9 @@
                             ${productsList.map(p => `<option value="${p.id}" ${p.id === batch.productId ? 'selected' : ''}>${p.name} (${p.code || ''})</option>`).join('')}
                         </select>
                     </div>
-                    <input type="text" class="batch-signature" placeholder="Sygnatura (np. sku25.3)" value="${signatureVal}" style="grid-column: span 2; margin-bottom: 4px;">
-                    <input type="text" class="batch-date" value="${dateVal}" placeholder="Data (np. 12.05.2026A)" style="grid-column: span 2;">
-                    <input type="number" class="batch-cartons" placeholder="Kartony" min="0" value="${batch.cartons || 0}" oninput="updateCalculatedPieces(this)">
-                    <input type="number" class="batch-pcs-per-carton" placeholder="Sztuk w kartonie" min="0" value="${batch.pcsPerCarton || 0}" oninput="updateCalculatedPieces(this)">
-                    <input type="number" class="batch-pieces" placeholder="Sztuki razem" min="0" value="${batch.pieces || 0}" style="grid-column: span 2;">
+                    <input type="text" class="batch-date" value="${dateVal}" placeholder="Data (np. 12.05.2026A)">
+                    <input type="number" class="batch-cartons" placeholder="Kartony" min="0" value="${batch.cartons || 0}">
+                    <input type="number" class="batch-pieces" placeholder="Sztuki" min="0" value="${batch.pieces || 0}">
                     <div class="batch-checkbox">
                         <input type="checkbox" class="batch-oklejony" data-index="${index}" ${batch.oklejony ? 'checked' : ''}> 
                         <label>Oklejony</label>
@@ -519,14 +505,40 @@
             sel.addEventListener('change', (e) => {
                 const prodId = sel.value;
                 const prod = productsList.find(p => p.id === prodId);
+                const item = sel.closest('.batch-item');
                 if (prod) {
                     currentBatches[index].productId = prod.id;
                     currentBatches[index].productName = prod.name;
                     currentBatches[index].productCode = prod.code;
+                    
+                    // Automatyczne przeliczenie sztuk przy zmianie produktu (jeśli wpisano wcześniej kartony)
+                    if (prod.piecesPerCarton) {
+                        const cartonsInput = item.querySelector('.batch-cartons');
+                        const piecesInput = item.querySelector('.batch-pieces');
+                        const cartons = parseInt(cartonsInput.value) || 0;
+                        if (cartons > 0) {
+                            piecesInput.value = cartons * prod.piecesPerCarton;
+                        }
+                    }
                 } else {
                     currentBatches[index].productId = null;
                     currentBatches[index].productName = '';
                     currentBatches[index].productCode = '';
+                }
+            });
+        });
+
+        // Automatyczne przeliczanie sztuk na podstawie liczby kartonów i bazy produktów
+        document.querySelectorAll('.batch-cartons').forEach(input => {
+            input.addEventListener('input', () => {
+                const item = input.closest('.batch-item');
+                const selectEl = item.querySelector('.batch-product-select');
+                const prodId = selectEl.value;
+                const prod = productsList.find(p => p.id === prodId);
+                if (prod && prod.piecesPerCarton) {
+                    const cartons = parseInt(input.value) || 0;
+                    const piecesInput = item.querySelector('.batch-pieces');
+                    piecesInput.value = cartons * prod.piecesPerCarton;
                 }
             });
         });
@@ -551,10 +563,8 @@
         const batches = [];
         document.querySelectorAll('.batch-item').forEach(item => {
             const selectEl = item.querySelector('.batch-product-select');
-            const signatureInput = item.querySelector('.batch-signature');
             const dateInput = item.querySelector('.batch-date');
             const cartonsInput = item.querySelector('.batch-cartons');
-            const pcsPerCartonInput = item.querySelector('.batch-pcs-per-carton');
             const piecesInput = item.querySelector('.batch-pieces');
             const oklejonyCb = item.querySelector('.batch-oklejony');
             const prodId = selectEl.value;
@@ -565,11 +575,9 @@
                     productId: prodId,
                     productName: prod?.name || '',
                     productCode: prod?.code || '',
-                    signature: signatureInput.value.trim(),
                     prodDateString: rawValue,
                     prodDate: firebase.firestore.Timestamp.fromDate(parseDateWithSuffix(rawValue)),
                     cartons: parseInt(cartonsInput.value) || 0,
-                    pcsPerCarton: parseInt(pcsPerCartonInput.value) || 0,
                     pieces: parseInt(piecesInput.value) || 0,
                     oklejony: oklejonyCb ? oklejonyCb.checked : false
                 });
@@ -579,7 +587,7 @@
     }
 
     addBatchBtn.addEventListener('click', () => {
-        currentBatches.push({ signature: '', cartons: 0, pcsPerCarton: 0, pieces: 0, oklejony: false });
+        currentBatches.push({ cartons: 0, pieces: 0, oklejony: false });
         renderBatchesList();
     });
 
@@ -595,11 +603,9 @@
             productId: b.productId || null,
             productName: b.productName || '',
             productCode: b.productCode || '',
-            signature: b.signature || '',
             prodDateString: b.prodDateString || '',
             prodDate: b.prodDate,
             cartons: b.cartons || 0,
-            pcsPerCarton: b.pcsPerCarton || 0,
             pieces: b.pieces || 0,
             oklejony: b.oklejony || false
         }));
@@ -608,11 +614,9 @@
                 productId: data.productId || null,
                 productName: data.productName,
                 productCode: data.productCode,
-                signature: '',
                 prodDateString: data.prodDateString || '',
                 prodDate: data.prodDate,
                 cartons: 0,
-                pcsPerCarton: 0,
                 pieces: data.quantity || 0,
                 oklejony: false
             });
@@ -643,9 +647,7 @@
             for (const b of newBatches) {
                 await slotRef.collection("batches").add({
                     productId: b.productId, productName: b.productName, productCode: b.productCode,
-                    signature: b.signature || '',
-                    prodDateString: b.prodDateString, prodDate: b.prodDate, cartons: b.cartons, 
-                    pcsPerCarton: b.pcsPerCarton, pieces: b.pieces, oklejony: b.oklejony
+                    prodDateString: b.prodDateString, prodDate: b.prodDate, cartons: b.cartons, pieces: b.pieces, oklejony: b.oklejony
                 });
             }
             showToast('✅ Zapisano');
@@ -693,9 +695,7 @@
             for (const b of sourceBatches) {
                 await targetSlotRef.collection("batches").add({
                     productId: b.productId, productName: b.productName, productCode: b.productCode,
-                    signature: b.signature || '',
-                    prodDateString: b.prodDateString || '', prodDate: b.prodDate, cartons: b.cartons || 0,
-                    pcsPerCarton: b.pcsPerCarton || 0, pieces: b.pieces || 0, oklejony: b.oklejony || false
+                    prodDateString: b.prodDateString || '', prodDate: b.prodDate, cartons: b.cartons || 0, pieces: b.pieces || 0, oklejony: b.oklejony || false
                 });
             }
             const sourceRef = db.collection("slots").doc(sourceLocId);
@@ -726,9 +726,7 @@
             for (const b of sourceBatches) {
                 await targetSlotRef.collection("batches").add({
                     productId: b.productId, productName: b.productName, productCode: b.productCode,
-                    signature: b.signature || '',
-                    prodDateString: b.prodDateString || '', prodDate: b.prodDate, cartons: b.cartons || 0,
-                    pcsPerCarton: b.pcsPerCarton || 0, pieces: b.pieces || 0, oklejony: b.oklejony || false
+                    prodDateString: b.prodDateString || '', prodDate: b.prodDate, cartons: b.cartons || 0, pieces: b.pieces || 0, oklejony: b.oklejony || false
                 });
             }
             showToast('✅ Paleta skopiowana');
@@ -788,7 +786,7 @@
         let html = '';
         productsList.forEach(prod => {
             html += `<div class="product-item">
-                <div class="product-info"><strong>${prod.name}</strong><br><span style="font-size:12px; color:#64748b;">Kod: ${prod.code || '—'}</span></div>
+                <div class="product-info"><strong>${prod.name}</strong><br><span style="font-size:12px; color:#64748b;">Kod: ${prod.code || '—'} | Sztuk w kartonie: ${prod.piecesPerCarton || '—'}</span></div>
                 <div class="product-actions">
                     <button class="icon-btn edit-product" data-id="${prod.id}">✏️</button>
                     <button class="icon-btn delete-product" data-id="${prod.id}">🗑️</button>
@@ -801,13 +799,17 @@
     }
     async function addProduct() {
         const name = newProductName.value.trim();
+        const piecesPerCarton = parseInt(newProductPiecesPerCarton.value) || null;
         if (!name) { alert('Podaj nazwę'); return; }
         try {
             await db.collection("products").add({
-                name, code: newProductCode.value.trim() || null,
+                name, 
+                code: newProductCode.value.trim() || null,
+                piecesPerCarton: piecesPerCarton,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
             newProductName.value = newProductCode.value = '';
+            newProductPiecesPerCarton.value = '';
             showToast('✅ Produkt dodany');
         } catch (err) { alert('Błąd: ' + err.message); }
     }
@@ -816,9 +818,14 @@
         if (!prod) return;
         const newName = prompt('Nowa nazwa:', prod.name); if (newName === null) return;
         const newCode = prompt('Nowy kod:', prod.code || '');
+        const newPieces = prompt('Nowa ilość sztuk w kartonie:', prod.piecesPerCarton || '');
         if (!newName.trim()) { alert('Nazwa wymagana'); return; }
         try {
-            await db.collection("products").doc(id).update({ name: newName.trim(), code: newCode.trim() || null });
+            await db.collection("products").doc(id).update({ 
+                name: newName.trim(), 
+                code: newCode.trim() || null,
+                piecesPerCarton: parseInt(newPieces) || null
+            });
             showToast('✅ Zaktualizowano');
         } catch (err) { alert('Błąd: ' + err.message); }
     }
@@ -833,25 +840,17 @@
 
     // ========== MODAL FIFO ==========
     function updateProductFilterSelect() {
-        const query = fifoProductSearch.value.toLowerCase();
         productFilterSelect.innerHTML = '<option value="">-- Wybierz produkt --</option>';
         productsList.forEach(prod => {
-            const name = prod.name.toLowerCase();
-            const code = (prod.code || '').toLowerCase();
-            if (name.includes(query) || code.includes(query)) {
-                const option = document.createElement('option');
-                option.value = prod.id;
-                option.textContent = `${prod.name} (${prod.code || 'brak kodu'})`;
-                productFilterSelect.appendChild(option);
-            }
+            const option = document.createElement('option');
+            option.value = prod.id;
+            option.textContent = `${prod.name} (${prod.code || 'brak kodu'})`;
+            productFilterSelect.appendChild(option);
         });
     }
-
-    fifoProductSearch.addEventListener('input', updateProductFilterSelect);
-
     function renderBatchesForProduct(productId) {
         const product = productsList.find(p => p.id === productId);
-        if (!product) { batchesTableBody.innerHTML = '<tr><td colspan="8">Nie znaleziono produktu</td></tr>'; return; }
+        if (!product) { batchesTableBody.innerHTML = '<tr><td colspan="6">Nie znaleziono produktu</td></tr>'; return; }
         const allBatches = [];
         for (const [locId, batches] of Object.entries(slotBatches)) {
             const slotData = allSlotsData[locId] || {};
@@ -859,10 +858,8 @@
                 if (batch.productId === productId) {
                     allBatches.push({
                         locationId: locId, palletType: slotData.palletType || 'magazynowa',
-                        signature: batch.signature || '',
                         prodDateString: batch.prodDateString || '',
-                        prodDate: batch.prodDate, cartons: batch.cartons || 0,
-                        pcsPerCarton: batch.pcsPerCarton || 0, pieces: batch.pieces || 0,
+                        prodDate: batch.prodDate, cartons: batch.cartons || 0, pieces: batch.pieces || 0,
                         oklejony: batch.oklejony || false
                     });
                 }
@@ -870,17 +867,16 @@
         }
         allBatches.sort((a,b) => (a.prodDate?.seconds || 0) - (b.prodDate?.seconds || 0));
         if (allBatches.length === 0) {
-            batchesTableBody.innerHTML = `<tr><td colspan="8">Brak partii dla "${product.name}"</td></tr>`;
+            batchesTableBody.innerHTML = `<tr><td colspan="6">Brak partii dla "${product.name}"</td></tr>`;
             return;
         }
         let html = '';
         allBatches.forEach(b => {
             const loc = b.locationId;
             const date = b.prodDateString || (b.prodDate?.toDate().toLocaleDateString('pl-PL') || '—');
-            const signature = b.signature || '—';
             const type = b.palletType === 'magazynowa' ? '🔴 Magazyn' : '🟢 Spedycja';
             const oklejonyStr = b.oklejony ? '✅' : '❌';
-            html += `<tr data-location-id="${loc}"><td>${loc}</td><td>${date}</td><td>${signature}</td><td>${b.cartons}</td><td>${b.pcsPerCarton}</td><td>${b.pieces}</td><td>${type}</td><td>${oklejonyStr}</td></tr>`;
+            html += `<tr data-location-id="${loc}"><td>${loc}</td><td>${date}</td><td>${b.cartons}</td><td>${b.pieces}</td><td>${type}</td><td>${oklejonyStr}</td></tr>`;
         });
         batchesTableBody.innerHTML = html;
         document.querySelectorAll('#batchesTableBody tr').forEach(row => {
@@ -900,10 +896,9 @@
     }
     productFilterSelect.addEventListener('change', () => {
         const id = productFilterSelect.value;
-        id ? renderBatchesForProduct(id) : batchesTableBody.innerHTML = '<tr><td colspan="8">Wybierz produkt</td></tr>';
+        id ? renderBatchesForProduct(id) : batchesTableBody.innerHTML = '<tr><td colspan="6">Wybierz produkt</td></tr>';
     });
     batchesByProductBtn.addEventListener('click', () => {
-        fifoProductSearch.value = '';
         updateProductFilterSelect();
         productBatchesModal.style.display = 'flex';
     });
@@ -912,7 +907,7 @@
     // ========== EKSPORT CSV ==========
     function doExportCsv(rackChoice) {
         const rows = [];
-        rows.push(['Lokalizacja', 'Produkt', 'Kod', 'Sygnatura', 'Data produkcji', 'Kartony', 'Sztuk w kartonie', 'Sztuki', 'Typ palety', 'Oklejony'].join(';'));
+        rows.push(['Lokalizacja', 'Produkt', 'Kod', 'Data produkcji', 'Kartony', 'Sztuki', 'Typ palety', 'Oklejony'].join(';'));
         for (const [locId, data] of Object.entries(allSlotsData)) {
             const rack = locId.charAt(1);
             if (rackChoice && rack !== rackChoice) continue;
@@ -922,11 +917,11 @@
                 batches.forEach(b => {
                     const date = b.prodDateString || (b.prodDate?.toDate().toLocaleDateString('pl-PL') || '');
                     const oklejonyStr = b.oklejony ? 'Tak' : 'Nie';
-                    rows.push([locId, b.productName || '', b.productCode || '', b.signature || '', date, b.cartons || 0, b.pcsPerCarton || 0, b.pieces || 0, data.palletType || 'magazynowa', oklejonyStr].join(';'));
+                    rows.push([locId, b.productName || '', b.productCode || '', date, b.cartons || 0, b.pieces || 0, data.palletType || 'magazynowa', oklejonyStr].join(';'));
                 });
             } else {
                 const date = data.prodDateString || (data.prodDate?.toDate().toLocaleDateString('pl-PL') || '');
-                rows.push([locId, data.productName || '', data.productCode || '', '', date, '0', '0', data.quantity || 0, data.palletType || 'magazynowa', 'Nie'].join(';'));
+                rows.push([locId, data.productName || '', data.productCode || '', date, '0', data.quantity || 0, data.palletType || 'magazynowa', 'Nie'].join(';'));
             }
         }
         if (rows.length === 1) { alert('Brak danych do eksportu dla wybranego zakresu.'); return; }
