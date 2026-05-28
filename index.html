@@ -227,7 +227,6 @@
     let allSlotsData = {};
     let slotBatches = {};
     let productsList = [];
-    let labelsStock = {};
     let unsubscribeSlots = null;
     let unsubscribeProducts = null;
     let unsubscribeBatches = null;
@@ -325,18 +324,6 @@
             renderProductsList();
             updateProductFilterSelect();
         }, err => console.error("Products error:", err));
-    }
-
-    function subscribeToLabelsStock() {
-        db.collection("labelsStock").onSnapshot(snapshot => {
-            labelsStock = {};
-
-            snapshot.forEach(doc => {
-                labelsStock[doc.id] = doc.data();
-            });
-
-            renderProductsList();
-        });
     }
 
     // ========== RENDER REGAŁÓW ==========
@@ -622,121 +609,35 @@
     }
 
     saveSlotBtn.addEventListener('click', async () => {
-
         if (!currentEditingLocation) return;
-
         const type = palletType.value;
-
         const newBatches = collectBatchesFromForm();
-
-        if (newBatches.length === 0) {
-            alert('Dodaj przynajmniej jeden produkt z datą!');
-            return;
-        }
-
+        if (newBatches.length === 0) { alert('Dodaj przynajmniej jeden produkt z datą!'); return; }
+        const mainProduct = newBatches[0];
+        const slotData = {
+            productId: mainProduct.productId,
+            productName: mainProduct.productName,
+            productCode: mainProduct.productCode,
+            palletType: type,
+            prodDateString: mainProduct.prodDateString || '',
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
         try {
-
             const slotRef = db.collection("slots").doc(currentEditingLocation);
-
-            const oldBatchesSnapshot = await slotRef.collection("batches").get();
-
-            const oldBatches = [];
-
-            oldBatchesSnapshot.forEach(doc => {
-                oldBatches.push(doc.data());
-            });
-
-            for (const oldBatch of oldBatches) {
-
-                if (oldBatch.oklejony === true) {
-
-                    const qtyToReturn = oldBatch.pieces || 0;
-
-                    const labelRef = db.collection('labelsStock').doc(oldBatch.productId);
-
-                    const labelDoc = await labelRef.get();
-
-                    const currentQty = labelDoc.exists
-                        ? (labelDoc.data().quantity || 0)
-                        : 0;
-
-                    await labelRef.set({
-                        quantity: currentQty + qtyToReturn
-                    });
-                }
-            }
-
-            for (const batch of newBatches) {
-
-                if (batch.oklejony === true) {
-
-                    const qtyToSubtract = batch.pieces || 0;
-
-                    const labelRef = db.collection('labelsStock').doc(batch.productId);
-
-                    const labelDoc = await labelRef.get();
-
-                    const currentQty = labelDoc.exists
-                        ? (labelDoc.data().quantity || 0)
-                        : 0;
-
-                    if (currentQty < qtyToSubtract) {
-
-                        alert(
-                            `Brak etykiet dla produktu ${batch.productName}.\n` +
-                            `Stan: ${currentQty}\n` +
-                            `Potrzeba: ${qtyToSubtract}`
-                        );
-
-                        return;
-                    }
-
-                    await labelRef.set({
-                        quantity: currentQty - qtyToSubtract
-                    });
-                }
-            }
-
-            const mainProduct = newBatches[0];
-
-            const slotData = {
-                productId: mainProduct.productId,
-                productName: mainProduct.productName,
-                productCode: mainProduct.productCode,
-                palletType: type,
-                prodDateString: mainProduct.prodDateString || '',
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            };
-
             await slotRef.set(slotData, { merge: true });
-
+            const oldBatchesSnapshot = await slotRef.collection("batches").get();
             await Promise.all(oldBatchesSnapshot.docs.map(doc => doc.ref.delete()));
-
             for (const b of newBatches) {
-
                 await slotRef.collection("batches").add({
-                    productId: b.productId,
-                    productName: b.productName,
-                    productCode: b.productCode,
+                    productId: b.productId, productName: b.productName, productCode: b.productCode,
                     signature: b.signature || '',
-                    prodDateString: b.prodDateString,
-                    prodDate: b.prodDate,
-                    cartons: b.cartons,
-                    pieces: b.pieces,
-                    oklejony: b.oklejony
+                    prodDateString: b.prodDateString, prodDate: b.prodDate, cartons: b.cartons, pieces: b.pieces, oklejony: b.oklejony
                 });
             }
-
             showToast('✅ Zapisano');
-
             editModal.style.display = 'none';
-
-        } catch (err) {
-
-            alert('Błąd zapisu: ' + err.message);
-        }
+        } catch (err) { alert('Błąd zapisu: ' + err.message); }
     });
-});
 
     clearSlotBtn.addEventListener('click', async () => {
         if (!currentEditingLocation) return;
@@ -871,17 +772,8 @@
         let html = '';
         productsList.forEach(prod => {
             html += `<div class="product-item">
-                <div class="product-info">
-                    <strong>${prod.name}</strong><br>
-                    <span style="font-size:12px; color:#64748b;">
-                        Kod: ${prod.code || '—'}
-                    </span><br>
-                    <span style="font-size:12px; color:#2563eb; font-weight:700;">
-                        🏷️ Etykiety: ${labelsStock[prod.id]?.quantity || 0}
-                    </span>
-                </div>
+                <div class="product-info"><strong>${prod.name}</strong><br><span style="font-size:12px; color:#64748b;">Kod: ${prod.code || '—'}</span></div>
                 <div class="product-actions">
-                    <button class="icon-btn edit-labels" data-id="${prod.id}">🏷️</button>
                     <button class="icon-btn edit-product" data-id="${prod.id}">✏️</button>
                     <button class="icon-btn delete-product" data-id="${prod.id}">🗑️</button>
                 </div>
@@ -890,66 +782,18 @@
         productsListContainer.innerHTML = html;
         document.querySelectorAll('.edit-product').forEach(btn => btn.addEventListener('click', () => editProduct(btn.dataset.id)));
         document.querySelectorAll('.delete-product').forEach(btn => btn.addEventListener('click', () => deleteProduct(btn.dataset.id)));
-
-        document.querySelectorAll('.edit-labels').forEach(btn => {
-            btn.addEventListener('click', async () => {
-
-                const productId = btn.dataset.id;
-                const currentQty = labelsStock[productId]?.quantity || 0;
-
-                const newQty = prompt('Podaj ilość etykiet:', currentQty);
-
-                if (newQty === null) return;
-
-                const parsedQty = parseInt(newQty);
-
-                if (isNaN(parsedQty) || parsedQty < 0) {
-                    alert('Niepoprawna ilość');
-                    return;
-                }
-
-                try {
-
-                    await db.collection('labelsStock').doc(productId).set({
-                        quantity: parsedQty
-                    });
-
-                    showToast('✅ Zapisano etykiety');
-
-                } catch(err) {
-                    alert('Błąd: ' + err.message);
-                }
-            });
-        });
     }
     async function addProduct() {
         const name = newProductName.value.trim();
-
-        if (!name) {
-            alert('Podaj nazwę');
-            return;
-        }
-
+        if (!name) { alert('Podaj nazwę'); return; }
         try {
-
-            const docRef = await db.collection("products").add({
-                name,
-                code: newProductCode.value.trim() || null,
+            await db.collection("products").add({
+                name, code: newProductCode.value.trim() || null,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
-
-            await db.collection("labelsStock").doc(docRef.id).set({
-                quantity: 0
-            });
-
-            newProductName.value = '';
-            newProductCode.value = '';
-
+            newProductName.value = newProductCode.value = '';
             showToast('✅ Produkt dodany');
-
-        } catch (err) {
-            alert('Błąd: ' + err.message);
-        }
+        } catch (err) { alert('Błąd: ' + err.message); }
     }
     async function editProduct(id) {
         const prod = productsList.find(p => p.id === id);
@@ -1112,7 +956,6 @@
     subscribeToSlots();
     subscribeToBatches();
     subscribeToProducts();
-    subscribeToLabelsStock();
 </script>
 </body>
 </html>
