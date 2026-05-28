@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magazyn - Stan Etykiet</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { margin: 0; padding: 16px; background: #f4f6f9; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 24px; border-radius: 24px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
+        h1 { font-size: 1.6rem; color: #1e293b; margin-top: 0; display: flex; align-items: center; gap: 10px; }
+        .back-btn { background: #e2e8f0; color: #1e293b; border: none; padding: 10px 18px; border-radius: 40px; font-weight: 600; cursor: pointer; text-decoration: none; font-size: 14px; }
+        .search-box { width: 100%; padding: 12px 16px; font-size: 16px; border: 1px solid #cbd5e1; border-radius: 40px; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { padding: 12px; background: #f1f5f9; color: #334155; font-weight: 600; border-bottom: 2px solid #e2e8f0; }
+        td { padding: 12px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
+        .label-input { width: 110px; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-weight: 600; text-align: center; }
+        .btn-save { background: #2563eb; color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; margin-left: 6px; }
+        .btn-save:hover { background: #1d4ed8; }
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 10px 20px; border-radius: 40px; opacity: 0; transition: 0.2s; pointer-events: none; z-index: 2000; }
+        .low-stock { border-color: #ef4444; color: #ef4444; background: #fef2f2; }
+        .low-stock-msg { font-size: 11px; color: #ef4444; display: block; margin-top: 2px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h1>🏷️ Stan Magazynowy Etykiet</h1>
+        <a href="index.html" class="back-btn">⬅ Regały</a>
+    </div>
+
+    <input type="text" id="searchBar" class="search-box" placeholder="🔍 Szukaj produktu lub kodu...">
+
+    <table>
+        <thead>
+            <tr>
+                <th>Produkt</th>
+                <th>Kod</th>
+                <th>Ilość etykiet w zapasie</th>
+                <th>Akcja</th>
+            </tr>
+        </thead>
+        <tbody id="labelsTableBody">
+            <tr><td colspan="4" style="text-align:center; color:#64748b;">Ładowanie danych...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div id="toast" class="toast">Zapisano</div>
+
+<script>
+    // Konfiguracja Firebase identyczna jak w głównym pliku
+    const firebaseConfig = {
+        apiKey: "AIzaSyAbMTVozOhIXesvF59REYnIOtmo-V5qimk",
+        authDomain: "forevermagazyn.firebaseapp.com",
+        projectId: "forevermagazyn",
+        storageBucket: "forevermagazyn.firebasestorage.app",
+        messagingSenderId: "251843942343",
+        appId: "1:251843942343:web:2c81227b12ab4ad0052be2"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    let productsList = [];
+    let labelsStock = {};
+
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.style.opacity = 1;
+        setTimeout(() => toast.style.opacity = 0, 2000);
+    }
+
+    function initData() {
+        // Nasłuchiwanie bazy produktów
+        db.collection("products").onSnapshot(prodSnapshot => {
+            productsList = [];
+            prodSnapshot.forEach(doc => productsList.push({ id: doc.id, ...doc.data() }));
+            productsList.sort((a,b) => (a.name || '').localeCompare(b.name || ''));
+            
+            // Nasłuchiwanie bazy ilości etykiet
+            db.collection("labels").onSnapshot(labelSnapshot => {
+                labelsStock = {};
+                labelSnapshot.forEach(doc => {
+                    labelsStock[doc.id] = doc.data().stock || 0;
+                });
+                renderTable();
+            });
+        }, err => console.error(err));
+    }
+
+    function renderTable() {
+        const searchQuery = document.getElementById('searchBar').value.toLowerCase().trim();
+        const tbody = document.getElementById('labelsTableBody');
+        let html = '';
+
+        const filteredProducts = productsList.filter(p => 
+            (p.name || '').toLowerCase().includes(searchQuery) || 
+            (p.code || '').toLowerCase().includes(searchQuery)
+        );
+
+        if (filteredProducts.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#64748b;">Brak wyników</td></tr>';
+            return;
+        }
+
+        filteredProducts.forEach(p => {
+            const currentStock = labelsStock[p.id] !== undefined ? labelsStock[p.id] : 0;
+            // Ostrzeżenie przy niskim stanie zapasów etykiet (poniżej 1000 sztuk)
+            const isLow = currentStock < 1000; 
+
+            html += `
+                <tr>
+                    <td><strong>${p.name}</strong></td>
+                    <td><span style="color:#64748b; font-size:14px;">${p.code || '—'}</span></td>
+                    <td>
+                        <input type="number" id="input-${p.id}" class="label-input ${isLow ? 'low-stock' : ''}" value="${currentStock}" min="0">
+                        <span style="font-size: 13px; color: #475569;">szt.</span>
+                        ${isLow ? '<span class="low-stock-msg">⚠️ Niski zapas!</span>' : ''}
+                    </td>
+                    <td>
+                        <button class="btn-save" onclick="saveLabelStock('${p.id}', '${p.name.replace(/'/g, "\\'")}', '${(p.code || '').replace(/'/g, "\\'")}')">💾 Zapisz</button>
+                    </td>
+                </tr>
+            `;
+        });
+        tbody.innerHTML = html;
+    }
+
+    async function saveLabelStock(productId, productName, productCode) {
+        const inputEl = document.getElementById(`input-${productId}`);
+        const newStock = parseInt(inputEl.value) || 0;
+
+        try {
+            await db.collection("labels").doc(productId).set({
+                productName: productName,
+                productCode: productCode,
+                stock: newStock,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+            showToast('✅ Zaktualizowano zapas etykiet');
+        } catch (err) {
+            alert('Błąd zapisu: ' + err.message);
+        }
+    }
+
+    document.getElementById('searchBar').addEventListener('input', renderTable);
+    initData();
+</script>
+</body>
+</html>
