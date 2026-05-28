@@ -623,11 +623,31 @@
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         };
         try {
-            const slotRef = db.collection("slots").doc(currentEditingLocation);
-            await slotRef.set(slotData, { merge: true });
+           // Pobierz stare partie, aby sprawdzić, co się zmieniło
             const oldBatchesSnapshot = await slotRef.collection("batches").get();
+            const oldBatches = oldBatchesSnapshot.docs.map(doc => doc.data());
+            
             await Promise.all(oldBatchesSnapshot.docs.map(doc => doc.ref.delete()));
+            
             for (const b of newBatches) {
+                // Jeśli produkt ma ID i zmieniono status oklejony
+                if (b.productId) {
+                    const oldBatch = oldBatches.find(o => o.productId === b.productId && o.signature === b.signature);
+                    
+                    // Jeśli przedtem nie był oklejony, a teraz jest -> odejmij etykietę
+                    if (b.oklejony && (!oldBatch || !oldBatch.oklejony)) {
+                        await db.collection("products").doc(b.productId).update({
+                            ilosc_etykiet: firebase.firestore.FieldValue.increment(-1)
+                        });
+                    }
+                    // Jeśli był oklejony, a teraz nie jest -> dodaj etykietę z powrotem
+                    else if (!b.oklejony && oldBatch && oldBatch.oklejony) {
+                        await db.collection("products").doc(b.productId).update({
+                            ilosc_etykiet: firebase.firestore.FieldValue.increment(1)
+                        });
+                    }
+                }
+
                 await slotRef.collection("batches").add({
                     productId: b.productId, productName: b.productName, productCode: b.productCode,
                     signature: b.signature || '',
@@ -639,15 +659,25 @@
         } catch (err) { alert('Błąd zapisu: ' + err.message); }
     });
 
-    clearSlotBtn.addEventListener('click', async () => {
+clearSlotBtn.addEventListener('click', async () => {
         if (!currentEditingLocation) return;
-        if (!confirm('Na pewno wyczyścić to pole?')) return;
+        if (!confirm('Na pewno wyczyścić to pole i zwrócić etykiety?')) return;
         try {
             const slotRef = db.collection("slots").doc(currentEditingLocation);
             const batchesSnapshot = await slotRef.collection("batches").get();
-            await Promise.all(batchesSnapshot.docs.map(d => d.ref.delete()));
+            
+            for (const doc of batchesSnapshot.docs) {
+                const b = doc.data();
+                if (b.oklejony && b.productId) {
+                    // Zwrot etykiety do puli produktu
+                    await db.collection("products").doc(b.productId).update({
+                        ilosc_etykiet: firebase.firestore.FieldValue.increment(1)
+                    });
+                }
+                await doc.ref.delete();
+            }
             await slotRef.delete();
-            showToast('🗑️ Pole wyczyszczone');
+            showToast('🗑️ Pole wyczyszczone, etykiety zwrócone');
             editModal.style.display = 'none';
         } catch (err) { alert('Błąd: ' + err.message); }
     });
