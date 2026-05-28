@@ -104,11 +104,11 @@
     </div>
 
     <div id="moveModeIndicator" class="move-mode-indicator">
-        🚚 Tryb przenoszenia – kliknij na pusty slot, aby przenieść tutaj paletę.
+        🚚 Tryb przenoszenia – kliknij na pusty slot, aby przenieść tutaj paletę. 
         <button id="cancelMoveBtn" class="btn-sm" style="margin-left:12px; padding:4px 12px;">Anuluj</button>
     </div>
     <div id="copyModeIndicator" class="copy-mode-indicator">
-        📋 Tryb kopiowania – kliknij na pusty slot, aby skopiować tutaj paletę.
+        📋 Tryb kopiowania – kliknij na pusty slot, aby skopiować tutaj paletę. 
         <button id="cancelCopyBtn" class="btn-sm" style="margin-left:12px; padding:4px 12px;">Anuluj</button>
     </div>
 
@@ -204,6 +204,7 @@
         messagingSenderId: "251843942343",
         appId: "1:251843942343:web:2c81227b12ab4ad0052be2"
     };
+
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
@@ -328,7 +329,7 @@
     // ========== RENDER REGAŁÓW ==========
     function renderCurrentRack() {
         let html = '';
-        for (let level = LEVELS; level >= 1; level--) {
+        for (let level = LEVELS; level >= 1; level--) { // Zmieniono na odliczanie od 5 do 1
             html += `<div class="shelf"><div class="shelf-label"><span>📌 Poziom ${level}</span><span class="status-badge">${COLUMNS} pól</span></div><div class="slots">`;
             for (let col = 1; col <= COLUMNS; col++) {
                 const locId = getLocationId(currentRack, level, col);
@@ -352,6 +353,7 @@
                 let totalCartons = 0, totalPieces = 0;
                 batches.forEach(b => { totalCartons += b.cartons || 0; totalPieces += b.pieces || 0; });
                 const qtyStr = (totalCartons > 0 || totalPieces > 0) ? `${totalCartons}k ${totalPieces}szt` : (data?.quantity ? `${data.quantity} szt` : '');
+                
                 const hasOklejony = batches.some(b => b.oklejony === true);
                 const signature = (batches.length > 0 && batches[0].signature) ? batches[0].signature : '';
                 
@@ -545,22 +547,19 @@
             const cartonsInput = item.querySelector('.batch-cartons');
             const piecesInput = item.querySelector('.batch-pieces');
             const oklejonyCb = item.querySelector('.batch-oklejony');
-        
             const prodId = selectEl.value;
             const prod = productsList.find(p => p.id === prodId);
-            
-            // Usunięto przymus podawania daty produkcji, aby produkt zapisał się w bazie danych
-            if (prodId) {
-                const rawValue = dateInput ? dateInput.value.trim() : '';
+            if (prodId && dateInput.value) {
+                const rawValue = dateInput.value;
                 batches.push({
                     productId: prodId,
                     productName: prod?.name || '',
                     productCode: prod?.code || '',
-                    signature: signatureInput ? signatureInput.value.trim() : '',
+                    signature: signatureInput.value.trim(),
                     prodDateString: rawValue,
-                    prodDate: rawValue ? firebase.firestore.Timestamp.fromDate(parseDateWithSuffix(rawValue)) : firebase.firestore.Timestamp.fromDate(new Date()),
-                    cartons: cartonsInput ? (parseInt(cartonsInput.value) || 0) : 0,
-                    pieces: piecesInput ? (parseInt(piecesInput.value) || 0) : 0,
+                    prodDate: firebase.firestore.Timestamp.fromDate(parseDateWithSuffix(rawValue)),
+                    cartons: parseInt(cartonsInput.value) || 0,
+                    pieces: parseInt(piecesInput.value) || 0,
                     oklejony: oklejonyCb ? oklejonyCb.checked : false
                 });
             }
@@ -613,7 +612,7 @@
         if (!currentEditingLocation) return;
         const type = palletType.value;
         const newBatches = collectBatchesFromForm();
-        if (newBatches.length === 0) { alert('Dodaj przynajmniej jeden produkt do palety!'); return; }
+        if (newBatches.length === 0) { alert('Dodaj przynajmniej jeden produkt z datą!'); return; }
         const mainProduct = newBatches[0];
         const slotData = {
             productId: mainProduct.productId,
@@ -625,17 +624,9 @@
         };
         try {
             const slotRef = db.collection("slots").doc(currentEditingLocation);
-            
-            // 1. POBIERZ POPRZEDNIE PARTIE PRZED ICH USUNIĘCIEM
-            const oldBatchesSnapshot = await slotRef.collection("batches").get();
-            const oldBatches = [];
-            oldBatchesSnapshot.forEach(doc => oldBatches.push(doc.data()));
-
-            // 2. NADPISZ DANE SLOTU I WYCZYŚĆ DOTYCHCZASOWE PARTIE
             await slotRef.set(slotData, { merge: true });
+            const oldBatchesSnapshot = await slotRef.collection("batches").get();
             await Promise.all(oldBatchesSnapshot.docs.map(doc => doc.ref.delete()));
-            
-            // 3. ZAPISZ NOWE PARTIE DO KOLEKCJI
             for (const b of newBatches) {
                 await slotRef.collection("batches").add({
                     productId: b.productId, productName: b.productName, productCode: b.productCode,
@@ -643,51 +634,7 @@
                     prodDateString: b.prodDateString, prodDate: b.prodDate, cartons: b.cartons, pieces: b.pieces, oklejony: b.oklejony
                 });
             }
-
-            // 4. NOWA, NIEZAWODNA LOGIKA METODY RÓŻNICOWEJ DLA STANÓW ETYKIET
-            const uniqueProductIds = [...new Set(newBatches.map(b => b.productId))];
-
-            for (const prodId of uniqueProductIds) {
-                // Wyliczamy ile sztuk/kartonów było oklejonych na tej palecie dotychczas (Sztuki mają priorytet, jeśli 0 - bierzemy Kartony)
-                const oldOklejoneCount = oldBatches
-                    .filter(b => b.productId === prodId && b.oklejony === true)
-                    .reduce((sum, b) => sum + ((parseInt(b.pieces) > 0) ? parseInt(b.pieces) : (parseInt(b.cartons) || 0)), 0);
-
-                // Wyliczamy ile sztuk/kartonów jest oznaczonych jako oklejone teraz
-                const newOklejoneCount = newBatches
-                    .filter(b => b.productId === prodId && b.oklejony === true)
-                    .reduce((sum, b) => sum + ((parseInt(b.pieces) > 0) ? parseInt(b.pieces) : (parseInt(b.cartons) || 0)), 0);
-
-                // Sprawdzamy różnicę (odejmujemy tylko wtedy, kiedy zaznaczono coś NOWEGO)
-                const diff = newOklejoneCount - oldOklejoneCount;
-
-                if (diff > 0) {
-                    console.log(`Zdejmuję z zapasów: ${diff} etykiet dla produktu ID: ${prodId}`);
-                    const labelDocRef = db.collection("labels").doc(prodId);
-                    
-                    await db.runTransaction(async (transaction) => {
-                        const labelDoc = await transaction.get(labelDocRef);
-                        if (labelDoc.exists) {
-                            const currentStock = labelDoc.data().stock || 0;
-                            const newStock = Math.max(0, currentStock - diff);
-                            transaction.update(labelDocRef, { 
-                                stock: newStock,
-                                lastUsedAt: firebase.firestore.FieldValue.serverTimestamp()
-                            });
-                        } else {
-                            // Jeśli produkt nie został wcześniej skonfigurowany w zakładce stanów etykiet
-                            transaction.set(labelDocRef, {
-                                productName: newBatches.find(b => b.productId === prodId)?.productName || 'Nieznany',
-                                productCode: newBatches.find(b => b.productId === prodId)?.productCode || '',
-                                stock: 0,
-                                lastUsedAt: firebase.firestore.FieldValue.serverTimestamp()
-                            });
-                        }
-                    });
-                }
-            }
-
-            showToast('✅ Zapisano i zaktualizowano zapas etykiet');
+            showToast('✅ Zapisano');
             editModal.style.display = 'none';
         } catch (err) { alert('Błąd zapisu: ' + err.message); }
     });
@@ -704,6 +651,7 @@
             editModal.style.display = 'none';
         } catch (err) { alert('Błąd: ' + err.message); }
     });
+
     cancelEditBtn.addEventListener('click', () => editModal.style.display = 'none');
 
     // ========== PRZENOSZENIE I KOPIOWANIE ==========
@@ -897,7 +845,7 @@
                         locationId: locId, palletType: slotData.palletType || 'magazynowa',
                         signature: batch.signature || '',
                         prodDateString: batch.prodDateString || '',
-                        prodDate: batch.prodDate, cartons: batch.cartons || 0, pieces: batch.pieces || 0, // Naprawiono błąd 'b is not defined'
+                        prodDate: batch.prodDate, cartons: batch.cartons || 0, pieces: batch.pieces || 0,
                         oklejony: batch.oklejony || false
                     });
                 }
@@ -988,10 +936,10 @@
 
     // ========== PRZYCISK ETYKIETY ==========
     openLabelGeneratorBtn.addEventListener('click', () => {
-        window.open('etykiety_stan.html', '_self');
+        window.open('etykieta.html', '_blank');
     });
 
-    // ========== INICJALIZACJA =========
+    // ========== INICJALIZACJA ==========
     tabs.forEach(tab => tab.addEventListener('click', () => {
         currentRack = tab.dataset.rack;
         tabs.forEach(t => t.classList.remove('active'));
