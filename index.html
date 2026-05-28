@@ -104,11 +104,11 @@
     </div>
 
     <div id="moveModeIndicator" class="move-mode-indicator">
-        🚚 Tryb przenoszenia – kliknij na pusty slot, aby przenieść tutaj paletę. 
+        🚚 Tryb przenoszenia – kliknij na pusty slot, aby przenieść tutaj paletę.
         <button id="cancelMoveBtn" class="btn-sm" style="margin-left:12px; padding:4px 12px;">Anuluj</button>
     </div>
     <div id="copyModeIndicator" class="copy-mode-indicator">
-        📋 Tryb kopiowania – kliknij na pusty slot, aby skopiować tutaj paletę. 
+        📋 Tryb kopiowania – kliknij na pusty slot, aby skopiować tutaj paletę.
         <button id="cancelCopyBtn" class="btn-sm" style="margin-left:12px; padding:4px 12px;">Anuluj</button>
     </div>
 
@@ -204,7 +204,6 @@
         messagingSenderId: "251843942343",
         appId: "1:251843942343:web:2c81227b12ab4ad0052be2"
     };
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
@@ -329,7 +328,7 @@
     // ========== RENDER REGAŁÓW ==========
     function renderCurrentRack() {
         let html = '';
-        for (let level = LEVELS; level >= 1; level--) { // Zmieniono na odliczanie od 5 do 1
+        for (let level = LEVELS; level >= 1; level--) {
             html += `<div class="shelf"><div class="shelf-label"><span>📌 Poziom ${level}</span><span class="status-badge">${COLUMNS} pól</span></div><div class="slots">`;
             for (let col = 1; col <= COLUMNS; col++) {
                 const locId = getLocationId(currentRack, level, col);
@@ -353,7 +352,6 @@
                 let totalCartons = 0, totalPieces = 0;
                 batches.forEach(b => { totalCartons += b.cartons || 0; totalPieces += b.pieces || 0; });
                 const qtyStr = (totalCartons > 0 || totalPieces > 0) ? `${totalCartons}k ${totalPieces}szt` : (data?.quantity ? `${data.quantity} szt` : '');
-                
                 const hasOklejony = batches.some(b => b.oklejony === true);
                 const signature = (batches.length > 0 && batches[0].signature) ? batches[0].signature : '';
                 
@@ -547,6 +545,7 @@
             const cartonsInput = item.querySelector('.batch-cartons');
             const piecesInput = item.querySelector('.batch-pieces');
             const oklejonyCb = item.querySelector('.batch-oklejony');
+        
             const prodId = selectEl.value;
             const prod = productsList.find(p => p.id === prodId);
             if (prodId && dateInput.value) {
@@ -624,17 +623,56 @@
         };
         try {
             const slotRef = db.collection("slots").doc(currentEditingLocation);
-            await slotRef.set(slotData, { merge: true });
+            
+            // Pobranie aktualnego stanu podkolekcji batches przed nadpisaniem
             const oldBatchesSnapshot = await slotRef.collection("batches").get();
+            const oldBatches = [];
+            oldBatchesSnapshot.forEach(doc => oldBatches.push(doc.data()));
+
+            await slotRef.set(slotData, { merge: true });
             await Promise.all(oldBatchesSnapshot.docs.map(doc => doc.ref.delete()));
+            
             for (const b of newBatches) {
                 await slotRef.collection("batches").add({
                     productId: b.productId, productName: b.productName, productCode: b.productCode,
                     signature: b.signature || '',
                     prodDateString: b.prodDateString, prodDate: b.prodDate, cartons: b.cartons, pieces: b.pieces, oklejony: b.oklejony
                 });
+
+                // Sprawdzanie czy status zmienił się na oklejony (weryfikacja zapobiegająca duplikowaniu odliczeń)
+                if (b.oklejony === true && b.productId) {
+                    const wasAlreadyOklejona = oldBatches.some(oldB => 
+                        oldB.productId === b.productId && 
+                        oldB.signature === b.signature && 
+                        oldB.prodDateString === b.prodDateString && 
+                        oldB.oklejony === true
+                    );
+
+                    // Jeśli partia nie była oznaczona jako oklejona, a teraz jest – zdejmujemy sztuki z zapasów etykiet
+                    if (!wasAlreadyOklejona && b.pieces > 0) {
+                        const labelDocRef = db.collection("labels").doc(b.productId);
+                        await db.runTransaction(async (transaction) => {
+                            const labelDoc = await transaction.get(labelDocRef);
+                            if (labelDoc.exists) {
+                                const currentStock = labelDoc.data().stock || 0;
+                                const newStock = Math.max(0, currentStock - b.pieces);
+                                transaction.update(labelDocRef, { 
+                                    stock: newStock,
+                                    lastUsedAt: firebase.firestore.FieldValue.serverTimestamp()
+                                });
+                            } else {
+                                transaction.set(labelDocRef, {
+                                    productName: b.productName,
+                                    productCode: b.productCode,
+                                    stock: 0,
+                                    lastUsedAt: firebase.firestore.FieldValue.serverTimestamp()
+                                });
+                            }
+                        });
+                    }
+                }
             }
-            showToast('✅ Zapisano');
+            showToast('✅ Zapisano i zaktualizowano zapas etykiet');
             editModal.style.display = 'none';
         } catch (err) { alert('Błąd zapisu: ' + err.message); }
     });
@@ -651,7 +689,6 @@
             editModal.style.display = 'none';
         } catch (err) { alert('Błąd: ' + err.message); }
     });
-
     cancelEditBtn.addEventListener('click', () => editModal.style.display = 'none');
 
     // ========== PRZENOSZENIE I KOPIOWANIE ==========
@@ -845,7 +882,7 @@
                         locationId: locId, palletType: slotData.palletType || 'magazynowa',
                         signature: batch.signature || '',
                         prodDateString: batch.prodDateString || '',
-                        prodDate: batch.prodDate, cartons: batch.cartons || 0, pieces: batch.pieces || 0,
+                        prodDate: batch.prodDate, cartons: batch.cartons || 0, pieces: b.pieces || 0,
                         oklejony: batch.oklejony || false
                     });
                 }
@@ -935,8 +972,9 @@
     cancelExportCsvBtn.addEventListener('click', () => exportCsvModal.style.display = 'none');
 
     // ========== PRZYCISK ETYKIETY ==========
+    // Przekierowanie do nowej karty stanu etykiet w tym samym oknie aplikacji
     openLabelGeneratorBtn.addEventListener('click', () => {
-        window.open('etykieta.html', '_blank');
+        window.open('etykiety_stan.html', '_self');
     });
 
     // ========== INICJALIZACJA ==========
