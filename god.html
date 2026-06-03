@@ -73,6 +73,12 @@
         .small-modal-card { max-width: 400px !important; }
         .move-mode-indicator { background: #fef3c7; border: 2px dashed #f59e0b; padding: 12px; border-radius: 16px; margin-bottom: 16px; text-align: center; display: none; }
         .copy-mode-indicator { background: #d1fae5; border: 2px dashed #10b981; padding: 12px; border-radius: 16px; margin-bottom: 16px; text-align: center; display: none; }
+        /* Style dla widoku mobilnego */
+body.mobile-view .app { max-width: 100%; padding: 5px; }
+body.mobile-view .slots { grid-template-columns: repeat(7, 1fr); gap: 2px; }
+body.mobile-view .rack-container { padding: 10px; }
+body.mobile-view .slot { font-size: 8px; padding: 1px; }
+body.mobile-view .search-box, body.mobile-view .btn-secondary { font-size: 12px; padding: 6px 10px; }
     </style>
 </head>
 <body>
@@ -81,6 +87,13 @@
     
     <div class="top-bar">
         <div class="search-group">
+            <div class="top-bar">
+    <div class="search-group">
+        </div>
+    <button class="btn-secondary" id="toggleMobileBtn">📱 Mobile</button>
+    
+    <button class="btn-secondary" id="clearSearchBtn">✖ Wyczyść</button>
+    </div>
             <input type="text" id="searchProductInput" class="search-box" placeholder="🔍 Produkt / kod / sygnatura" autocomplete="off">
             <input type="text" id="searchDateInput" class="search-box" placeholder="📅 Data (np. 1.04.2026)" autocomplete="off">
             <select id="oklejonyFilterSelect" class="filter-select">
@@ -953,6 +966,13 @@
         if (e.target === productBatchesModal) productBatchesModal.style.display = 'none';
         if (e.target === exportCsvModal) exportCsvModal.style.display = 'none';
     });
+    // Kod do obsługi przycisku mobilnego
+const toggleMobileBtn = document.getElementById('toggleMobileBtn');
+toggleMobileBtn.addEventListener('click', () => {
+    document.body.classList.toggle('mobile-view');
+    // Zmiana tekstu przycisku w zależności od trybu
+    toggleMobileBtn.textContent = document.body.classList.contains('mobile-view') ? '💻 Desktop' : '📱 Mobile';
+});
     subscribeToSlots();
     subscribeToBatches();
     subscribeToProducts();
