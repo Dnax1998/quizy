@@ -963,203 +963,84 @@
         return totalNeeded;
     }
 
-    // --- POPRAWKA 2 & 5: ŁADNIEJSZY INTERFEJS STANU ETYKIET WG SYGNATUR ---
+// ========== ZMODYFIKOWANA FUNKCJA: STAN I ZAPOTRZEBOWANIE ETYKIET ==========
     function renderLabelsList() {
         if (productsList.length === 0) {
-            labelsListContainer.innerHTML = '<div style="text-align:center; color:#64748b; padding:20px;">Brak produktów w bazie.</div>';
+            labelsListContainer.innerHTML = '<div style="text-align:center; color:#64748b;">Brak produktów.</div>';
             return;
         }
         let html = '';
         productsList.forEach(prod => {
-            const needed = getLabelsNeededForProduct(prod.id);
-            const sigs = prod.labelsBySignature || {};
+            const count = prod.labelsCount || 0; 
             
-            html += `
-            <div class="label-prod-card">
-                <div class="label-prod-header">
-                    <div>
-                        <div class="label-prod-title">${prod.name}</div>
-                        <div class="label-prod-sub">Kod: ${prod.code || '—'} | W kartonie: <b>${prod.piecesPerCarton || 0} szt.</b></div>
-                    </div>
-                    <div class="label-prod-needed">
-                        <span class="needed-title">Potrzebne etykiety</span>
-                        <span class="needed-val">${needed} szt.</span>
-                    </div>
-                </div>
+            // Obliczanie zapotrzebowania z podziałem na sygnatury dla obecnego produktu
+            let demandBySignature = {};
+            let totalDemand = 0;
+            
+            Object.values(slotBatches).forEach(batches => {
+                batches.forEach(b => {
+                    if (b.productId === prod.id) {
+                        const piecesPerCarton = parseInt(prod.piecesPerCarton) || 0;
+                        const cartons = parseInt(b.cartons) || 0;
+                        const pieces = parseInt(b.pieces) || 0;
+                        
+                        // Przeliczenie sumarycznej liczby sztuk danej partii
+                        const bCount = (cartons * piecesPerCarton) + pieces;
+                        
+                        if (bCount > 0) {
+                            const sig = b.signature ? b.signature.trim() : 'Brak sygnatury';
+                            demandBySignature[sig] = (demandBySignature[sig] || 0) + bCount;
+                            totalDemand += bCount;
+                        }
+                    }
+                });
+            });
+
+            // Generowanie kodu HTML dla sekcji zapotrzebowania z rozbiciem na sygnatury
+            let breakdownHtml = '';
+            if (totalDemand > 0) {
+                breakdownHtml = `<div style="font-size:12px; color:#475569; margin-top:6px; background:#f8fafc; padding:8px 12px; border-radius:12px; border:1px solid #e2e8f0; width:100%;">`;
+                breakdownHtml += `📋 <strong>Łączne zapotrzebowanie:</strong> <span style="color:#2563eb; font-weight:700;">${totalDemand} szt.</span><br>`;
                 
-                <div class="label-sigs-section">
-                    <div class="sigs-title">📋 Stan magazynowy etykiet wg sygnatur:</div>
-                    <div class="sigs-grid">
-                        ${Object.keys(sigs).length === 0 ? '<span style="color:#94a3b8; font-size:13px; font-style:italic; padding: 4px 0;">Brak zarejestrowanych sygnatur etykiet.</span>' : ''}
-                        ${Object.entries(sigs).map(([sig, count]) => `
-                            <div class="sig-row">
-                                <span class="sig-badge">${sig}</span>
-                                <input type="number" class="sig-count-input" data-prod-id="${prod.id}" data-sig="${sig}" value="${count}" min="0">
-                                <button class="btn-sig-save" data-prod-id="${prod.id}" data-sig="${sig}" title="Zapisz stan">💾</button>
-                                <button class="btn-sig-delete" data-prod-id="${prod.id}" data-sig="${sig}" title="Usuń sygnaturę">🗑️</button>
-                            </div>
-                        `).join('')}
+                // Iteracja po znalezionych sygnaturach i wyświetlenie szczegółów
+                Object.entries(demandBySignature).forEach(([sig, qty]) => {
+                    breakdownHtml += `<div style="margin-top:3px; padding-left:8px;">▪️ Sygnatura <code style="background:#e2e8f0; padding:1px 5px; border-radius:4px; font-weight:600; font-family:monospace;">${sig}</code>: <b>${qty} szt.</b></div>`;
+                });
+                breakdownHtml += `</div>`;
+            } else {
+                breakdownHtml = `<div style="font-size:12px; color:#94a3b8; margin-top:4px; font-style:italic;">📋 Brak partii na magazynie (zapotrzebowanie: 0 szt.)</div>`;
+            }
+
+            // Render całego kafelka produktu w modalu etykiet
+            html += `<div class="product-item" style="display:flex; flex-direction:column; align-items:stretch; padding:12px 0; border-bottom:1px solid #e2e8f0;">
+                <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                    <div class="product-info" style="flex:1;">
+                        <strong style="font-size:15px; color:#1e293b;">${prod.name}</strong><br>
+                        <span style="font-size:12px; color:#64748b;">Kod: ${prod.code || '—'}</span>
                     </div>
-                    
-                    <div class="add-sig-inline">
-                        <input type="text" placeholder="Nowa sygnatura (np. 25.5)" class="new-sig-name" data-prod-id="${prod.id}">
-                        <input type="number" placeholder="Ilość (szt.)" class="new-sig-count" data-prod-id="${prod.id}" min="0">
-                        <button class="btn-sig-add" data-prod-id="${prod.id}">➕ Dodaj sygnaturę</button>
+                    <div class="product-actions" style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-size:13px; font-weight:600; color:#475569;">Stan:</span>
+                        <input type="number" id="label-input-${prod.id}" value="${count}" style="width:75px; padding:6px 10px; border-radius:12px; border:1px solid #cbd5e1; text-align:center; font-weight:600;">
+                        <button class="btn btn-primary update-labels-btn" data-id="${prod.id}" style="padding:6px 12px; font-size:12px; border-radius:20px;">Zapisz</button>
                     </div>
                 </div>
-            </div>
-            `;
+                ${breakdownHtml}
+            </div>`;
         });
         labelsListContainer.innerHTML = html;
         
-        // Event Listenery dla zarządzania sygnaturami bezpośrednio z poziomu karty produktu
-        document.querySelectorAll('.btn-sig-save').forEach(btn => {
+        document.querySelectorAll('.update-labels-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
-                const prodId = btn.dataset.prodId;
-                const sig = btn.dataset.sig;
-                const input = document.querySelector(`.sig-count-input[data-prod-id="${prodId}"][data-sig="${sig}"]`);
+                const id = btn.dataset.id;
+                const input = document.getElementById(`label-input-${id}`);
                 const newCount = parseInt(input.value) || 0;
                 try {
-                    const prodRef = db.collection("products").doc(prodId);
-                    const doc = await prodRef.get();
-                    if (doc.exists) {
-                        let sigs = doc.data().labelsBySignature || {};
-                        sigs[sig] = newCount;
-                        await prodRef.update({ labelsBySignature: sigs });
-                        showToast('💾 Zaktualizowano stan');
-                    }
-                } catch(err) { alert('Błąd zapisu: ' + err.message); }
-            });
-        });
-
-        document.querySelectorAll('.btn-sig-delete').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                if(!confirm('Usunąć tę sygnaturę etykiet z produktu?')) return;
-                const prodId = btn.dataset.prodId;
-                const sig = btn.dataset.sig;
-                try {
-                    const prodRef = db.collection("products").doc(prodId);
-                    const doc = await prodRef.get();
-                    if (doc.exists) {
-                        let sigs = doc.data().labelsBySignature || {};
-                        delete sigs[sig];
-                        await prodRef.update({ labelsBySignature: sigs });
-                        showToast('🗑️ Sygnatura usunięta');
-                    }
-                } catch(err) { alert('Błąd: ' + err.message); }
-            });
-        });
-
-        document.querySelectorAll('.btn-sig-add').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const prodId = btn.dataset.prodId;
-                const nameInput = document.querySelector(`.new-sig-name[data-prod-id="${prodId}"]`);
-                const countInput = document.querySelector(`.new-sig-count[data-prod-id="${prodId}"]`);
-                const sigName = nameInput.value.trim();
-                const sigCount = parseInt(countInput.value) || 0;
-                
-                if(!sigName) { alert('Wpisz sygnaturę (np. 25.5)'); return; }
-                try {
-                    const prodRef = db.collection("products").doc(prodId);
-                    const doc = await prodRef.get();
-                    if (doc.exists) {
-                        let sigs = doc.data().labelsBySignature || {};
-                        sigs[sigName] = (sigs[sigName] || 0) + sigCount;
-                        await prodRef.update({ labelsBySignature: sigs });
-                        showToast('➕ Dodano nową sygnaturę');
-                        nameInput.value = '';
-                        countInput.value = '';
-                    }
-                } catch(err) { alert('Błąd: ' + err.message); }
+                    await db.collection("products").doc(id).update({ labelsCount: newCount });
+                    showToast('✅ Zaktualizowano stan etykiet');
+                } catch (err) { alert('Błąd: ' + err.message); }
             });
         });
     }
-
-    manageLabelsBtn.addEventListener('click', () => {
-        renderLabelsList();
-        labelsModal.style.display = 'flex';
-    });
-    closeLabelsBtn.addEventListener('click', () => labelsModal.style.display = 'none');
-
-    // --- POPRAWKA 3: FUNKCJA GENEROWANIA I DRUKOWANIA RAPORTU ETYKIET ---
-    function printLabelsReport() {
-        const printWindow = window.open('', '_blank');
-        let html = `
-        <html>
-        <head>
-            <title>Raport Stanu i Zapotrzebowania Etykiet</title>
-            <style>
-                body { font-family: 'Segoe UI', Arial, sans-serif; padding: 30px; color: #1e293b; }
-                h1 { font-size: 24px; color: #0f172a; margin-bottom: 5px; text-align: center; }
-                .date { font-size: 13px; color: #64748b; text-align: center; margin-bottom: 30px; }
-                table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-                th, td { border: 1px solid #cbd5e1; padding: 10px 12px; text-align: left; font-size: 14px; }
-                th { background-color: #f1f5f9; font-weight: 600; color: #1e293b; }
-                tr:nth-child(even) { background-color: #f8fafc; }
-                .needed-badge { font-weight: 700; color: #b45309; background: #fffbeb; padding: 4px 8px; border-radius: 6px; }
-                .sig-tag { display: inline-block; background: #f1f5f9; padding: 3px 6px; border-radius: 6px; margin-right: 6px; font-size: 12px; border: 1px solid #e2e8f0; }
-                .sig-tag strong { color: #2563eb; }
-                @media print {
-                    body { padding: 0; }
-                }
-            </style>
-        </head>
-        <body>
-            <h1>📋 Raport Stanu i Zapotrzebowania Etykiet</h1>
-            <div class="date">Wygenerowano: ${new Date().toLocaleString('pl-PL')}</div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Nazwa produktu</th>
-                        <th>Kod produktu</th>
-                        <th>W kartonie</th>
-                        <th>Zapotrzebowanie (Potrzebne)</th>
-                        <th>Aktualny stan etykiet (sygnatury)</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-        
-        productsList.forEach(prod => {
-            const needed = getLabelsNeededForProduct(prod.id);
-            const sigs = prod.labelsBySignature || {};
-            let sigsStr = '';
-            
-            if (Object.keys(sigs).length === 0) {
-                sigsStr = '<span style="color:#94a3b8; font-style:italic;">Brak zapasów</span>';
-            } else {
-                sigsStr = Object.entries(sigs)
-                    .map(([sig, count]) => `<span class="sig-tag">Syg: <strong>${sig}</strong> — ${count} szt.</span>`)
-                    .join(' ');
-            }
-            
-            html += `
-                <tr>
-                    <td><strong>${prod.name}</strong></td>
-                    <td>${prod.code || '—'}</td>
-                    <td>${prod.piecesPerCarton || 0} szt.</td>
-                    <td><span class="needed-badge">${needed} szt.</span></td>
-                    <td>${sigsStr}</td>
-                </tr>
-            `;
-        });
-        
-        html += `
-                </tbody>
-            </table>
-            <script>
-                window.onload = function() { window.print(); }
-            <\/script>
-        </body>
-        </html>
-        `;
-        
-        printWindow.document.write(html);
-        printWindow.document.close();
-    }
-
-    document.getElementById('printLabelsReportBtn').addEventListener('click', printLabelsReport);
-    
     // ========== MODAL FIFO ==========
     function updateProductFilterSelect() {
         const query = fifoProductSearch.value.toLowerCase();
