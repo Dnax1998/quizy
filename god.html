@@ -93,6 +93,7 @@
         <button class="btn-secondary" id="batchesByProductBtn">📊 Partie wg produktu</button>
         <button class="btn-secondary" id="exportCsvBtn">📥 Eksportuj CSV</button>
         <button class="btn-secondary" id="manageProductsBtn">📋 Produkty</button>
+        <button class="btn-secondary" id="manageLabelsBtn">🏷️ Stan etykiet</button>
         <button class="btn-secondary" id="openLabelGeneratorBtn">🏷️ Etykiety</button>
     </div>
 
@@ -153,6 +154,17 @@
         <div class="flex-row"><button class="btn" id="closeProductsBtn">Zamknij</button></div>
     </div>
 </div>
+
+<div class="modal" id="labelsModal">
+    <div class="modal-card small-modal-card">
+        <h3>🏷️ Stan Etykiet</h3>
+        <p style="font-size: 14px; color: #64748b; margin-bottom: 16px;">Wpisz liczbę sztuk i kliknij Zapisz. Zaznaczenie checkboxa "Oklejony" na palecie automatycznie odejmie stąd etykiety.</p>
+        <div class="product-list" id="labelsListContainer" style="max-height: 400px; overflow-y: auto;">Ładowanie...</div>
+        <div class="flex-row">
+            <button class="btn" id="closeLabelsBtn">Zamknij</button>
+        </div>
+    </div>
+</div>    
 
 <div class="modal" id="productBatchesModal">
     <div class="modal-card" style="max-width:800px;">
@@ -254,6 +266,10 @@
     const productsListContainer = document.getElementById('productsListContainer');
     const manageProductsBtn = document.getElementById('manageProductsBtn');
     const closeProductsBtn = document.getElementById('closeProductsBtn');
+    const manageLabelsBtn = document.getElementById('manageLabelsBtn');
+    const labelsModal = document.getElementById('labelsModal');
+    const closeLabelsBtn = document.getElementById('closeLabelsBtn');
+    const labelsListContainer = document.getElementById('labelsListContainer');
     const productBatchesModal = document.getElementById('productBatchesModal');
     const productFilterSelect = document.getElementById('productFilterSelect');
     const fifoProductSearch = document.getElementById('fifoProductSearch');
@@ -609,11 +625,30 @@
     }
 
     saveSlotBtn.addEventListener('click', async () => {
-        if (!currentEditingLocation) return;
-        const type = palletType.value;
-        const newBatches = collectBatchesFromForm();
-        if (newBatches.length === 0) { alert('Dodaj przynajmniej jeden produkt z datą!'); return; }
-        const mainProduct = newBatches[0];
+    if (!currentEditingLocation) return;
+    const type = palletType.value;
+    const newBatches = collectBatchesFromForm();
+    if (newBatches.length === 0) { alert('Dodaj przynajmniej jeden produkt z datą!'); return; }
+    const mainProduct = newBatches[0];
+    
+    try {
+        const slotRef = db.collection("slots").doc(currentEditingLocation);
+        
+        // KROK 1: Obliczenie ile etykiet zużyto NA TYM POLU przed obecną edycją
+        const oldBatchesSnapshot = await slotRef.collection("batches").get();
+        const oldBatches = oldBatchesSnapshot.docs.map(doc => doc.data());
+        const oldLabeledCounts = {};
+        oldBatches.forEach(b => {
+            if (b.oklejony && b.productId) oldLabeledCounts[b.productId] = (oldLabeledCounts[b.productId] || 0) + (b.pieces || 0);
+        });
+        
+        // KROK 2: Obliczenie ile etykiet partia wymaga PO obecnej edycji
+        const newLabeledCounts = {};
+        newBatches.forEach(b => {
+            if (b.oklejony && b.productId) newLabeledCounts[b.productId] = (newLabeledCounts[b.productId] || 0) + (b.pieces || 0);
+        });
+
+        // STANDARDOWY ZAPIS DANYCH NA POLU
         const slotData = {
             productId: mainProduct.productId,
             productName: mainProduct.productName,
@@ -622,38 +657,63 @@
             prodDateString: mainProduct.prodDateString || '',
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         };
-        try {
-            const slotRef = db.collection("slots").doc(currentEditingLocation);
-            await slotRef.set(slotData, { merge: true });
-            const oldBatchesSnapshot = await slotRef.collection("batches").get();
-            await Promise.all(oldBatchesSnapshot.docs.map(doc => doc.ref.delete()));
-            for (const b of newBatches) {
-                await slotRef.collection("batches").add({
-                    productId: b.productId, productName: b.productName, productCode: b.productCode,
-                    signature: b.signature || '',
-                    prodDateString: b.prodDateString, prodDate: b.prodDate, cartons: b.cartons, pieces: b.pieces, oklejony: b.oklejony
-                });
+
+        await slotRef.set(slotData, { merge: true });
+        await Promise.all(oldBatchesSnapshot.docs.map(doc => doc.ref.delete()));
+        for (const b of newBatches) {
+            await slotRef.collection("batches").add({
+                productId: b.productId, productName: b.productName, productCode: b.productCode,
+                signature: b.signature || '',
+                prodDateString: b.prodDateString, prodDate: b.prodDate, cartons: b.cartons, pieces: b.pieces, oklejony: b.oklejony
+            });
+        }
+
+        // KROK 3: Aktualizacja stanu w bazie (w locie) przy użyciu increment/decrement
+        const allProductIds = new Set([...Object.keys(oldLabeledCounts), ...Object.keys(newLabeledCounts)]);
+        allProductIds.forEach(async prodId => {
+            const oldQty = oldLabeledCounts[prodId] || 0;
+            const newQty = newLabeledCounts[prodId] || 0;
+            const diff = newQty - oldQty; 
+            
+            // Jeśli diff > 0 oznacza to, że przybyło oklejonych sztuk i musimy ściągnąć etykiety
+            if (diff !== 0) {
+                await db.collection("products").doc(prodId).update({
+                    labelsCount: firebase.firestore.FieldValue.increment(-diff)
+                }).catch(e => console.error("Błąd aktualizacji etykiet:", e));
             }
-            showToast('✅ Zapisano');
-            editModal.style.display = 'none';
-        } catch (err) { alert('Błąd zapisu: ' + err.message); }
-    });
+        });
+
+        showToast('✅ Zapisano');
+        editModal.style.display = 'none';
+    } catch (err) { alert('Błąd zapisu: ' + err.message); }
+});
 
     clearSlotBtn.addEventListener('click', async () => {
-        if (!currentEditingLocation) return;
-        if (!confirm('Na pewno wyczyścić to pole?')) return;
-        try {
-            const slotRef = db.collection("slots").doc(currentEditingLocation);
-            const batchesSnapshot = await slotRef.collection("batches").get();
-            await Promise.all(batchesSnapshot.docs.map(d => d.ref.delete()));
-            await slotRef.delete();
-            showToast('🗑️ Pole wyczyszczone');
-            editModal.style.display = 'none';
-        } catch (err) { alert('Błąd: ' + err.message); }
-    });
+    if (!currentEditingLocation) return;
+    if (!confirm('Na pewno wyczyścić to pole?')) return;
+    try {
+        const slotRef = db.collection("slots").doc(currentEditingLocation);
+        const batchesSnapshot = await slotRef.collection("batches").get();
+        
+        // Zwracanie etykiet (jeśli pole miało "Oklejone" partie)
+        const oldBatches = batchesSnapshot.docs.map(d => d.data());
+        const oldLabeledCounts = {};
+        oldBatches.forEach(b => {
+            if (b.oklejony && b.productId) oldLabeledCounts[b.productId] = (oldLabeledCounts[b.productId] || 0) + (b.pieces || 0);
+        });
+        for (const [prodId, qty] of Object.entries(oldLabeledCounts)) {
+            await db.collection("products").doc(prodId).update({
+                labelsCount: firebase.firestore.FieldValue.increment(qty)
+            }).catch(e => console.error("Błąd zwrotu etykiet:", e));
+        }
 
-    cancelEditBtn.addEventListener('click', () => editModal.style.display = 'none');
-
+        await Promise.all(batchesSnapshot.docs.map(d => d.ref.delete()));
+        await slotRef.delete();
+        showToast('🗑️ Pole wyczyszczone');
+        editModal.style.display = 'none';
+    } catch (err) { alert('Błąd: ' + err.message); }
+});
+    
     // ========== PRZENOSZENIE I KOPIOWANIE ==========
     function isSlotAvailable(locId) {
         const data = allSlotsData[locId];
@@ -815,6 +875,50 @@
     manageProductsBtn.addEventListener('click', () => productsModal.style.display = 'flex');
     closeProductsBtn.addEventListener('click', () => productsModal.style.display = 'none');
 
+
+    // ======= TUTAJ WKLEJASZ NOWY KOD =======
+    function renderLabelsList() {
+        if (productsList.length === 0) {
+            labelsListContainer.innerHTML = '<div style="text-align:center; color:#64748b;">Brak produktów.</div>';
+            return;
+        }
+        let html = '';
+        productsList.forEach(prod => {
+            const count = prod.labelsCount || 0; 
+            html += `<div class="product-item">
+                <div class="product-info">
+                    <strong>${prod.name}</strong><br>
+                    <span style="font-size:12px; color:#64748b;">Kod: ${prod.code || '—'}</span>
+                </div>
+                <div class="product-actions" style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:14px; font-weight:600;">Szt:</span>
+                    <input type="number" id="label-input-${prod.id}" value="${count}" style="width:80px; padding:6px 12px; border-radius:12px; border:1px solid #cbd5e1;">
+                    <button class="btn btn-primary btn-sm update-labels-btn" data-id="${prod.id}" style="padding:6px 12px; font-size:12px;">Zapisz</button>
+                </div>
+            </div>`;
+        });
+        labelsListContainer.innerHTML = html;
+        
+        document.querySelectorAll('.update-labels-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const id = btn.dataset.id;
+                const input = document.getElementById(`label-input-${id}`);
+                const newCount = parseInt(input.value) || 0;
+                try {
+                    await db.collection("products").doc(id).update({ labelsCount: newCount });
+                    showToast('✅ Zaktualizowano stan etykiet');
+                } catch (err) { alert('Błąd: ' + err.message); }
+            });
+        });
+    }
+
+    manageLabelsBtn.addEventListener('click', () => {
+        renderLabelsList();
+        labelsModal.style.display = 'flex';
+    });
+    closeLabelsBtn.addEventListener('click', () => labelsModal.style.display = 'none');
+    // =========================================
+    
     // ========== MODAL FIFO ==========
     function updateProductFilterSelect() {
         const query = fifoProductSearch.value.toLowerCase();
@@ -952,6 +1056,7 @@
         if (e.target === productsModal) productsModal.style.display = 'none';
         if (e.target === productBatchesModal) productBatchesModal.style.display = 'none';
         if (e.target === exportCsvModal) exportCsvModal.style.display = 'none';
+        if (e.target === labelsModal) labelsModal.style.display = 'none';
     });
     subscribeToSlots();
     subscribeToBatches();
