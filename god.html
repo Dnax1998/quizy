@@ -148,6 +148,7 @@
         <div style="margin-bottom:20px;">
             <div class="form-group"><label>Nazwa produktu</label><input type="text" id="newProductName" placeholder="np. Dezodorant 067"></div>
             <div class="form-group"><label>Kod produktu</label><input type="text" id="newProductCode" placeholder="IND-12345"></div>
+            <div class="form-group"><label>Sztuk w kartonie</label><input type="number" id="newProductPpc" placeholder="np. 24" min="0"></div>
             <button class="btn btn-primary" id="addProductBtn" style="width:100%;">➕ Dodaj produkt</button>
         </div>
         <div class="product-list" id="productsListContainer">Ładowanie...</div>
@@ -262,6 +263,7 @@
     const productsModal = document.getElementById('productsModal');
     const newProductName = document.getElementById('newProductName');
     const newProductCode = document.getElementById('newProductCode');
+    const newProductPpc = document.getElementById('newProductPpc');
     const addProductBtn = document.getElementById('addProductBtn');
     const productsListContainer = document.getElementById('productsListContainer');
     const manageProductsBtn = document.getElementById('manageProductsBtn');
@@ -624,96 +626,106 @@
         editModal.style.display = 'flex';
     }
 
+// --- NOWA FUNKCJA POMOCNICZA DO OBLICZANIA ETYKIET ---
+    function getBatchLabelCount(batch) {
+        if (!batch.oklejony || !batch.productId) return 0;
+        const prod = productsList.find(p => p.id === batch.productId);
+        const piecesPerCarton = prod ? (prod.piecesPerCarton || 0) : 0;
+        const cartons = parseInt(batch.cartons) || 0;
+        const pieces = parseInt(batch.pieces) || 0;
+        // Zwraca zsumowaną wartość całkowitą sztuk na palecie dla tej partii
+        return (cartons * piecesPerCarton) + pieces;
+    }
+
+    // --- ULEPSZONY ZAPIS POLA ---
     saveSlotBtn.addEventListener('click', async () => {
-    if (!currentEditingLocation) return;
-    const type = palletType.value;
-    const newBatches = collectBatchesFromForm();
-    if (newBatches.length === 0) { alert('Dodaj przynajmniej jeden produkt z datą!'); return; }
-    const mainProduct = newBatches[0];
-    
-    try {
-        const slotRef = db.collection("slots").doc(currentEditingLocation);
+        if (!currentEditingLocation) return;
+        const type = palletType.value;
+        const newBatches = collectBatchesFromForm();
+        if (newBatches.length === 0) { alert('Dodaj przynajmniej jeden produkt z datą!'); return; }
+        const mainProduct = newBatches[0];
         
-        // KROK 1: Obliczenie ile etykiet zużyto NA TYM POLU przed obecną edycją
-        const oldBatchesSnapshot = await slotRef.collection("batches").get();
-        const oldBatches = oldBatchesSnapshot.docs.map(doc => doc.data());
-        const oldLabeledCounts = {};
-        oldBatches.forEach(b => {
-            if (b.oklejony && b.productId) oldLabeledCounts[b.productId] = (oldLabeledCounts[b.productId] || 0) + (b.pieces || 0);
-        });
-        
-        // KROK 2: Obliczenie ile etykiet partia wymaga PO obecnej edycji
-        const newLabeledCounts = {};
-        newBatches.forEach(b => {
-            if (b.oklejony && b.productId) newLabeledCounts[b.productId] = (newLabeledCounts[b.productId] || 0) + (b.pieces || 0);
-        });
-
-        // STANDARDOWY ZAPIS DANYCH NA POLU
-        const slotData = {
-            productId: mainProduct.productId,
-            productName: mainProduct.productName,
-            productCode: mainProduct.productCode,
-            palletType: type,
-            prodDateString: mainProduct.prodDateString || '',
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
-
-        await slotRef.set(slotData, { merge: true });
-        await Promise.all(oldBatchesSnapshot.docs.map(doc => doc.ref.delete()));
-        for (const b of newBatches) {
-            await slotRef.collection("batches").add({
-                productId: b.productId, productName: b.productName, productCode: b.productCode,
-                signature: b.signature || '',
-                prodDateString: b.prodDateString, prodDate: b.prodDate, cartons: b.cartons, pieces: b.pieces, oklejony: b.oklejony
-            });
-        }
-
-        // KROK 3: Aktualizacja stanu w bazie (w locie) przy użyciu increment/decrement
-        const allProductIds = new Set([...Object.keys(oldLabeledCounts), ...Object.keys(newLabeledCounts)]);
-        allProductIds.forEach(async prodId => {
-            const oldQty = oldLabeledCounts[prodId] || 0;
-            const newQty = newLabeledCounts[prodId] || 0;
-            const diff = newQty - oldQty; 
+        try {
+            const slotRef = db.collection("slots").doc(currentEditingLocation);
             
-            // Jeśli diff > 0 oznacza to, że przybyło oklejonych sztuk i musimy ściągnąć etykiety
-            if (diff !== 0) {
-                await db.collection("products").doc(prodId).update({
-                    labelsCount: firebase.firestore.FieldValue.increment(-diff)
-                }).catch(e => console.error("Błąd aktualizacji etykiet:", e));
+            // KROK 1: Obliczanie starego stanu przy pomocy nowej funkcji matematycznej
+            const oldBatchesSnapshot = await slotRef.collection("batches").get();
+            const oldBatches = oldBatchesSnapshot.docs.map(doc => doc.data());
+            const oldLabeledCounts = {};
+            oldBatches.forEach(b => {
+                const totalLabels = getBatchLabelCount(b);
+                if (totalLabels > 0) oldLabeledCounts[b.productId] = (oldLabeledCounts[b.productId] || 0) + totalLabels;
+            });
+            
+            // KROK 2: Obliczanie nowego stanu
+            const newLabeledCounts = {};
+            newBatches.forEach(b => {
+                const totalLabels = getBatchLabelCount(b);
+                if (totalLabels > 0) newLabeledCounts[b.productId] = (newLabeledCounts[b.productId] || 0) + totalLabels;
+            });
+
+            // Zapis do bazy regału
+            const slotData = {
+                productId: mainProduct.productId, productName: mainProduct.productName, productCode: mainProduct.productCode,
+                palletType: type, prodDateString: mainProduct.prodDateString || '', updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            await slotRef.set(slotData, { merge: true });
+            await Promise.all(oldBatchesSnapshot.docs.map(doc => doc.ref.delete()));
+            for (const b of newBatches) {
+                await slotRef.collection("batches").add({
+                    productId: b.productId, productName: b.productName, productCode: b.productCode,
+                    signature: b.signature || '', prodDateString: b.prodDateString, prodDate: b.prodDate, 
+                    cartons: b.cartons, pieces: b.pieces, oklejony: b.oklejony
+                });
             }
-        });
 
-        showToast('✅ Zapisano');
-        editModal.style.display = 'none';
-    } catch (err) { alert('Błąd zapisu: ' + err.message); }
-});
+            // KROK 3: Aktualizacja etykiet (z uwzględnieniem kartonów)
+            const allProductIds = new Set([...Object.keys(oldLabeledCounts), ...Object.keys(newLabeledCounts)]);
+            allProductIds.forEach(async prodId => {
+                const oldQty = oldLabeledCounts[prodId] || 0;
+                const newQty = newLabeledCounts[prodId] || 0;
+                const diff = newQty - oldQty; 
+                if (diff !== 0) {
+                    await db.collection("products").doc(prodId).update({
+                        labelsCount: firebase.firestore.FieldValue.increment(-diff)
+                    }).catch(e => console.error("Błąd aktualizacji etykiet:", e));
+                }
+            });
 
+            showToast('✅ Zapisano');
+            editModal.style.display = 'none';
+        } catch (err) { alert('Błąd zapisu: ' + err.message); }
+    });
+
+    // --- ULEPSZONE CZYSZCZENIE POLA ---
     clearSlotBtn.addEventListener('click', async () => {
-    if (!currentEditingLocation) return;
-    if (!confirm('Na pewno wyczyścić to pole?')) return;
-    try {
-        const slotRef = db.collection("slots").doc(currentEditingLocation);
-        const batchesSnapshot = await slotRef.collection("batches").get();
-        
-        // Zwracanie etykiet (jeśli pole miało "Oklejone" partie)
-        const oldBatches = batchesSnapshot.docs.map(d => d.data());
-        const oldLabeledCounts = {};
-        oldBatches.forEach(b => {
-            if (b.oklejony && b.productId) oldLabeledCounts[b.productId] = (oldLabeledCounts[b.productId] || 0) + (b.pieces || 0);
-        });
-        for (const [prodId, qty] of Object.entries(oldLabeledCounts)) {
-            await db.collection("products").doc(prodId).update({
-                labelsCount: firebase.firestore.FieldValue.increment(qty)
-            }).catch(e => console.error("Błąd zwrotu etykiet:", e));
-        }
+        if (!currentEditingLocation) return;
+        if (!confirm('Na pewno wyczyścić to pole?')) return;
+        try {
+            const slotRef = db.collection("slots").doc(currentEditingLocation);
+            const batchesSnapshot = await slotRef.collection("batches").get();
+            
+            // Zwracanie etykiet uwzględniające kartony
+            const oldBatches = batchesSnapshot.docs.map(d => d.data());
+            const oldLabeledCounts = {};
+            oldBatches.forEach(b => {
+                const totalLabels = getBatchLabelCount(b);
+                if (totalLabels > 0) oldLabeledCounts[b.productId] = (oldLabeledCounts[b.productId] || 0) + totalLabels;
+            });
+            
+            for (const [prodId, qty] of Object.entries(oldLabeledCounts)) {
+                await db.collection("products").doc(prodId).update({
+                    labelsCount: firebase.firestore.FieldValue.increment(qty)
+                }).catch(e => console.error("Błąd zwrotu etykiet:", e));
+            }
 
-        await Promise.all(batchesSnapshot.docs.map(d => d.ref.delete()));
-        await slotRef.delete();
-        showToast('🗑️ Pole wyczyszczone');
-        editModal.style.display = 'none';
-    } catch (err) { alert('Błąd: ' + err.message); }
-});
-    
+            await Promise.all(batchesSnapshot.docs.map(d => d.ref.delete()));
+            await slotRef.delete();
+            showToast('🗑️ Pole wyczyszczone');
+            editModal.style.display = 'none';
+        } catch (err) { alert('Błąd: ' + err.message); }
+    });
     // ========== PRZENOSZENIE I KOPIOWANIE ==========
     function isSlotAvailable(locId) {
         const data = allSlotsData[locId];
@@ -831,8 +843,12 @@
         }
         let html = '';
         productsList.forEach(prod => {
+            // Dodano wyświetlanie sztuk w kartonie
             html += `<div class="product-item">
-                <div class="product-info"><strong>${prod.name}</strong><br><span style="font-size:12px; color:#64748b;">Kod: ${prod.code || '—'}</span></div>
+                <div class="product-info">
+                    <strong>${prod.name}</strong><br>
+                    <span style="font-size:12px; color:#64748b;">Kod: ${prod.code || '—'} | W kartonie: <b>${prod.piecesPerCarton || 0} szt.</b></span>
+                </div>
                 <div class="product-actions">
                     <button class="icon-btn edit-product" data-id="${prod.id}">✏️</button>
                     <button class="icon-btn delete-product" data-id="${prod.id}">🗑️</button>
@@ -843,26 +859,39 @@
         document.querySelectorAll('.edit-product').forEach(btn => btn.addEventListener('click', () => editProduct(btn.dataset.id)));
         document.querySelectorAll('.delete-product').forEach(btn => btn.addEventListener('click', () => deleteProduct(btn.dataset.id)));
     }
+
     async function addProduct() {
         const name = newProductName.value.trim();
         if (!name) { alert('Podaj nazwę'); return; }
+        // Pobieranie wartości sztuk w kartonie
+        const ppc = parseInt(newProductPpc.value) || 0;
         try {
             await db.collection("products").add({
-                name, code: newProductCode.value.trim() || null,
+                name, 
+                code: newProductCode.value.trim() || null,
+                piecesPerCarton: ppc, // ZAPIS NOWEJ WARTOŚCI
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
-            newProductName.value = newProductCode.value = '';
+            newProductName.value = newProductCode.value = newProductPpc.value = '';
             showToast('✅ Produkt dodany');
         } catch (err) { alert('Błąd: ' + err.message); }
     }
+
     async function editProduct(id) {
         const prod = productsList.find(p => p.id === id);
         if (!prod) return;
         const newName = prompt('Nowa nazwa:', prod.name); if (newName === null) return;
         const newCode = prompt('Nowy kod:', prod.code || '');
+        // Pytanie o nową ilość w kartonie
+        const newPpc = prompt('Sztuk w jednym kartonie:', prod.piecesPerCarton || 0);
+        
         if (!newName.trim()) { alert('Nazwa wymagana'); return; }
         try {
-            await db.collection("products").doc(id).update({ name: newName.trim(), code: newCode.trim() || null });
+            await db.collection("products").doc(id).update({ 
+                name: newName.trim(), 
+                code: newCode.trim() || null,
+                piecesPerCarton: parseInt(newPpc) || 0 // ZAPIS NOWEJ WARTOŚCI
+            });
             showToast('✅ Zaktualizowano');
         } catch (err) { alert('Błąd: ' + err.message); }
     }
