@@ -963,7 +963,7 @@
         return totalNeeded;
     }
 
-    // --- POPRAWKA 2 & 5: ŁADNIEJSZY INTERFEJS STANU ETYKIET WG SYGNATUR ---
+// --- POPRAWKA 2 & 5: ŁADNIEJSZY INTERFEJS STANU ETYKIET WG SYGNATUR ---
     function renderLabelsList() {
         if (productsList.length === 0) {
             labelsListContainer.innerHTML = '<div style="text-align:center; color:#64748b; padding:20px;">Brak produktów w bazie.</div>';
@@ -971,7 +971,39 @@
         }
         let html = '';
         productsList.forEach(prod => {
-            const needed = getLabelsNeededForProduct(prod.id);
+            
+            // OBLICZANIE ZAPOTRZEBOWANIA Z ROZBICIEM NA SYGNATURY PARTII NA REGAŁACH
+            let demandBySignature = {};
+            let totalNeeded = 0;
+            
+            Object.values(slotBatches).forEach(batches => {
+                batches.forEach(b => {
+                    if (b.productId === prod.id) {
+                        const piecesPerCarton = parseInt(prod.piecesPerCarton) || 0;
+                        const cartons = parseInt(b.cartons) || 0;
+                        const pieces = parseInt(b.pieces) || 0;
+                        const bCount = (cartons * piecesPerCarton) + pieces;
+                        
+                        if (bCount > 0) {
+                            const sig = b.signature ? b.signature.trim() : 'Brak sygnatury';
+                            demandBySignature[sig] = (demandBySignature[sig] || 0) + bCount;
+                            totalNeeded += bCount;
+                        }
+                    }
+                });
+            });
+
+            // Generowanie widoku zapotrzebowania (rozbitego na sygnatury)
+            let neededBreakdownHtml = '';
+            if (totalNeeded > 0) {
+                neededBreakdownHtml += `<span class="needed-val" style="display:block; text-align:right;">${totalNeeded} szt.</span>`;
+                Object.entries(demandBySignature).forEach(([sig, qty]) => {
+                    neededBreakdownHtml += `<div style="font-size:11px; color:#b45309; text-align:right; margin-top:2px;">Syg. <b>${sig}</b>: ${qty} szt.</div>`;
+                });
+            } else {
+                neededBreakdownHtml = `<span class="needed-val">0 szt.</span>`;
+            }
+
             const sigs = prod.labelsBySignature || {};
             
             html += `
@@ -981,9 +1013,9 @@
                         <div class="label-prod-title">${prod.name}</div>
                         <div class="label-prod-sub">Kod: ${prod.code || '—'} | W kartonie: <b>${prod.piecesPerCarton || 0} szt.</b></div>
                     </div>
-                    <div class="label-prod-needed">
+                    <div class="label-prod-needed" style="min-width: 140px;">
                         <span class="needed-title">Potrzebne etykiety</span>
-                        <span class="needed-val">${needed} szt.</span>
+                        ${neededBreakdownHtml}
                     </div>
                 </div>
                 
@@ -1096,9 +1128,10 @@
                 th, td { border: 1px solid #cbd5e1; padding: 10px 12px; text-align: left; font-size: 14px; }
                 th { background-color: #f1f5f9; font-weight: 600; color: #1e293b; }
                 tr:nth-child(even) { background-color: #f8fafc; }
-                .needed-badge { font-weight: 700; color: #b45309; background: #fffbeb; padding: 4px 8px; border-radius: 6px; }
+                .needed-badge { font-weight: 700; color: #b45309; background: #fffbeb; padding: 4px 8px; border-radius: 6px; display: inline-block; }
                 .sig-tag { display: inline-block; background: #f1f5f9; padding: 3px 6px; border-radius: 6px; margin-right: 6px; font-size: 12px; border: 1px solid #e2e8f0; }
                 .sig-tag strong { color: #2563eb; }
+                .demand-tag { display: inline-block; background: #fffbeb; border: 1px solid #fde68a; padding: 2px 5px; border-radius: 4px; font-size: 11px; margin-top: 2px; color: #b45309; }
                 @media print {
                     body { padding: 0; }
                 }
@@ -1121,10 +1154,36 @@
         `;
         
         productsList.forEach(prod => {
-            const needed = getLabelsNeededForProduct(prod.id);
+            
+            // OBLICZANIE ZAPOTRZEBOWANIA DLA RAPORTU
+            let demandBySignature = {};
+            let totalNeeded = 0;
+            Object.values(slotBatches).forEach(batches => {
+                batches.forEach(b => {
+                    if (b.productId === prod.id) {
+                        const piecesPerCarton = parseInt(prod.piecesPerCarton) || 0;
+                        const cartons = parseInt(b.cartons) || 0;
+                        const pieces = parseInt(b.pieces) || 0;
+                        const bCount = (cartons * piecesPerCarton) + pieces;
+                        if (bCount > 0) {
+                            const sig = b.signature ? b.signature.trim() : 'Brak sygnatury';
+                            demandBySignature[sig] = (demandBySignature[sig] || 0) + bCount;
+                            totalNeeded += bCount;
+                        }
+                    }
+                });
+            });
+
+            let neededStr = `<span class="needed-badge">${totalNeeded} szt.</span>`;
+            if (totalNeeded > 0) {
+                neededStr += '<br>';
+                neededStr += Object.entries(demandBySignature)
+                    .map(([sig, qty]) => `<span class="demand-tag">Syg: ${sig} — <b>${qty} szt.</b></span>`)
+                    .join(' ');
+            }
+
             const sigs = prod.labelsBySignature || {};
             let sigsStr = '';
-            
             if (Object.keys(sigs).length === 0) {
                 sigsStr = '<span style="color:#94a3b8; font-style:italic;">Brak zapasów</span>';
             } else {
@@ -1138,7 +1197,7 @@
                     <td><strong>${prod.name}</strong></td>
                     <td>${prod.code || '—'}</td>
                     <td>${prod.piecesPerCarton || 0} szt.</td>
-                    <td><span class="needed-badge">${needed} szt.</span></td>
+                    <td>${neededStr}</td>
                     <td>${sigsStr}</td>
                 </tr>
             `;
@@ -1159,7 +1218,6 @@
     }
 
     document.getElementById('printLabelsReportBtn').addEventListener('click', printLabelsReport);
-    
     // ========== MODAL FIFO ==========
     function updateProductFilterSelect() {
         const query = fifoProductSearch.value.toLowerCase();
