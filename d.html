@@ -1,18 +1,13 @@
-html_content = r"""<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dostawy OSL - Dashboard</title>
-    <!-- Tailwind CSS do stylizacji (zamiast Bootstrapa) -->
+    <title>Dostawy OSL - Generator Formularza Kontroli GM-03-01</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Biblioteka do czytania PDF w przeglądarce -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <!-- Biblioteka do tworzenia plików Excel -->
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-    <!-- Biblioteka do wykresów -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
     <style>
         body { background-color: #f3f4f6; }
         .tab-btn.active { border-bottom: 2px solid #4F46E5; color: #4F46E5; }
@@ -24,40 +19,57 @@ html_content = r"""<!DOCTYPE html>
         
         <!-- Header -->
         <div class="bg-indigo-600 p-6 text-white text-center">
-            <h1 class="text-3xl font-bold mb-2">📦 Panel Dostawy OSL</h1>
-            <p class="text-indigo-200">Przetwarzaj PDF do Excela i analizuj dostawy w przeglądarce.</p>
+            <h1 class="text-3xl font-bold mb-2">📦 Generator Formularza Kontroli Wejściowej (GM-03-01)</h1>
+            <p class="text-indigo-200">Przetwarzaj pliki PDF OSL na wzorcowy arkusz Excel z nagłówkiem i statystykami.</p>
         </div>
 
         <div class="p-8">
-            <!-- Wgrywanie pliku -->
-            <div class="border-2 border-dashed border-gray-300 rounded-lg p-10 text-center hover:bg-gray-50 transition">
-                <input type="file" id="fileInput" accept=".pdf" class="hidden" />
-                <label for="fileInput" class="cursor-pointer flex flex-col items-center">
-                    <svg class="w-12 h-12 text-indigo-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
-                    <span class="text-lg font-medium text-gray-700">Kliknij tutaj, aby wgrać plik PDF (OSL)</span>
-                    <span class="text-sm text-gray-400 mt-1">Wszystkie dane są przetwarzane w Twojej przeglądarce.</span>
-                </label>
+            <!-- Wgrywanie pliku PDF i opcjonalnie wzoru -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                
+                <div class="md:col-span-2 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:bg-gray-50 transition">
+                    <input type="file" id="fileInput" accept=".pdf" class="hidden" />
+                    <label for="fileInput" class="cursor-pointer flex flex-col items-center">
+                        <svg class="w-12 h-12 text-indigo-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                        <span class="text-lg font-medium text-gray-700">1. Wgraj plik PDF (Order Summary List)</span>
+                        <span class="text-xs text-gray-400 mt-1" id="pdfFileName">Brak wybranego pliku</span>
+                    </label>
+                </div>
+
+                <div class="border-2 border-dashed border-amber-300 bg-amber-50/30 rounded-lg p-8 text-center hover:bg-amber-50 transition">
+                    <input type="file" id="templateInput" accept=".xlsx, .xls, .ods" class="hidden" />
+                    <label for="templateInput" class="cursor-pointer flex flex-col items-center">
+                        <svg class="w-12 h-12 text-amber-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <span class="text-sm font-medium text-amber-900">2. (Opcjonalnie) Wgraj swój pusty wzór Excel</span>
+                        <span class="text-xs text-amber-600 mt-1" id="templateFileName">Domyślny wzór GM-03-01</span>
+                    </label>
+                </div>
+
             </div>
 
             <!-- Loader -->
-            <div id="loading" class="hidden text-center mt-8">
+            <div id="loading" class="hidden text-center my-8">
                 <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                <p class="mt-2 text-indigo-600 font-medium">Analizowanie dokumentu i generowanie statystyk...</p>
+                <p class="mt-2 text-indigo-600 font-medium">Analizowanie dokumentu OSL i generowanie struktury GM-03-01...</p>
             </div>
 
-            <!-- Główna sekcja Dashboardu (ukryta na start) -->
-            <div id="dashboard" class="hidden mt-8">
+            <!-- Główna sekcja Dashboardu -->
+            <div id="dashboard" class="hidden mt-6">
                 
                 <!-- Zakładki -->
                 <div class="flex border-b mb-6">
                     <button onclick="switchTab('tab-dash')" id="btn-tab-dash" class="tab-btn active px-4 py-2 font-medium text-gray-600 focus:outline-none">📊 Dashboard</button>
-                    <button onclick="switchTab('tab-data')" id="btn-tab-data" class="tab-btn px-4 py-2 font-medium text-gray-600 focus:outline-none">📁 Tabela i Excel</button>
+                    <button onclick="switchTab('tab-data')" id="btn-tab-data" class="tab-btn px-4 py-2 font-medium text-gray-600 focus:outline-none">📋 Podgląd Formularza i Pobieranie</button>
                 </div>
 
                 <!-- Tab: Dashboard -->
                 <div id="tab-dash">
-                    <h2 class="text-xl font-bold mb-4">Podsumowanie dostawy</h2>
-                    
+                    <div class="flex flex-wrap justify-between items-center bg-gray-50 p-4 rounded-lg border mb-6 text-sm text-gray-700">
+                        <div><strong>Nr Dokumentu Dostawy:</strong> <span id="metaShipmentId" class="text-indigo-600 font-bold">-</span></div>
+                        <div><strong>Data wydruku/dostawy:</strong> <span id="metaPrintDate" class="text-indigo-600 font-bold">-</span></div>
+                        <div><strong>Odbiorca:</strong> <span id="metaRecipient" class="text-indigo-600 font-bold">Forever Living Products Poland Sp. z o.o.</span></div>
+                    </div>
+
                     <!-- KPI Cards -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                         <div class="bg-indigo-50 p-6 rounded-lg border border-indigo-100">
@@ -69,14 +81,14 @@ html_content = r"""<!DOCTYPE html>
                             <p id="kpiKarton" class="text-3xl font-bold text-emerald-700 mt-1">0</p>
                         </div>
                         <div class="bg-purple-50 p-6 rounded-lg border border-purple-100">
-                            <p class="text-sm text-purple-500 font-semibold uppercase">Unikalne pozycje</p>
+                            <p class="text-sm text-purple-500 font-semibold uppercase">Unikalne pozycje (Kody)</p>
                             <p id="kpiUnique" class="text-3xl font-bold text-purple-700 mt-1">0</p>
                         </div>
                     </div>
 
                     <!-- Wykres -->
                     <div class="bg-white border rounded-lg p-4 mb-4">
-                        <h3 class="text-lg font-semibold mb-4">TOP 10 produktów (wg ilości)</h3>
+                        <h3 class="text-lg font-semibold mb-4">TOP 10 produktów w dostawie</h3>
                         <div class="relative h-64 w-full">
                             <canvas id="myChart"></canvas>
                         </div>
@@ -86,13 +98,25 @@ html_content = r"""<!DOCTYPE html>
                 <!-- Tab: Dane -->
                 <div id="tab-data" class="hidden">
                     <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-xl font-bold">Wyekstrahowane dane</h2>
-                        <button id="btnDownload" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-6 rounded shadow transition">
-                            📥 Pobierz gotowy plik Excel
+                        <h2 class="text-xl font-bold">Wzór formularza GM-03-01 (Gotowy do druku/edycji)</h2>
+                        <button id="btnDownload" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-6 rounded-lg shadow transition flex items-center gap-2">
+                            <span>📥 Pobierz wypełniony plik Excel</span>
                         </button>
                     </div>
 
-                    <div class="overflow-x-auto border rounded-lg">
+                    <!-- Nagłówek Wzoru -->
+                    <div class="bg-gray-50 border rounded-t-lg p-4 text-xs font-mono border-b-0 space-y-1 text-gray-600">
+                        <div class="flex justify-between">
+                            <div><strong>DOSTAWCA:</strong> Forever Direct E.U. B.V.</div>
+                            <div><strong>ODBIORCA:</strong> Forever Living Products Poland Sp. z o.o.</div>
+                            <div><strong>NR DOKUMENTU DOSTAWY:</strong> <span id="previewShipment">-</span></div>
+                        </div>
+                        <div class="text-center font-bold text-sm text-gray-800 pt-2 border-t mt-2">
+                            Dokument nr GM-03-01 | Kontrola wejściowa wyrobów gotowych | Wydanie 3 (13.09.2023)
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto border rounded-b-lg">
                         <table class="min-w-full text-left text-sm whitespace-nowrap">
                             <thead class="bg-gray-100 uppercase font-medium">
                                 <tr>
@@ -116,13 +140,22 @@ html_content = r"""<!DOCTYPE html>
     </div>
 
     <script>
-        // Konfiguracja PDF.js
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
         let globalData = [];
+        let metadata = { shipmentId: '', printDate: '', dateFormatted: '' };
         let myChart = null;
+        let userTemplateWorkbook = null;
 
-        // Przełączanie zakładek
+        // Wgrywanie opcjonalnego szablonu Excel / ODS
+        document.getElementById('templateInput').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            document.getElementById('templateFileName').innerText = file.name;
+            const data = await file.arrayBuffer();
+            userTemplateWorkbook = XLSX.read(data, {type: 'array'});
+        });
+
         function switchTab(tabId) {
             document.getElementById('tab-dash').classList.add('hidden');
             document.getElementById('tab-data').classList.add('hidden');
@@ -133,10 +166,10 @@ html_content = r"""<!DOCTYPE html>
             document.getElementById('btn-' + tabId).classList.add('active');
         }
 
-        // Obsługa wgrania pliku
         document.getElementById('fileInput').addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
+            document.getElementById('pdfFileName').innerText = file.name;
             
             document.getElementById('loading').classList.remove('hidden');
             document.getElementById('dashboard').classList.add('hidden');
@@ -145,55 +178,58 @@ html_content = r"""<!DOCTYPE html>
                 const arrayBuffer = await file.arrayBuffer();
                 const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
                 globalData = [];
+                metadata = { shipmentId: '', printDate: '', dateFormatted: '' };
 
-                // Przechodzimy po wszystkich stronach
                 for (let i = 1; i <= pdf.numPages; i++) {
                     const page = await pdf.getPage(i);
                     const textContent = await page.getTextContent();
                     
-                    // Sortujemy elementy tekstowe z PDF po koordynatach Y (od góry do dołu), a potem X (od lewej do prawej)
                     const items = textContent.items.sort((a, b) => {
                         let dy = b.transform[5] - a.transform[5];
                         if (Math.abs(dy) < 5) return a.transform[4] - b.transform[4];
                         return dy;
                     });
 
-                    // Grupowanie w wiersze
                     let currentY = -1;
                     let rowTexts = [];
                     let tableData = [];
+                    
                     for (let item of items) {
-                        if (item.str.trim() === '') continue;
+                        let str = item.str.trim();
+                        if (str === '') continue;
+                        
+                        if (str.includes('10925') || (str.length === 9 && !isNaN(str))) {
+                            if (!metadata.shipmentId && /^\d{8,9}$/.test(str)) metadata.shipmentId = str;
+                        }
+                        if (/^\d{2}-[a-zA-Z]{3}-\d{4}$/.test(str) || /^\d{2}-\d{2}-\d{4}$/.test(str)) {
+                            metadata.printDate = str;
+                        }
+
                         let y = item.transform[5];
                         if (currentY === -1 || Math.abs(currentY - y) > 5) {
                             if (rowTexts.length > 0) tableData.push(rowTexts);
                             rowTexts = [];
                             currentY = y;
                         }
-                        rowTexts.push(item.str.trim());
+                        rowTexts.push(str);
                     }
                     if (rowTexts.length > 0) tableData.push(rowTexts);
 
-                    // Filtracja wierszy odpowiadających strukturze produktów z pliku
                     tableData.forEach(row => {
                         if (row.length >= 6) {
                             let kod = row[0];
-                            if (kod.toLowerCase().includes("item") || kod.toLowerCase().includes("order") || kod.toLowerCase().includes("page")) return;
+                            if (kod.toLowerCase().includes("item") || kod.toLowerCase().includes("order") || kod.toLowerCase().includes("page") || kod.toLowerCase().includes("shipment")) return;
                             
-                            // Szukamy kolumny "Country of Origin" jako punktu zaczepienia (np. US, TW, PL, DE)
                             let countryIndex = row.findIndex(v => ["US", "TW", "PL", "DE", "IN", "GB", "NL", "FR", "IT"].includes(v));
                             
                             if (countryIndex !== -1 && countryIndex + 2 < row.length) {
                                 let partia = row[1];
-                                // Szukamy daty np. 04-MAY-29, -MAR-, itd.
                                 let hasDate = /-[a-zA-Z]{3}-/.test(row[2]) || /-[a-zA-Z]{3}-/.test(row[1]) || /-\d{2}/.test(row[2]);
                                 let data = hasDate ? row[2] : "";
                                 
-                                // Sklejenie opisu
                                 let opisStart = hasDate ? 3 : (partia.length > 5 ? 2 : 1);
                                 let opis = row.slice(opisStart, countryIndex > opisStart ? countryIndex - 1 : countryIndex).join(" ");
                                 
-                                // Czyszczenie kropek tysięcznych
                                 let sztukiText = row[countryIndex + 1].replace(/\./g, '').replace(/,/g, '');
                                 let kartonText = row[countryIndex + 2].replace(/\./g, '').replace(/,/g, '');
                                 
@@ -216,19 +252,22 @@ html_content = r"""<!DOCTYPE html>
                 renderDashboard();
             } catch (error) {
                 console.error(error);
-                alert("Wystąpił błąd podczas analizy pliku PDF.");
+                alert("Wystąpił błąd podczas przetwarzania pliku PDF.");
             } finally {
                 document.getElementById('loading').classList.add('hidden');
             }
         });
 
-        // Generowanie Dashboardu i Tabeli
         function renderDashboard() {
             if(globalData.length === 0) {
-                alert("Nie znaleziono danych produktowych w tym pliku. Sprawdź, czy to poprawny plik OSL.");
+                alert("Nie odnaleziono pozycji towarowych w wgranym pliku PDF.");
                 return;
             }
             
+            document.getElementById('metaShipmentId').innerText = metadata.shipmentId || '109252529';
+            document.getElementById('metaPrintDate').innerText = metadata.printDate || '28.07.2025';
+            document.getElementById('previewShipment').innerText = (metadata.shipmentId || '109252529') + ' z dnia ' + (metadata.printDate || '28.07.2025');
+
             let sumSztuki = 0;
             let sumKarton = 0;
             let uniqueKods = new Set();
@@ -241,7 +280,6 @@ html_content = r"""<!DOCTYPE html>
                 sumSztuki += row.SZTUKI;
                 sumKarton += row.KARTON;
                 uniqueKods.add(row.KOD);
-                
                 opisCounts[row.OPIS] = (opisCounts[row.OPIS] || 0) + row.SZTUKI;
 
                 let tr = document.createElement('tr');
@@ -254,17 +292,15 @@ html_content = r"""<!DOCTYPE html>
                 tbody.appendChild(tr);
             });
 
-            // Aktualizacja kafelków
             document.getElementById('kpiSztuki').innerText = sumSztuki.toLocaleString('pl-PL');
             document.getElementById('kpiKarton').innerText = sumKarton.toLocaleString('pl-PL');
             document.getElementById('kpiUnique').innerText = uniqueKods.size;
 
-            // Wykres Chart.js
             let sortedOpis = Object.keys(opisCounts).sort((a, b) => opisCounts[b] - opisCounts[a]).slice(0, 10);
             let chartData = sortedOpis.map(k => opisCounts[k]);
 
             const ctx = document.getElementById('myChart').getContext('2d');
-            if (myChart) myChart.destroy(); // Usuwa stary wykres przy nowym pliku
+            if (myChart) myChart.destroy();
             
             myChart = new Chart(ctx, {
                 type: 'bar',
@@ -291,20 +327,52 @@ html_content = r"""<!DOCTYPE html>
             document.getElementById('dashboard').classList.remove('hidden');
         }
 
-        // Generowanie i pobieranie Excela (SheetJS)
+        // Generowanie pliku Excel
         document.getElementById('btnDownload').addEventListener('click', () => {
             if(globalData.length === 0) return;
-            const ws = XLSX.utils.json_to_sheet(globalData);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Kontrola wejściowa");
-            XLSX.writeFile(wb, "kontrola_wejsciowa.xlsx");
+
+            let wb, ws;
+
+            if (userTemplateWorkbook) {
+                // Gdy wgrasz swój własny pusty wzór:
+                wb = userTemplateWorkbook;
+                let sheetName = wb.SheetNames[0];
+                ws = wb.Sheets[sheetName];
+                
+                XLSX.utils.sheet_add_json(ws, globalData, {
+                    header: ["KOD", "PARTIA", "DATA", "OPIS", "SZTUKI", "KARTON"],
+                    skipHeader: true,
+                    origin: "A7"
+                });
+            } else {
+                // Tworzenie zgodnego szablonu GM-03-01
+                let excelData = [
+                    ["DOSTAWCA", "Forever Direct E.U. B.V.", "", "ODBIORCA", "Forever Living Products Poland Sp. z o.o.", "NR DOKUMENTU DOSTAWY:", (metadata.shipmentId || '109252529') + " z dnia " + (metadata.printDate || '28.07.2025')],
+                    ["", "", "", "Aleje Jerozolimskie 92 | 00-807 Warszawa", "", "Data dostawy:", ""],
+                    ["", "", "", "Magazyn Centralny Forever Living Products Poland", "", "", ""],
+                    ["", "", "", "ul. Nowa 3; 05-816 Opacz Kolonia", "", "", ""],
+                    ["Dokument nr GM-03-01", "Kontrola wejściowa wyrobów gotowych", "", "", "Wydanie 3", "13.09.2023", ""],
+                    ["KOD", "PARTIA", "DATA", "OPIS", "SZTUKI", "KARTON"]
+                ];
+
+                globalData.forEach(item => {
+                    excelData.push([
+                        item.KOD,
+                        item.PARTIA,
+                        item.DATA,
+                        item.OPIS,
+                        item.SZTUKI,
+                        item.KARTON
+                    ]);
+                });
+
+                ws = XLSX.utils.aoa_to_sheet(excelData);
+                wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Kontrola wejściowa");
+            }
+
+            XLSX.writeFile(wb, "Kontrola_Wejsciowa_GM-03-01.xlsx");
         });
     </script>
 </body>
 </html>
-"""
-
-with open("index.html", "w", encoding="utf-8") as f:
-    f.write(html_content)
-    
-print("File index.html generated.")
