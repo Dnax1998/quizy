@@ -3,45 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dostawy OSL - Generator Formularza Kontroli GM-03-01</title>
+    <title>Dostawy OSL - Generator Formularza Kontroli GM-03-01 z Sygnaturami</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- PDF.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <!-- SheetJS (Excel) -->
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { background-color: #f3f4f6; }
-        .tab-btn.active { border-bottom: 2px solid #4F46E5; color: #4F46E5; }
+        .tab-btn.active { border-bottom: 2px solid #4F46E5; color: #4F46E5; font-weight: 600; }
     </style>
 </head>
 <body class="text-gray-800 font-sans p-6">
 
-    <div class="max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
+    <div class="max-w-7xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
         
-        <!-- Header -->
+        <!-- Nagłówek -->
         <div class="bg-indigo-600 p-6 text-white text-center">
             <h1 class="text-3xl font-bold mb-2">📦 Generator Formularza Kontroli Wejściowej (GM-03-01)</h1>
-            <p class="text-indigo-200">Przetwarzaj pliki PDF OSL na wzorcowy arkusz Excel z nagłówkiem i statystykami.</p>
+            <p class="text-indigo-200">Przetwarzaj pliki OSL i automatycznie dopasowuj sygnatury etykiet do kodu produktu.</p>
         </div>
 
         <div class="p-8">
-            <!-- Wgrywanie pliku PDF i opcjonalnie wzoru -->
+            <!-- Wgrywanie plików (3 Sekcje) -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 
-                <div class="md:col-span-2 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:bg-gray-50 transition">
+                <!-- 1. PDF OSL -->
+                <div class="border-2 border-dashed border-indigo-300 bg-indigo-50/20 rounded-lg p-6 text-center hover:bg-indigo-50/50 transition">
                     <input type="file" id="fileInput" accept=".pdf" class="hidden" />
                     <label for="fileInput" class="cursor-pointer flex flex-col items-center">
-                        <svg class="w-12 h-12 text-indigo-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
-                        <span class="text-lg font-medium text-gray-700">1. Wgraj plik PDF (Order Summary List)</span>
-                        <span class="text-xs text-gray-400 mt-1" id="pdfFileName">Brak wybranego pliku</span>
+                        <svg class="w-10 h-10 text-indigo-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                        <span class="text-base font-semibold text-gray-700">1. Wgraj OSL (PDF)</span>
+                        <span class="text-xs text-indigo-600 mt-1 font-semibold" id="pdfFileName">Brak pliku PDF</span>
                     </label>
                 </div>
 
-                <div class="border-2 border-dashed border-amber-300 bg-amber-50/30 rounded-lg p-8 text-center hover:bg-amber-50 transition">
+                <!-- 2. Baza Sygnatur Excel -->
+                <div class="border-2 border-dashed border-purple-300 bg-purple-50/20 rounded-lg p-6 text-center hover:bg-purple-50/50 transition">
+                    <input type="file" id="signaturesInput" accept=".xlsx, .xls, .ods" class="hidden" />
+                    <label for="signaturesInput" class="cursor-pointer flex flex-col items-center">
+                        <svg class="w-10 h-10 text-purple-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h10M7 11h10M7 15h10M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z"></path></svg>
+                        <span class="text-base font-semibold text-gray-700">2. Wgraj Sygnatury (.xlsx/.ods)</span>
+                        <span class="text-xs text-purple-600 mt-1 font-semibold" id="signaturesFileName">Brak pliku sygnatur</span>
+                    </label>
+                </div>
+
+                <!-- 3. Pusty wzór Excel (Opcjonalnie) -->
+                <div class="border-2 border-dashed border-amber-300 bg-amber-50/20 rounded-lg p-6 text-center hover:bg-amber-50/50 transition">
                     <input type="file" id="templateInput" accept=".xlsx, .xls, .ods" class="hidden" />
                     <label for="templateInput" class="cursor-pointer flex flex-col items-center">
-                        <svg class="w-12 h-12 text-amber-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                        <span class="text-sm font-medium text-amber-900">2. (Opcjonalnie) Wgraj swój pusty wzór Excel</span>
-                        <span class="text-xs text-amber-600 mt-1" id="templateFileName">Domyślny wzór GM-03-01</span>
+                        <svg class="w-10 h-10 text-amber-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <span class="text-base font-semibold text-amber-900">3. Wzór GM-03-01 (Opcja)</span>
+                        <span class="text-xs text-amber-600 mt-1 font-semibold" id="templateFileName">Użyj domyślnego szablonu</span>
                     </label>
                 </div>
 
@@ -50,7 +66,7 @@
             <!-- Loader -->
             <div id="loading" class="hidden text-center my-8">
                 <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                <p class="mt-2 text-indigo-600 font-medium">Analizowanie dokumentu OSL i generowanie struktury GM-03-01...</p>
+                <p class="mt-2 text-indigo-600 font-medium">Analizowanie dokumentów i dopasowywanie sygnatur...</p>
             </div>
 
             <!-- Główna sekcja Dashboardu -->
@@ -58,8 +74,8 @@
                 
                 <!-- Zakładki -->
                 <div class="flex border-b mb-6">
-                    <button onclick="switchTab('tab-dash')" id="btn-tab-dash" class="tab-btn active px-4 py-2 font-medium text-gray-600 focus:outline-none">📊 Dashboard</button>
-                    <button onclick="switchTab('tab-data')" id="btn-tab-data" class="tab-btn px-4 py-2 font-medium text-gray-600 focus:outline-none">📋 Podgląd Formularza i Pobieranie</button>
+                    <button onclick="switchTab('tab-dash')" id="btn-tab-dash" class="tab-btn active px-4 py-2 text-gray-600 focus:outline-none">📊 Dashboard</button>
+                    <button onclick="switchTab('tab-data')" id="btn-tab-data" class="tab-btn px-4 py-2 text-gray-600 focus:outline-none">📋 Podgląd Formularza i Pobieranie</button>
                 </div>
 
                 <!-- Tab: Dashboard -->
@@ -67,7 +83,7 @@
                     <div class="flex flex-wrap justify-between items-center bg-gray-50 p-4 rounded-lg border mb-6 text-sm text-gray-700">
                         <div><strong>Nr Dokumentu Dostawy:</strong> <span id="metaShipmentId" class="text-indigo-600 font-bold">-</span></div>
                         <div><strong>Data wydruku/dostawy:</strong> <span id="metaPrintDate" class="text-indigo-600 font-bold">-</span></div>
-                        <div><strong>Odbiorca:</strong> <span id="metaRecipient" class="text-indigo-600 font-bold">Forever Living Products Poland Sp. z o.o.</span></div>
+                        <div><strong>Baza Sygnatur:</strong> <span id="metaSigStatus" class="text-purple-600 font-bold">Oczekuje na wgranie pliku</span></div>
                     </div>
 
                     <!-- KPI Cards -->
@@ -81,8 +97,8 @@
                             <p id="kpiKarton" class="text-3xl font-bold text-emerald-700 mt-1">0</p>
                         </div>
                         <div class="bg-purple-50 p-6 rounded-lg border border-purple-100">
-                            <p class="text-sm text-purple-500 font-semibold uppercase">Unikalne pozycje (Kody)</p>
-                            <p id="kpiUnique" class="text-3xl font-bold text-purple-700 mt-1">0</p>
+                            <p class="text-sm text-purple-500 font-semibold uppercase">Dopasowane Sygnatury</p>
+                            <p id="kpiSignatures" class="text-3xl font-bold text-purple-700 mt-1">0 / 0</p>
                         </div>
                     </div>
 
@@ -97,8 +113,8 @@
 
                 <!-- Tab: Dane -->
                 <div id="tab-data" class="hidden">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-xl font-bold">Wzór formularza GM-03-01 (Gotowy do druku/edycji)</h2>
+                    <div class="flex flex-wrap justify-between items-center gap-4 mb-4">
+                        <h2 class="text-xl font-bold">Wzór formularza GM-03-01 (z sygnaturami)</h2>
                         <button id="btnDownload" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-6 rounded-lg shadow transition flex items-center gap-2">
                             <span>📥 Pobierz wypełniony plik Excel</span>
                         </button>
@@ -118,14 +134,16 @@
 
                     <div class="overflow-x-auto border rounded-b-lg">
                         <table class="min-w-full text-left text-sm whitespace-nowrap">
-                            <thead class="bg-gray-100 uppercase font-medium">
+                            <thead class="bg-gray-100 uppercase font-medium border-b">
                                 <tr>
-                                    <th class="px-4 py-3 border-b">KOD</th>
-                                    <th class="px-4 py-3 border-b">PARTIA</th>
-                                    <th class="px-4 py-3 border-b">DATA</th>
-                                    <th class="px-4 py-3 border-b">OPIS</th>
-                                    <th class="px-4 py-3 border-b">SZTUKI</th>
-                                    <th class="px-4 py-3 border-b">KARTON</th>
+                                    <th class="px-4 py-3">KOD</th>
+                                    <th class="px-4 py-3">PARTIA</th>
+                                    <th class="px-4 py-3">DATA</th>
+                                    <th class="px-4 py-3">OPIS</th>
+                                    <th class="px-4 py-3">SZTUKI</th>
+                                    <th class="px-4 py-3">KARTON</th>
+                                    <th class="px-4 py-3 bg-purple-100 text-purple-900 border-l border-r">Sygnatura etykiety (aktualna)</th>
+                                    <th class="px-4 py-3 bg-purple-100 text-purple-900 border-r">Sygnatura etykiety PL</th>
                                 </tr>
                             </thead>
                             <tbody id="tableBody" class="divide-y divide-gray-200">
@@ -143,17 +161,75 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
         let globalData = [];
-        let metadata = { shipmentId: '', printDate: '', dateFormatted: '' };
+        let metadata = { shipmentId: '', printDate: '' };
+        let signaturesMap = {}; // Map: { KOD: { aktualna: '...', pl: '...' } }
         let myChart = null;
         let userTemplateWorkbook = null;
 
-        // Wgrywanie opcjonalnego szablonu Excel / ODS
+        // 1. Wgrywanie pliku z sygnaturami
+        document.getElementById('signaturesInput').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            document.getElementById('signaturesFileName').innerText = file.name;
+
+            try {
+                const data = await file.arrayBuffer();
+                const wb = XLSX.read(data, { type: 'array' });
+                const sheet = wb.Sheets[wb.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+                signaturesMap = {};
+                let colKod = -1, colAktualna = -1, colPL = -1;
+
+                // Szukanie nagłówków kolumn w pliku Excela
+                for (let r = 0; r < rows.length; r++) {
+                    const row = rows[r];
+                    if (!row) continue;
+                    for (let c = 0; c < row.length; c++) {
+                        let cellVal = String(row[c] || '').toLowerCase().trim();
+                        if (cellVal.includes('kod') || cellVal.includes('sku')) colKod = c;
+                        if (cellVal.includes('aktualna')) colAktualna = c;
+                        if (cellVal.includes('etykiety pl') || cellVal.includes('etykietypl') || cellVal.includes('sygnatura etykiety pl')) colPL = c;
+                    }
+                    
+                    // Po odnalezieniu nagłówków, zczytujemy dane
+                    if (colKod !== -1 && (colAktualna !== -1 || colPL !== -1)) {
+                        for (let i = r + 1; i < rows.length; i++) {
+                            let itemRow = rows[i];
+                            if (!itemRow || itemRow[colKod] === undefined) continue;
+                            
+                            let kodRaw = String(itemRow[colKod]).trim();
+                            let aktualna = colAktualna !== -1 && itemRow[colAktualna] !== undefined ? String(itemRow[colAktualna]).trim() : '';
+                            let pl = colPL !== -1 && itemRow[colPL] !== undefined ? String(itemRow[colPL]).trim() : '';
+
+                            if (kodRaw) {
+                                signaturesMap[kodRaw.toUpperCase()] = { aktualna, pl };
+                            }
+                        }
+                        break;
+                    }
+                }
+
+                document.getElementById('metaSigStatus').innerText = `Wczytano ${Object.keys(signaturesMap).length} pozycji sygnatur`;
+                
+                // Jeśli PDF już był wgrany, odświeżamy dane w tabeli
+                if (globalData.length > 0) {
+                    applySignaturesToGlobalData();
+                    renderDashboard();
+                }
+            } catch (err) {
+                console.error("Błąd podczas odczytu pliku sygnatur:", err);
+                alert("Wystąpił błąd podczas odczytywania pliku z sygnaturami.");
+            }
+        });
+
+        // 2. Wgrywanie opcjonalnego wzoru Excel
         document.getElementById('templateInput').addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
             document.getElementById('templateFileName').innerText = file.name;
             const data = await file.arrayBuffer();
-            userTemplateWorkbook = XLSX.read(data, {type: 'array'});
+            userTemplateWorkbook = XLSX.read(data, { type: 'array' });
         });
 
         function switchTab(tabId) {
@@ -166,6 +242,33 @@
             document.getElementById('btn-' + tabId).classList.add('active');
         }
 
+        // Dopasowywanie sygnatury do Kodu Produktu (uwzględnia kody z "SKU" oraz bez "SKU")
+        function findSignatureForKod(kod) {
+            if (!kod) return { aktualna: '', pl: '' };
+            let cleanKod = String(kod).toUpperCase().trim();
+            
+            if (signaturesMap[cleanKod]) return signaturesMap[cleanKod];
+
+            if (cleanKod.startsWith("SKU")) {
+                let sansSku = cleanKod.replace(/^SKU/, '');
+                if (signaturesMap[sansSku]) return signaturesMap[sansSku];
+            } else {
+                let withSku = "SKU" + cleanKod;
+                if (signaturesMap[withSku]) return signaturesMap[withSku];
+            }
+
+            return { aktualna: '', pl: '' };
+        }
+
+        function applySignaturesToGlobalData() {
+            globalData.forEach(item => {
+                let sig = findSignatureForKod(item.KOD);
+                item.SYGNATURA_AKTUALNA = sig.aktualna;
+                item.SYGNATURA_PL = sig.pl;
+            });
+        }
+
+        // 3. Wgrywanie i parsowanie OSL (PDF)
         document.getElementById('fileInput').addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -178,7 +281,7 @@
                 const arrayBuffer = await file.arrayBuffer();
                 const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
                 globalData = [];
-                metadata = { shipmentId: '', printDate: '', dateFormatted: '' };
+                metadata = { shipmentId: '', printDate: '' };
 
                 for (let i = 1; i <= pdf.numPages; i++) {
                     const page = await pdf.getPage(i);
@@ -236,13 +339,17 @@
                                 let sztuki = parseInt(sztukiText) || 0;
                                 let karton = parseInt(kartonText) || 0;
                                 
+                                let sig = findSignatureForKod(kod);
+
                                 globalData.push({ 
                                     "KOD": kod, 
                                     "PARTIA": partia, 
                                     "DATA": data, 
                                     "OPIS": opis, 
                                     "SZTUKI": sztuki, 
-                                    "KARTON": karton 
+                                    "KARTON": karton,
+                                    "SYGNATURA_AKTUALNA": sig.aktualna,
+                                    "SYGNATURA_PL": sig.pl
                                 });
                             }
                         }
@@ -270,7 +377,7 @@
 
             let sumSztuki = 0;
             let sumKarton = 0;
-            let uniqueKods = new Set();
+            let matchedSignaturesCount = 0;
             let opisCounts = {};
 
             const tbody = document.getElementById('tableBody');
@@ -279,8 +386,11 @@
             globalData.forEach(row => {
                 sumSztuki += row.SZTUKI;
                 sumKarton += row.KARTON;
-                uniqueKods.add(row.KOD);
                 opisCounts[row.OPIS] = (opisCounts[row.OPIS] || 0) + row.SZTUKI;
+
+                if (row.SYGNATURA_AKTUALNA || row.SYGNATURA_PL) {
+                    matchedSignaturesCount++;
+                }
 
                 let tr = document.createElement('tr');
                 tr.innerHTML = `<td class="px-4 py-2 border-b font-medium text-gray-700">${row.KOD}</td>
@@ -288,13 +398,15 @@
                                 <td class="px-4 py-2 border-b text-gray-500">${row.DATA}</td>
                                 <td class="px-4 py-2 border-b text-gray-800">${row.OPIS}</td>
                                 <td class="px-4 py-2 border-b font-bold text-indigo-600">${row.SZTUKI}</td>
-                                <td class="px-4 py-2 border-b font-bold text-emerald-600">${row.KARTON}</td>`;
+                                <td class="px-4 py-2 border-b font-bold text-emerald-600">${row.KARTON}</td>
+                                <td class="px-4 py-2 border-b font-medium text-purple-700 bg-purple-50/50">${row.SYGNATURA_AKTUALNA || '-'}</td>
+                                <td class="px-4 py-2 border-b font-medium text-purple-700 bg-purple-50/50">${row.SYGNATURA_PL || '-'}</td>`;
                 tbody.appendChild(tr);
             });
 
             document.getElementById('kpiSztuki').innerText = sumSztuki.toLocaleString('pl-PL');
             document.getElementById('kpiKarton').innerText = sumKarton.toLocaleString('pl-PL');
-            document.getElementById('kpiUnique').innerText = uniqueKods.size;
+            document.getElementById('kpiSignatures').innerText = `${matchedSignaturesCount} / ${globalData.length}`;
 
             let sortedOpis = Object.keys(opisCounts).sort((a, b) => opisCounts[b] - opisCounts[a]).slice(0, 10);
             let chartData = sortedOpis.map(k => opisCounts[k]);
@@ -327,42 +439,53 @@
             document.getElementById('dashboard').classList.remove('hidden');
         }
 
-        // Generowanie pliku Excel
+        // Generowanie wzorcowego pliku Excel z sygnaturami
         document.getElementById('btnDownload').addEventListener('click', () => {
             if(globalData.length === 0) return;
 
             let wb, ws;
 
+            let formattedRows = globalData.map(item => ({
+                "KOD": item.KOD,
+                "PARTIA": item.PARTIA,
+                "DATA": item.DATA,
+                "OPIS": item.OPIS,
+                "SZTUKI": item.SZTUKI,
+                "KARTON": item.KARTON,
+                "Sygnatura etykiety (aktualna)": item.SYGNATURA_AKTUALNA,
+                "Sygnatura etykiety PL": item.SYGNATURA_PL
+            }));
+
             if (userTemplateWorkbook) {
-                // Gdy wgrasz swój własny pusty wzór:
                 wb = userTemplateWorkbook;
                 let sheetName = wb.SheetNames[0];
                 ws = wb.Sheets[sheetName];
                 
-                XLSX.utils.sheet_add_json(ws, globalData, {
-                    header: ["KOD", "PARTIA", "DATA", "OPIS", "SZTUKI", "KARTON"],
+                XLSX.utils.sheet_add_json(ws, formattedRows, {
+                    header: ["KOD", "PARTIA", "DATA", "OPIS", "SZTUKI", "KARTON", "Sygnatura etykiety (aktualna)", "Sygnatura etykiety PL"],
                     skipHeader: true,
                     origin: "A7"
                 });
             } else {
-                // Tworzenie zgodnego szablonu GM-03-01
                 let excelData = [
                     ["DOSTAWCA", "Forever Direct E.U. B.V.", "", "ODBIORCA", "Forever Living Products Poland Sp. z o.o.", "NR DOKUMENTU DOSTAWY:", (metadata.shipmentId || '109252529') + " z dnia " + (metadata.printDate || '28.07.2025')],
                     ["", "", "", "Aleje Jerozolimskie 92 | 00-807 Warszawa", "", "Data dostawy:", ""],
                     ["", "", "", "Magazyn Centralny Forever Living Products Poland", "", "", ""],
                     ["", "", "", "ul. Nowa 3; 05-816 Opacz Kolonia", "", "", ""],
-                    ["Dokument nr GM-03-01", "Kontrola wejściowa wyrobów gotowych", "", "", "Wydanie 3", "13.09.2023", ""],
-                    ["KOD", "PARTIA", "DATA", "OPIS", "SZTUKI", "KARTON"]
+                    ["Dokument nr GM-03-01", "Kontrola wejściowa wyrobów gotowych", "", "", "Wydanie 3", "13.09.2023", "", ""],
+                    ["KOD", "PARTIA", "DATA", "OPIS", "SZTUKI", "KARTON", "Sygnatura etykiety (aktualna)", "Sygnatura etykiety PL"]
                 ];
 
-                globalData.forEach(item => {
+                formattedRows.forEach(item => {
                     excelData.push([
-                        item.KOD,
-                        item.PARTIA,
-                        item.DATA,
-                        item.OPIS,
-                        item.SZTUKI,
-                        item.KARTON
+                        item["KOD"],
+                        item["PARTIA"],
+                        item["DATA"],
+                        item["OPIS"],
+                        item["SZTUKI"],
+                        item["KARTON"],
+                        item["Sygnatura etykiety (aktualna)"],
+                        item["Sygnatura etykiety PL"]
                     ]);
                 });
 
