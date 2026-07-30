@@ -1,0 +1,62 @@
+import streamlit as st
+import pdfplumber
+import pandas as pd
+import io
+
+# Konfiguracja strony
+st.set_page_config(page_title="Konwerter OSL na Formularz Kontroli", layout="wide")
+
+st.title("📄 Konwerter PDF (Order Summary List) na Excel")
+st.markdown("Wgraj plik PDF, aby wygenerować arkusz z kolumnami: **KOD, PARTIA, DATA, OPIS, SZTUKI, KARTON**.")
+
+# Przycisk do wgrania pliku
+uploaded_file = st.file_uploader("Wybierz plik PDF", type="pdf")
+
+if uploaded_file is not None:
+    st.info("Przetwarzanie pliku PDF...")
+    
+    all_data = []
+    
+    # Odczyt pliku PDF
+    with pdfplumber.open(uploaded_file) as pdf:
+        for page in pdf.pages:
+            # Ekstrakcja tabeli z każdej strony
+            table = page.extract_table()
+            if table:
+                # Pomijanie pustych wierszy i nagłówków
+                for row in table:
+                    # Szukamy wierszy, gdzie pierwsza kolumna to numer przedmiotu (KOD)
+                    if row[0] and row[0] != "Item Number" and len(row) >= 8:
+                        # Mapowanie kolumn z PDF na nowy format
+                        kod = row[0].replace('\n', '')
+                        partia = row[1].replace('\n', '') if row[1] else ""
+                        data = row[2].replace('\n', '') if row[2] else ""
+                        opis = row[3].replace('\n', '') if row[3] else ""
+                        sztuki = row[6].replace('\n', '') if row[6] else ""
+                        karton = row[7].replace('\n', '') if row[7] else ""
+                        
+                        all_data.append([kod, partia, data, opis, sztuki, karton])
+    
+    if all_data:
+        # Tworzenie DataFrame w formacie docelowym
+        df = pd.DataFrame(all_data, columns=["KOD", "PARTIA", "DATA", "OPIS", "SZTUKI", "KARTON"])
+        
+        st.success("Udało się wyciągnąć dane!")
+        st.dataframe(df) # Podgląd tabeli na stronie
+        
+        # Konwersja do pliku Excel w pamięci (bez zapisywania na dysku)
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name='Kontrola wejściowa')
+        
+        processed_data = output.getvalue()
+        
+        # Przycisk do pobrania pliku
+        st.download_button(
+            label="📥 Pobierz gotowy plik Excel",
+            data=processed_data,
+            file_name="kontrola_wejsciowa.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+    else:
+        st.error("Nie udało się odnaleźć tabeli z produktami w tym pliku PDF.")
