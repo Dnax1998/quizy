@@ -24,7 +24,7 @@
         <!-- Nagłówek -->
         <div class="bg-indigo-600 p-6 text-white text-center">
             <h1 class="text-3xl font-bold mb-2">📦 Generator Formularza Kontroli Wejściowej (GM-03-01)</h1>
-            <p class="text-indigo-200">Przetwarzaj pliki OSL i automatycznie dopasowuj sygnatury etykiet do kodu produktu.</p>
+            <p class="text-indigo-200">Przetwarzaj pliki OSL i automatycznie dopasowuj sygnatury etykiet ze wszystkich zakładek Excela.</p>
         </div>
 
         <div class="p-8">
@@ -41,7 +41,7 @@
                     </label>
                 </div>
 
-                <!-- 2. Baza Sygnatur Excel -->
+                <!-- 2. Baza Sygnatur Excel (Wszystkie Zakładki) -->
                 <div class="border-2 border-dashed border-purple-300 bg-purple-50/20 rounded-lg p-6 text-center hover:bg-purple-50/50 transition">
                     <input type="file" id="signaturesInput" accept=".xlsx, .xls, .ods" class="hidden" />
                     <label for="signaturesInput" class="cursor-pointer flex flex-col items-center">
@@ -66,7 +66,7 @@
             <!-- Loader -->
             <div id="loading" class="hidden text-center my-8">
                 <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                <p class="mt-2 text-indigo-600 font-medium">Analizowanie dokumentów i dopasowywanie sygnatur...</p>
+                <p class="mt-2 text-indigo-600 font-medium">Analizowanie dokumentów ze wszystkich zakładek...</p>
             </div>
 
             <!-- Główna sekcja Dashboardu -->
@@ -83,7 +83,7 @@
                     <div class="flex flex-wrap justify-between items-center bg-gray-50 p-4 rounded-lg border mb-6 text-sm text-gray-700">
                         <div><strong>Nr Dokumentu Dostawy:</strong> <span id="metaShipmentId" class="text-indigo-600 font-bold">-</span></div>
                         <div><strong>Data wydruku/dostawy:</strong> <span id="metaPrintDate" class="text-indigo-600 font-bold">-</span></div>
-                        <div><strong>Baza Sygnatur:</strong> <span id="metaSigStatus" class="text-purple-600 font-bold">Oczekuje na wgranie pliku</span></div>
+                        <div><strong>Status Sygnatur:</strong> <span id="metaSigStatus" class="text-purple-600 font-bold">Oczekuje na wgranie pliku</span></div>
                     </div>
 
                     <!-- KPI Cards -->
@@ -162,11 +162,11 @@
 
         let globalData = [];
         let metadata = { shipmentId: '', printDate: '' };
-        let signaturesMap = {}; // Map: { KOD: { aktualna: '...', pl: '...' } }
+        let signaturesMap = {}; 
         let myChart = null;
         let userTemplateWorkbook = null;
 
-        // 1. Wgrywanie pliku z sygnaturami
+        // 1. Wgrywanie pliku z sygnaturami (PRZESZUKUJE WSZYSTKIE ZAKŁADKI)
         document.getElementById('signaturesInput').addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -175,44 +175,59 @@
             try {
                 const data = await file.arrayBuffer();
                 const wb = XLSX.read(data, { type: 'array' });
-                const sheet = wb.Sheets[wb.SheetNames[0]];
-                const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-
                 signaturesMap = {};
-                let colKod = -1, colAktualna = -1, colPL = -1;
 
-                // Szukanie nagłówków kolumn w pliku Excela
-                for (let r = 0; r < rows.length; r++) {
-                    const row = rows[r];
-                    if (!row) continue;
-                    for (let c = 0; c < row.length; c++) {
-                        let cellVal = String(row[c] || '').toLowerCase().trim();
-                        if (cellVal.includes('kod') || cellVal.includes('sku')) colKod = c;
-                        if (cellVal.includes('aktualna')) colAktualna = c;
-                        if (cellVal.includes('etykiety pl') || cellVal.includes('etykietypl') || cellVal.includes('sygnatura etykiety pl')) colPL = c;
-                    }
-                    
-                    // Po odnalezieniu nagłówków, zczytujemy dane
-                    if (colKod !== -1 && (colAktualna !== -1 || colPL !== -1)) {
-                        for (let i = r + 1; i < rows.length; i++) {
-                            let itemRow = rows[i];
-                            if (!itemRow || itemRow[colKod] === undefined) continue;
-                            
-                            let kodRaw = String(itemRow[colKod]).trim();
-                            let aktualna = colAktualna !== -1 && itemRow[colAktualna] !== undefined ? String(itemRow[colAktualna]).trim() : '';
-                            let pl = colPL !== -1 && itemRow[colPL] !== undefined ? String(itemRow[colPL]).trim() : '';
+                let totalSheetsParsed = 0;
 
-                            if (kodRaw) {
-                                signaturesMap[kodRaw.toUpperCase()] = { aktualna, pl };
-                            }
+                // PĘTLA PO WSZYSTKICH ZAKŁADKACH (SHEETS)
+                wb.SheetNames.forEach(sheetName => {
+                    const sheet = wb.Sheets[sheetName];
+                    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+                    let colKod = -1, colAktualna = -1, colPL = -1;
+
+                    // Szukanie nagłówków kolumn w danej zakładce
+                    for (let r = 0; r < rows.length; r++) {
+                        const row = rows[r];
+                        if (!row) continue;
+                        
+                        for (let c = 0; c < row.length; c++) {
+                            let cellVal = String(row[c] || '').toLowerCase().trim();
+                            if (cellVal.includes('kod') || cellVal.includes('sku') || cellVal === 'item') colKod = c;
+                            if (cellVal.includes('aktualna')) colAktualna = c;
+                            if (cellVal.includes('etykiety pl') || cellVal.includes('etykietypl') || cellVal.includes('sygnatura etykiety pl') || cellVal === 'pl') colPL = c;
                         }
-                        break;
-                    }
-                }
+                        
+                        // Zczytywanie danych od znalezionego nagłówka
+                        if (colKod !== -1 && (colAktualna !== -1 || colPL !== -1)) {
+                            for (let i = r + 1; i < rows.length; i++) {
+                                let itemRow = rows[i];
+                                if (!itemRow || itemRow[colKod] === undefined) continue;
+                                
+                                let kodRaw = String(itemRow[colKod]).trim();
+                                let aktualna = colAktualna !== -1 && itemRow[colAktualna] !== undefined ? String(itemRow[colAktualna]).trim() : '';
+                                let pl = colPL !== -1 && itemRow[colPL] !== undefined ? String(itemRow[colPL]).trim() : '';
 
-                document.getElementById('metaSigStatus').innerText = `Wczytano ${Object.keys(signaturesMap).length} pozycji sygnatur`;
+                                if (kodRaw && kodRaw !== '') {
+                                    let cleanKey = kodRaw.toUpperCase();
+                                    
+                                    // Zachowaj istniejący wpis lub zaktualizuj jeśli nowy posiada wartości
+                                    if (!signaturesMap[cleanKey]) {
+                                        signaturesMap[cleanKey] = { aktualna, pl };
+                                    } else {
+                                        if (aktualna) signaturesMap[cleanKey].aktualna = aktualna;
+                                        if (pl) signaturesMap[cleanKey].pl = pl;
+                                    }
+                                }
+                            }
+                            totalSheetsParsed++;
+                            break; 
+                        }
+                    }
+                });
+
+                document.getElementById('metaSigStatus').innerText = `Przeszukano ${wb.SheetNames.length} zakładek, wczytano ${Object.keys(signaturesMap).length} sygnatur`;
                 
-                // Jeśli PDF już był wgrany, odświeżamy dane w tabeli
                 if (globalData.length > 0) {
                     applySignaturesToGlobalData();
                     renderDashboard();
@@ -242,19 +257,22 @@
             document.getElementById('btn-' + tabId).classList.add('active');
         }
 
-        // Dopasowywanie sygnatury do Kodu Produktu (uwzględnia kody z "SKU" oraz bez "SKU")
+        // Elastyczne dopasowanie sygnatur (obsługuje SKU..., kody bez SKU oraz warianty)
         function findSignatureForKod(kod) {
             if (!kod) return { aktualna: '', pl: '' };
             let cleanKod = String(kod).toUpperCase().trim();
             
+            // 1. Dokładne dopasowanie (np. "439EURL" lub "SKU022RLX")
             if (signaturesMap[cleanKod]) return signaturesMap[cleanKod];
 
+            // 2. Szukanie z prefiksem SKU (np. jak w PDF jest "439EURL", a w bazie "SKU439EURL")
+            let withSku = "SKU" + cleanKod;
+            if (signaturesMap[withSku]) return signaturesMap[withSku];
+
+            // 3. Szukanie bez prefiksu SKU (np. w PDF "SKU439EURL", a w bazie "439EURL")
             if (cleanKod.startsWith("SKU")) {
                 let sansSku = cleanKod.replace(/^SKU/, '');
                 if (signaturesMap[sansSku]) return signaturesMap[sansSku];
-            } else {
-                let withSku = "SKU" + cleanKod;
-                if (signaturesMap[withSku]) return signaturesMap[withSku];
             }
 
             return { aktualna: '', pl: '' };
@@ -399,8 +417,8 @@
                                 <td class="px-4 py-2 border-b text-gray-800">${row.OPIS}</td>
                                 <td class="px-4 py-2 border-b font-bold text-indigo-600">${row.SZTUKI}</td>
                                 <td class="px-4 py-2 border-b font-bold text-emerald-600">${row.KARTON}</td>
-                                <td class="px-4 py-2 border-b font-medium text-purple-700 bg-purple-50/50">${row.SYGNATURA_AKTUALNA || '-'}</td>
-                                <td class="px-4 py-2 border-b font-medium text-purple-700 bg-purple-50/50">${row.SYGNATURA_PL || '-'}</td>`;
+                                <td class="px-4 py-2 border-b font-semibold text-purple-700 bg-purple-50/50">${row.SYGNATURA_AKTUALNA || '-'}</td>
+                                <td class="px-4 py-2 border-b font-semibold text-purple-700 bg-purple-50/50">${row.SYGNATURA_PL || '-'}</td>`;
                 tbody.appendChild(tr);
             });
 
