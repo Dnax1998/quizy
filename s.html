@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AI Watermark Remover</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -17,16 +17,15 @@
             top: 0;
             left: 0;
             cursor: crosshair;
-            touch-action: none;
-            pointer-events: none; /* Domyślnie kliknięcia trafiają w odtwarzacz wideo */
+            touch-action: none; /* Blokuje przewijanie strony palcem podczas rysowania */
+            pointer-events: none;
         }
-        /* Gdy ta klasa jest aktywna, włączamy możliwość rysowania na płótnie */
         #maskCanvas.drawing-active {
             pointer-events: auto;
         }
     </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans">
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans select-none">
 
     <!-- Header -->
     <header class="border-b border-slate-800 bg-slate-950/50 py-4 px-6 flex justify-between items-center">
@@ -38,81 +37,60 @@
             </div>
             <h1 class="text-xl font-bold tracking-wide">AI Video Eraser</h1>
         </div>
-        <span class="text-xs bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-3 py-1 rounded-full font-medium">Model AI: Deep Inpainting</span>
+        <span class="text-xs bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-3 py-1 rounded-full font-medium">Smart Blur Engine</span>
     </header>
 
     <!-- Główna zawartość -->
-    <main class="flex-1 max-w-6xl w-full mx-auto p-6 flex flex-col gap-6">
+    <main class="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 flex flex-col gap-6">
 
-        <!-- Sekcja 1: Uploader (przeciągnij i upuść) -->
-        <div id="dropZone" class="border-2 border-dashed border-slate-700 hover:border-indigo-500 bg-slate-800/40 rounded-2xl p-12 text-center transition-all cursor-pointer flex flex-col items-center justify-center">
+        <!-- Sekcja 1: Uploader -->
+        <div id="dropZone" class="border-2 border-dashed border-slate-700 hover:border-indigo-500 bg-slate-800/40 rounded-2xl p-8 sm:p-12 text-center transition-all cursor-pointer flex flex-col items-center justify-center">
             <svg class="w-16 h-16 text-slate-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 0115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
             </svg>
-            <p class="text-lg font-medium text-slate-200">Przeciągnij plik wideo tutaj lub <span class="text-indigo-400 underline">wybierz z dysku</span></p>
-            <p class="text-sm text-slate-500 mt-2">Obsługiwane formaty: MP4, MOV, WEBM (Max 200MB)</p>
+            <p class="text-lg font-medium text-slate-200">Kliknij lub przeciągnij wideo tutaj</p>
+            <p class="text-sm text-slate-500 mt-2">MP4, MOV, WEBM</p>
             <input type="file" id="videoInput" accept="video/*" class="hidden">
         </div>
 
         <!-- Sekcja 2: Edytor Maski i Wideo -->
-        <div id="editorSection" class="hidden flex-col lg:flex-row gap-6">
+        <div id="editorSection" class="hidden flex-col gap-6">
             
             <!-- Odtwarzacz z Płótnem do Rysowania -->
-            <div class="flex-1 bg-slate-950 p-4 rounded-2xl border border-slate-800 flex flex-col items-center justify-center">
+            <div class="bg-slate-950 p-2 sm:p-4 rounded-2xl border border-slate-800 flex flex-col items-center justify-center">
                 <div class="video-container rounded-lg overflow-hidden shadow-2xl">
-                    <video id="videoPlayer" class="block max-h-[500px] w-auto" controls></video>
+                    <video id="videoPlayer" class="block max-h-[60vh] w-auto" playsinline controls></video>
                     <canvas id="maskCanvas"></canvas>
                 </div>
-                <p class="text-xs text-slate-400 mt-3">Przełącz na "Rysuj maskę", zatrzymaj film i zamaluj znak wodny.</p>
+                <p class="text-xs text-slate-400 mt-3 text-center">Wybierz "Rysuj maskę", zatrzymaj film i zamaluj znak palcem/myszką.</p>
             </div>
 
-            <!-- Panel Kontrolny / Ustawienia AI -->
-            <div class="w-full lg:w-80 bg-slate-800/50 border border-slate-700/50 p-5 rounded-2xl flex flex-col justify-between">
-                <div class="space-y-6">
-                    <h2 class="text-lg font-semibold text-slate-100 border-b border-slate-700 pb-2">Ustawienia Myszki i AI</h2>
-                    
-                    <!-- Przełącznik Trybów: Odtwarzanie vs Rysowanie -->
-                    <div>
-                        <label class="block text-sm font-medium text-slate-300 mb-2">Tryb pracy</label>
-                        <div class="grid grid-cols-2 gap-2 bg-slate-900 p-1 rounded-xl border border-slate-700">
-                            <button id="playModeBtn" class="py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white transition shadow">
-                                ▶️ Odtwarzaj
-                            </button>
-                            <button id="drawModeBtn" class="py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition">
-                                ✏️ Rysuj maskę
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Rozmiar pędzla -->
-                    <div>
-                        <label class="block text-sm font-medium text-slate-300 mb-2">Rozmiar pędzla: <span id="brushSizeVal" class="text-indigo-400">20px</span></label>
-                        <input type="range" id="brushSize" min="5" max="80" value="20" class="w-full accent-indigo-500 bg-slate-700 rounded-lg cursor-pointer">
-                    </div>
-
-                    <!-- Model AI -->
-                    <div>
-                        <label class="block text-sm font-medium text-slate-300 mb-2">Algorytm AI</label>
-                        <select id="aiModel" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none">
-                            <option value="lama">LaMa Inpainting (Najwyższa jakość)</option>
-                            <option value="propainter">ProPainter (Dla ruchomych obiektów)</option>
-                            <option value="opencv">Fast Telea (Szybki, prosty)</option>
-                        </select>
-                    </div>
-
-                    <!-- Przyciski akcji maski -->
-                    <div class="flex gap-2">
-                        <button id="clearMaskBtn" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm py-2 px-3 rounded-lg transition">Wyczyść maskę</button>
+            <!-- Panel Kontrolny -->
+            <div class="bg-slate-800/50 border border-slate-700/50 p-5 rounded-2xl space-y-5">
+                <!-- Przełącznik Trybów -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Tryb pracy</label>
+                    <div class="grid grid-cols-2 gap-2 bg-slate-900 p-1 rounded-xl border border-slate-700">
+                        <button id="playModeBtn" class="py-2.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white transition shadow">
+                            ▶️ Odtwarzaj / Przewijaj
+                        </button>
+                        <button id="drawModeBtn" class="py-2.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition">
+                            ✏️ Rysuj maskę
+                        </button>
                     </div>
                 </div>
 
-                <!-- Przycisk wysłania do backendu -->
-                <div class="mt-6">
-                    <button id="processBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 font-medium py-3 px-4 rounded-xl shadow-lg shadow-indigo-600/30 transition flex items-center justify-center gap-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                        </svg>
-                        <span>Usuń Znak Wodny (AI)</span>
+                <!-- Rozmiar pędzla -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Rozmiar pędzla: <span id="brushSizeVal" class="text-indigo-400">30px</span></label>
+                    <input type="range" id="brushSize" min="10" max="100" value="30" class="w-full accent-indigo-500 bg-slate-700 rounded-lg cursor-pointer">
+                </div>
+
+                <!-- Akcje -->
+                <div class="flex gap-3">
+                    <button id="clearMaskBtn" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm py-2.5 px-3 rounded-xl transition">Wyczyść maskę</button>
+                    <button id="processBtn" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 px-4 rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+                        <span>Usuń Znak Wodny</span>
                     </button>
                 </div>
             </div>
@@ -121,17 +99,26 @@
 
         <!-- Sekcja 3: Pasek Postępu przetwarzania -->
         <div id="progressSection" class="hidden bg-slate-800 border border-slate-700 p-6 rounded-2xl text-center space-y-4">
-            <h3 class="text-lg font-medium text-slate-200">Trwa przetwarzanie AI...</h3>
-            <p class="text-sm text-slate-400">Model usuwa znak wodny klatka po klatce. Może to zająć chwilę.</p>
+            <h3 class="text-lg font-medium text-slate-200" id="progressStatus">Przetwarzanie wideo...</h3>
+            <p class="text-sm text-slate-400">Usuwanie znaku klatka po klatce w przeglądarce. Proszę czekać...</p>
             <div class="w-full bg-slate-700 h-3 rounded-full overflow-hidden">
-                <div id="progressBar" class="bg-indigo-500 h-full w-0 transition-all duration-300"></div>
+                <div id="progressBar" class="bg-indigo-500 h-full w-0 transition-all duration-100"></div>
             </div>
+        </div>
+
+        <!-- Sekcja 4: Wynik końcowy -->
+        <div id="resultSection" class="hidden bg-slate-800 border border-slate-700 p-6 rounded-2xl flex flex-col items-center gap-4 text-center">
+            <h3 class="text-lg font-semibold text-emerald-400">Gotowe! Znak wodny został usunięty.</h3>
+            <video id="resultVideo" class="max-h-[50vh] rounded-lg border border-slate-700" controls playsinline></video>
+            <a id="downloadBtn" download="video_no_watermark.mp4" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-8 rounded-xl transition text-center shadow-lg">
+                📥 Pobierz gotowe wideo
+            </a>
+            <button id="resetBtn" class="text-xs text-slate-400 underline mt-2">Przetwórz inny film</button>
         </div>
 
     </main>
 
     <script>
-        // Elementy DOM
         const dropZone = document.getElementById('dropZone');
         const videoInput = document.getElementById('videoInput');
         const editorSection = document.getElementById('editorSection');
@@ -144,6 +131,10 @@
         const processBtn = document.getElementById('processBtn');
         const progressSection = document.getElementById('progressSection');
         const progressBar = document.getElementById('progressBar');
+        const resultSection = document.getElementById('resultSection');
+        const resultVideo = document.getElementById('resultVideo');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const resetBtn = document.getElementById('resetBtn');
 
         const playModeBtn = document.getElementById('playModeBtn');
         const drawModeBtn = document.getElementById('drawModeBtn');
@@ -151,80 +142,77 @@
         let isDrawing = false;
         let selectedFile = null;
 
-        // Przełączanie Trybów (Odtwarzanie vs Rysowanie)
+        // Przełącznik trybów
         playModeBtn.addEventListener('click', () => {
             maskCanvas.classList.remove('drawing-active');
-            playModeBtn.className = "py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white transition shadow";
-            drawModeBtn.className = "py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition";
+            playModeBtn.className = "py-2.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white transition shadow";
+            drawModeBtn.className = "py-2.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition";
         });
 
         drawModeBtn.addEventListener('click', () => {
-            videoPlayer.pause(); // Zatrzymaj film podczas przełączania na rysowanie
+            videoPlayer.pause();
+            syncCanvasSize();
             maskCanvas.classList.add('drawing-active');
-            drawModeBtn.className = "py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white transition shadow";
-            playModeBtn.className = "py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition";
+            drawModeBtn.className = "py-2.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white transition shadow";
+            playModeBtn.className = "py-2.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition";
         });
 
-        // Obsługa wczytywania pliku
+        // Wczytywanie Pliku
         dropZone.addEventListener('click', () => videoInput.click());
-        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('border-indigo-500'); });
-        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('border-indigo-500'));
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
-        });
-        videoInput.addEventListener('change', (e) => {
-            if (e.target.files.length) handleFile(e.target.files[0]);
-        });
+        videoInput.addEventListener('change', (e) => { if (e.target.files.length) handleFile(e.target.files[0]); });
 
         function handleFile(file) {
-            if (!file.type.startsWith('video/')) return alert('Proszę wybrać plik wideo.');
             selectedFile = file;
-            const url = URL.createObjectURL(file);
-            videoPlayer.src = url;
-            
+            videoPlayer.src = URL.createObjectURL(file);
             dropZone.classList.add('hidden');
             editorSection.classList.remove('hidden');
             editorSection.classList.add('flex');
         }
 
-        // Dopasowanie rozmiaru płótna Canvas do widocznego rozmiaru wideo
-        videoPlayer.addEventListener('loadedmetadata', resizeCanvas);
-        window.addEventListener('resize', resizeCanvas);
+        videoPlayer.addEventListener('loadedmetadata', syncCanvasSize);
+        window.addEventListener('resize', syncCanvasSize);
 
-        function resizeCanvas() {
+        function syncCanvasSize() {
             maskCanvas.width = videoPlayer.clientWidth;
             maskCanvas.height = videoPlayer.clientHeight;
         }
 
-        // Rysowanie Maski na Canvasie
+        // Rysowanie z obsługą ekranów dotykowych (Pointer Events)
         brushSizeInput.addEventListener('input', (e) => brushSizeVal.textContent = `${e.target.value}px`);
 
-        maskCanvas.addEventListener('mousedown', startDrawing);
-        maskCanvas.addEventListener('mousemove', draw);
-        maskCanvas.addEventListener('mouseup', stopDrawing);
-        maskCanvas.addEventListener('mouseleave', stopDrawing);
+        maskCanvas.addEventListener('pointerdown', startDrawing);
+        maskCanvas.addEventListener('pointermove', draw);
+        maskCanvas.addEventListener('pointerup', stopDrawing);
+        maskCanvas.addEventListener('pointercancel', stopDrawing);
+
+        function getPos(e) {
+            const rect = maskCanvas.getBoundingClientRect();
+            return {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+        }
 
         function startDrawing(e) {
             if (!maskCanvas.classList.contains('drawing-active')) return;
             isDrawing = true;
+            const pos = getPos(e);
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
             draw(e);
         }
 
         function draw(e) {
             if (!isDrawing || !maskCanvas.classList.contains('drawing-active')) return;
-            const rect = maskCanvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
+            const pos = getPos(e);
 
             ctx.lineWidth = brushSizeInput.value;
             ctx.lineCap = 'round';
-            ctx.strokeStyle = 'rgba(239, 68, 68, 0.7)'; // Czerwony kolor maski
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = 'rgba(239, 68, 68, 0.8)'; // Czerwona maska
 
-            ctx.lineTo(x, y);
+            ctx.lineTo(pos.x, pos.y);
             ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(x, y);
         }
 
         function stopDrawing() {
@@ -236,45 +224,86 @@
             ctx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
         });
 
-        // Wysyłanie danych do backendu AI
+        // PRZETWARZANIE WIDEO W PRZEGLĄDARCE (Lokalne wymazywanie / rozmywanie)
         processBtn.addEventListener('click', async () => {
             if (!selectedFile) return;
 
-            // 1. Pobieranie rysunku z Canvas jako obraz PNG
-            const maskDataUrl = maskCanvas.toDataURL('image/png');
-
-            // 2. Przygotowanie paczki danych
-            const formData = new FormData();
-            formData.append('video', selectedFile);
-            formData.append('mask', maskDataUrl);
-            formData.append('model', document.getElementById('aiModel').value);
-            formData.append('videoWidth', videoPlayer.videoWidth);
-            formData.append('videoHeight', videoPlayer.videoHeight);
-
-            // Pokazujemy loader
             editorSection.classList.add('hidden');
             progressSection.classList.remove('hidden');
 
-            // Symulacja paska postępu
-            let progress = 0;
-            const interval = setInterval(() => {
-                progress += 10;
-                progressBar.style.width = `${progress}%`;
-                if (progress >= 100) clearInterval(interval);
-            }, 500);
+            const processingCanvas = document.createElement('canvas');
+            const pCtx = processingCanvas.getContext('2d');
+            
+            processingCanvas.width = videoPlayer.videoWidth;
+            processingCanvas.height = videoPlayer.videoHeight;
 
+            // Skalowanie maski z widoku do faktycznego rozmiaru wideo
+            const scaleX = videoPlayer.videoWidth / maskCanvas.width;
+            const scaleY = videoPlayer.videoHeight / maskCanvas.height;
+
+            const scaleCanvas = document.createElement('canvas');
+            scaleCanvas.width = videoPlayer.videoWidth;
+            scaleCanvas.height = videoPlayer.videoHeight;
+            const sCtx = scaleCanvas.getContext('2d');
+            sCtx.drawImage(maskCanvas, 0, 0, videoPlayer.videoWidth, videoPlayer.videoHeight);
+
+            // Nagrywanie wynikowego strumienia
+            const stream = processingCanvas.captureStream(30);
+            let recorder;
             try {
-                /* Po podłączeniu backendu Python:
-                const response = await fetch('/api/remove-watermark-ai', {
-                    method: 'POST',
-                    body: formData
-                });
-                const result = await response.json();
-                window.location.href = result.downloadUrl;
-                */
-            } catch (error) {
-                console.error("Błąd przetwarzania:", error);
+                recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+            } catch (e) {
+                recorder = new MediaRecorder(stream);
             }
+
+            const chunks = [];
+            recorder.ondataavailable = (e) => chunks.push(e.data);
+            recorder.onstop = () => {
+                const blob = new Blob(chunks, { type: 'video/mp4' });
+                const resultUrl = URL.createObjectURL(blob);
+                resultVideo.src = resultUrl;
+                downloadBtn.href = resultUrl;
+                
+                progressSection.classList.add('hidden');
+                resultSection.classList.remove('hidden');
+            };
+
+            videoPlayer.currentTime = 0;
+            await videoPlayer.play();
+            recorder.start();
+
+            function renderFrame() {
+                if (videoPlayer.paused || videoPlayer.ended) {
+                    recorder.stop();
+                    return;
+                }
+
+                // 1. Rysuj klatkę filmu
+                pCtx.drawImage(videoPlayer, 0, 0, processingCanvas.width, processingCanvas.height);
+
+                // 2. Nakładaj filtr usuwający (smart blur) na obszar maski
+                pCtx.save();
+                pCtx.filter = 'blur(16px)';
+                pCtx.drawImage(videoPlayer, 0, 0, processingCanvas.width, processingCanvas.height);
+                pCtx.restore();
+
+                // Przycinamy filtr tylko do obszaru zarysowanego przez użytkownika
+                pCtx.globalCompositeOperation = 'destination-in';
+                pCtx.drawImage(scaleCanvas, 0, 0);
+                pCtx.globalCompositeOperation = 'source-over';
+
+                // Aktualizacja paska postępu
+                const pct = Math.floor((videoPlayer.currentTime / videoPlayer.duration) * 100);
+                progressBar.style.width = `${pct}%`;
+
+                requestAnimationFrame(renderFrame);
+            }
+
+            renderFrame();
+        });
+
+        resetBtn.addEventListener('click', () => {
+            location.reload();
         });
     </script>
 </body>
