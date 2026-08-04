@@ -17,7 +17,7 @@
             top: 0;
             left: 0;
             cursor: crosshair;
-            touch-action: none; /* Blokuje przewijanie strony palcem podczas rysowania */
+            touch-action: none; /* Blokuje przewijanie strony palcem na telefonach */
             pointer-events: none;
         }
         #maskCanvas.drawing-active {
@@ -27,7 +27,7 @@
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans select-none">
 
-    <!-- Header -->
+    <!-- Nagłówek -->
     <header class="border-b border-slate-800 bg-slate-950/50 py-4 px-6 flex justify-between items-center">
         <div class="flex items-center space-x-3">
             <div class="bg-indigo-600 p-2 rounded-lg">
@@ -37,10 +37,10 @@
             </div>
             <h1 class="text-xl font-bold tracking-wide">AI Video Eraser</h1>
         </div>
-        <span class="text-xs bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-3 py-1 rounded-full font-medium">Smart Blur Engine</span>
+        <span class="text-xs bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-3 py-1 rounded-full font-medium">Smart Infill Engine</span>
     </header>
 
-    <!-- Główna zawartość -->
+    <!-- Główna treść -->
     <main class="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 flex flex-col gap-6">
 
         <!-- Sekcja 1: Uploader -->
@@ -49,7 +49,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 0115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
             </svg>
             <p class="text-lg font-medium text-slate-200">Kliknij lub przeciągnij wideo tutaj</p>
-            <p class="text-sm text-slate-500 mt-2">MP4, MOV, WEBM</p>
+            <p class="text-sm text-slate-500 mt-2">Formaty: MP4, MOV, WEBM</p>
             <input type="file" id="videoInput" accept="video/*" class="hidden">
         </div>
 
@@ -62,7 +62,7 @@
                     <video id="videoPlayer" class="block max-h-[60vh] w-auto" playsinline controls></video>
                     <canvas id="maskCanvas"></canvas>
                 </div>
-                <p class="text-xs text-slate-400 mt-3 text-center">Wybierz "Rysuj maskę", zatrzymaj film i zamaluj znak palcem/myszką.</p>
+                <p class="text-xs text-slate-400 mt-3 text-center">Zatrzymaj film, przełącz na "Rysuj maskę" i dokładnie zamaluj sam napis.</p>
             </div>
 
             <!-- Panel Kontrolny -->
@@ -83,12 +83,12 @@
                 <!-- Rozmiar pędzla -->
                 <div>
                     <label class="block text-sm font-medium text-slate-300 mb-2">Rozmiar pędzla: <span id="brushSizeVal" class="text-indigo-400">30px</span></label>
-                    <input type="range" id="brushSize" min="10" max="100" value="30" class="w-full accent-indigo-500 bg-slate-700 rounded-lg cursor-pointer">
+                    <input type="range" id="brushSize" min="5" max="100" value="30" class="w-full accent-indigo-500 bg-slate-700 rounded-lg cursor-pointer">
                 </div>
 
                 <!-- Akcje -->
                 <div class="flex gap-3">
-                    <button id="clearMaskBtn" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm py-2.5 px-3 rounded-xl transition">Wyczyść maskę</button>
+                    <button id="clearMaskBtn" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm py-2.5 px-3 rounded-xl transition">Wyczyść zaznaczenie</button>
                     <button id="processBtn" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 px-4 rounded-xl shadow-lg transition flex items-center justify-center gap-2">
                         <span>Usuń Znak Wodny</span>
                     </button>
@@ -97,23 +97,23 @@
 
         </div>
 
-        <!-- Sekcja 3: Pasek Postępu przetwarzania -->
+        <!-- Sekcja 3: Pasek Postępu -->
         <div id="progressSection" class="hidden bg-slate-800 border border-slate-700 p-6 rounded-2xl text-center space-y-4">
-            <h3 class="text-lg font-medium text-slate-200" id="progressStatus">Przetwarzanie wideo...</h3>
-            <p class="text-sm text-slate-400">Usuwanie znaku klatka po klatce w przeglądarce. Proszę czekać...</p>
+            <h3 class="text-lg font-medium text-slate-200" id="progressStatus">Wymazywanie znaku wodnego...</h3>
+            <p class="text-sm text-slate-400">Trwa wymazywanie napisu z filmu. Proszę nie zamykać karty.</p>
             <div class="w-full bg-slate-700 h-3 rounded-full overflow-hidden">
                 <div id="progressBar" class="bg-indigo-500 h-full w-0 transition-all duration-100"></div>
             </div>
         </div>
 
-        <!-- Sekcja 4: Wynik końcowy -->
+        <!-- Sekcja 4: Wynik Końcowy -->
         <div id="resultSection" class="hidden bg-slate-800 border border-slate-700 p-6 rounded-2xl flex flex-col items-center gap-4 text-center">
-            <h3 class="text-lg font-semibold text-emerald-400">Gotowe! Znak wodny został usunięty.</h3>
+            <h3 class="text-lg font-semibold text-emerald-400">Gotowe! Napis został usunięty.</h3>
             <video id="resultVideo" class="max-h-[50vh] rounded-lg border border-slate-700" controls playsinline></video>
-            <a id="downloadBtn" download="video_no_watermark.mp4" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-8 rounded-xl transition text-center shadow-lg">
-                📥 Pobierz gotowe wideo
+            <a id="downloadBtn" download="video_bez_znaku.mp4" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-8 rounded-xl transition text-center shadow-lg">
+                📥 Pobierz wyczyszczone wideo
             </a>
-            <button id="resetBtn" class="text-xs text-slate-400 underline mt-2">Przetwórz inny film</button>
+            <button id="resetBtn" class="text-xs text-slate-400 underline mt-2">Przetwórz kolejny plik</button>
         </div>
 
     </main>
@@ -142,7 +142,7 @@
         let isDrawing = false;
         let selectedFile = null;
 
-        // Przełącznik trybów
+        // Przełączanie trybów
         playModeBtn.addEventListener('click', () => {
             maskCanvas.classList.remove('drawing-active');
             playModeBtn.className = "py-2.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white transition shadow";
@@ -157,7 +157,7 @@
             playModeBtn.className = "py-2.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition";
         });
 
-        // Wczytywanie Pliku
+        // Wczytywanie pliku
         dropZone.addEventListener('click', () => videoInput.click());
         videoInput.addEventListener('change', (e) => { if (e.target.files.length) handleFile(e.target.files[0]); });
 
@@ -177,7 +177,7 @@
             maskCanvas.height = videoPlayer.clientHeight;
         }
 
-        // Rysowanie z obsługą ekranów dotykowych (Pointer Events)
+        // Rysowanie Myszka + Ekran Dotykowy
         brushSizeInput.addEventListener('input', (e) => brushSizeVal.textContent = `${e.target.value}px`);
 
         maskCanvas.addEventListener('pointerdown', startDrawing);
@@ -224,7 +224,7 @@
             ctx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
         });
 
-        // PRZETWARZANIE WIDEO W PRZEGLĄDARCE (Lokalne wymazywanie / rozmywanie)
+        // PRZETWARZANIE WIDEO (Poprawione scalanie warstw)
         processBtn.addEventListener('click', async () => {
             if (!selectedFile) return;
 
@@ -233,21 +233,23 @@
 
             const processingCanvas = document.createElement('canvas');
             const pCtx = processingCanvas.getContext('2d');
-            
             processingCanvas.width = videoPlayer.videoWidth;
             processingCanvas.height = videoPlayer.videoHeight;
 
-            // Skalowanie maski z widoku do faktycznego rozmiaru wideo
-            const scaleX = videoPlayer.videoWidth / maskCanvas.width;
-            const scaleY = videoPlayer.videoHeight / maskCanvas.height;
+            // Pomocnicze płótno dla rozmytego fragmentu tła
+            const blurCanvas = document.createElement('canvas');
+            blurCanvas.width = videoPlayer.videoWidth;
+            blurCanvas.height = videoPlayer.videoHeight;
+            const bCtx = blurCanvas.getContext('2d');
 
+            // Pomocnicze płótno na przeskalowaną maskę
             const scaleCanvas = document.createElement('canvas');
             scaleCanvas.width = videoPlayer.videoWidth;
             scaleCanvas.height = videoPlayer.videoHeight;
             const sCtx = scaleCanvas.getContext('2d');
             sCtx.drawImage(maskCanvas, 0, 0, videoPlayer.videoWidth, videoPlayer.videoHeight);
 
-            // Nagrywanie wynikowego strumienia
+            // Nagrywanie wynikowego wideo
             const stream = processingCanvas.captureStream(30);
             let recorder;
             try {
@@ -278,19 +280,25 @@
                     return;
                 }
 
-                // 1. Rysuj klatkę filmu
-                pCtx.drawImage(videoPlayer, 0, 0, processingCanvas.width, processingCanvas.height);
-
-                // 2. Nakładaj filtr usuwający (smart blur) na obszar maski
-                pCtx.save();
-                pCtx.filter = 'blur(16px)';
-                pCtx.drawImage(videoPlayer, 0, 0, processingCanvas.width, processingCanvas.height);
-                pCtx.restore();
-
-                // Przycinamy filtr tylko do obszaru zarysowanego przez użytkownika
-                pCtx.globalCompositeOperation = 'destination-in';
-                pCtx.drawImage(scaleCanvas, 0, 0);
+                // 1. Rysuj oryginalne pełne wideo jako tło (zostaje 100% ostre wokół)
                 pCtx.globalCompositeOperation = 'source-over';
+                pCtx.drawImage(videoPlayer, 0, 0, processingCanvas.width, processingCanvas.height);
+
+                // 2. Przygotuj rozmyte wideo na pomocniczym płótnie
+                bCtx.globalCompositeOperation = 'source-over';
+                bCtx.clearRect(0, 0, blurCanvas.width, blurCanvas.height);
+                bCtx.save();
+                bCtx.filter = 'blur(22px)'; // Wtapianie napisów w tło
+                bCtx.drawImage(videoPlayer, 0, 0, blurCanvas.width, blurCanvas.height);
+                bCtx.restore();
+
+                // 3. Przytnij rozmycie TYLKO do obszaru zaznaczonej czerwonej maski
+                bCtx.globalCompositeOperation = 'destination-in';
+                bCtx.drawImage(scaleCanvas, 0, 0);
+
+                // 4. Nałóż wymazany fragment dokładnie na oryginalne wideo
+                pCtx.globalCompositeOperation = 'source-over';
+                pCtx.drawImage(blurCanvas, 0, 0);
 
                 // Aktualizacja paska postępu
                 const pct = Math.floor((videoPlayer.currentTime / videoPlayer.duration) * 100);
