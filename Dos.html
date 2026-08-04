@@ -1,9 +1,9 @@
-html_content = """<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dostawy OSL - Generator Formularza Kontroli GM-03-01 z Sygnaturami</title>
+    <title>Dostawy OSL - Uniwersalny Generator Formularza Kontroli GM-03-01</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- PDF.js -->
@@ -23,8 +23,8 @@ html_content = """<!DOCTYPE html>
         
         <!-- Nagłówek -->
         <div class="bg-indigo-600 p-6 text-white text-center">
-            <h1 class="text-3xl font-bold mb-2">📦 Generator Formularza Kontroli Wejściowej (GM-03-01)</h1>
-            <p class="text-indigo-200">Przetwarzaj pliki OSL i automatycznie dopasowuj sygnatury etykiet ze wszystkich zakładek Excela.</p>
+            <h1 class="text-3xl font-bold mb-2">📦 Uniwersalny Generator Formularza Kontroli Wejściowej (GM-03-01)</h1>
+            <p class="text-indigo-200">Przetwarzaj dowolne pliki PDF OSL oraz pobieraj sygnatury ze wszystkich zakładek Excela.</p>
         </div>
 
         <div class="p-8">
@@ -55,7 +55,7 @@ html_content = """<!DOCTYPE html>
                 <div class="border-2 border-dashed border-amber-300 bg-amber-50/20 rounded-lg p-6 text-center hover:bg-amber-50/50 transition">
                     <input type="file" id="templateInput" accept=".xlsx, .xls, .ods" class="hidden" />
                     <label for="templateInput" class="cursor-pointer flex flex-col items-center">
-                        <svg class="w-10 h-10 text-amber-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <svg class="w-10 h-10 text-amber-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 01-2-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                         <span class="text-base font-semibold text-amber-900">3. Wzór GM-03-01 (Opcja)</span>
                         <span class="text-xs text-amber-600 mt-1 font-semibold" id="templateFileName">Użyj domyślnego szablonu</span>
                     </label>
@@ -66,7 +66,7 @@ html_content = """<!DOCTYPE html>
             <!-- Loader -->
             <div id="loading" class="hidden text-center my-8">
                 <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                <p class="mt-2 text-indigo-600 font-medium">Analizowanie dokumentów ze wszystkich zakładek...</p>
+                <p class="mt-2 text-indigo-600 font-medium">Analizowanie dokumentu PDF i przeszukiwanie sygnatur...</p>
             </div>
 
             <!-- Główna sekcja Dashboardu -->
@@ -166,9 +166,6 @@ html_content = """<!DOCTYPE html>
         let myChart = null;
         let userTemplateWorkbook = null;
 
-        // Lista obsługiwanych kodów krajów pochodzenia (ISO alpha-2)
-        const COUNTRY_CODES = ["US", "TW", "PL", "DE", "IN", "GB", "NL", "FR", "IT", "AT", "ES", "BE", "IE", "SE", "DK", "FI", "NO", "CZ", "SK", "HU", "RO", "BG", "GR", "PT", "HR", "SI", "CH", "LU"];
-
         // 1. Wgrywanie pliku z sygnaturami (PRZESZUKUJE WSZYSTKIE ZAKŁADKI)
         document.getElementById('signaturesInput').addEventListener('change', async (e) => {
             const file = e.target.files[0];
@@ -180,16 +177,12 @@ html_content = """<!DOCTYPE html>
                 const wb = XLSX.read(data, { type: 'array' });
                 signaturesMap = {};
 
-                let totalSheetsParsed = 0;
-
-                // PĘTLA PO WSZYSTKICH ZAKŁADKACH (SHEETS)
                 wb.SheetNames.forEach(sheetName => {
                     const sheet = wb.Sheets[sheetName];
                     const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
                     let colKod = -1, colAktualna = -1, colPL = -1;
 
-                    // Szukanie nagłówków kolumn w danej zakładce
                     for (let r = 0; r < rows.length; r++) {
                         const row = rows[r];
                         if (!row) continue;
@@ -201,7 +194,6 @@ html_content = """<!DOCTYPE html>
                             if (cellVal.includes('etykiety pl') || cellVal.includes('etykietypl') || cellVal.includes('sygnatura etykiety pl') || cellVal === 'pl') colPL = c;
                         }
                         
-                        // Zczytywanie danych od znalezionego nagłówka
                         if (colKod !== -1 && (colAktualna !== -1 || colPL !== -1)) {
                             for (let i = r + 1; i < rows.length; i++) {
                                 let itemRow = rows[i];
@@ -213,8 +205,6 @@ html_content = """<!DOCTYPE html>
 
                                 if (kodRaw && kodRaw !== '') {
                                     let cleanKey = kodRaw.toUpperCase();
-                                    
-                                    // Zachowaj istniejący wpis lub zaktualizuj jeśli nowy posiada wartości
                                     if (!signaturesMap[cleanKey]) {
                                         signaturesMap[cleanKey] = { aktualna, pl };
                                     } else {
@@ -223,7 +213,6 @@ html_content = """<!DOCTYPE html>
                                     }
                                 }
                             }
-                            totalSheetsParsed++;
                             break; 
                         }
                     }
@@ -241,7 +230,7 @@ html_content = """<!DOCTYPE html>
             }
         });
 
-        // 2. Wgrywanie opcjonalnego wzoru Excel
+        // 2. Wgrywanie wzoru Excel
         document.getElementById('templateInput').addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -260,19 +249,15 @@ html_content = """<!DOCTYPE html>
             document.getElementById('btn-' + tabId).classList.add('active');
         }
 
-        // Elastyczne dopasowanie sygnatur (obsługuje SKU..., kody bez SKU oraz warianty)
         function findSignatureForKod(kod) {
             if (!kod) return { aktualna: '', pl: '' };
             let cleanKod = String(kod).toUpperCase().trim();
             
-            // 1. Dokładne dopasowanie (np. "439EURL" lub "SKU022RLX")
             if (signaturesMap[cleanKod]) return signaturesMap[cleanKod];
 
-            // 2. Szukanie z prefiksem SKU (np. jak w PDF jest "439EURL", a w bazie "SKU439EURL")
             let withSku = "SKU" + cleanKod;
             if (signaturesMap[withSku]) return signaturesMap[withSku];
 
-            // 3. Szukanie bez prefiksu SKU (np. w PDF "SKU439EURL", a w bazie "439EURL")
             if (cleanKod.startsWith("SKU")) {
                 let sansSku = cleanKod.replace(/^SKU/, '');
                 if (signaturesMap[sansSku]) return signaturesMap[sansSku];
@@ -289,7 +274,121 @@ html_content = """<!DOCTYPE html>
             });
         }
 
-        // 3. Wgrywanie i parsowanie OSL (PDF)
+        // UNIWERSALNY PARSER WIERSZY
+        function parseRowHeuristically(rowTokens) {
+            if (!rowTokens || rowTokens.length < 2) return null;
+
+            let fullLineText = rowTokens.join(" ").toLowerCase();
+            
+            if (fullLineText.includes("item number") || 
+                fullLineText.includes("order summary") || 
+                fullLineText.includes("shipment id") || 
+                fullLineText.includes("consignor") || 
+                fullLineText.includes("ship to") || 
+                fullLineText.includes("page ") || 
+                fullLineText.includes("net weight") || 
+                fullLineText.includes("gross weight") ||
+                fullLineText.includes("qty units") ||
+                fullLineText.includes("total")) {
+                return null;
+            }
+
+            let quantIdxs = [];
+            for (let i = rowTokens.length - 1; i >= 0; i--) {
+                let tokenClean = rowTokens[i].replace(/\./g, '').replace(/,/g, '').trim();
+                if (/^\d+$/.test(tokenClean)) {
+                    quantIdxs.unshift(i);
+                    if (quantIdxs.length === 2) break;
+                } else if (quantIdxs.length > 0) {
+                    break;
+                }
+            }
+
+            if (quantIdxs.length === 0) return null;
+
+            let sztuki = 0;
+            let karton = 0;
+
+            if (quantIdxs.length === 1) {
+                let val = parseInt(rowTokens[quantIdxs[0]].replace(/\./g, '').replace(/,/g, ''));
+                sztuki = isNaN(val) ? 0 : val;
+            } else if (quantIdxs.length === 2) {
+                let v1 = parseInt(rowTokens[quantIdxs[0]].replace(/\./g, '').replace(/,/g, ''));
+                let v2 = parseInt(rowTokens[quantIdxs[1]].replace(/\./g, '').replace(/,/g, ''));
+                sztuki = isNaN(v1) ? 0 : v1;
+                karton = isNaN(v2) ? 0 : v2;
+            }
+
+            let endNonDataIndex = quantIdxs[0];
+
+            let kod = rowTokens[0];
+            if (!kod || kod.length < 2 || /^(total|subtotal|page|note|date)$/i.test(kod)) return null;
+
+            let date = "";
+            let dateIdx = -1;
+            let dateRegex = /^(\d{2}-[a-zA-Z]{3}-\d{2,4}|\d{2}\/\d{2}\/\d{2,4}|\d{4}-\d{2}-\d{2}|\d{2}\.\d{2}\.\d{4})$/;
+            
+            for (let i = 1; i < endNonDataIndex; i++) {
+                if (dateRegex.test(rowTokens[i])) {
+                    date = rowTokens[i];
+                    dateIdx = i;
+                    break;
+                }
+            }
+
+            let partia = "";
+            let partiaIdx = -1;
+            if (dateIdx > 1) {
+                partia = rowTokens[1];
+                partiaIdx = 1;
+            } else if (rowTokens.length > 2 && dateIdx === -1) {
+                if (/^[a-zA-Z0-9]{4,12}$/.test(rowTokens[1])) {
+                    partia = rowTokens[1];
+                    partiaIdx = 1;
+                }
+            }
+
+            let countryIdx = -1;
+            for (let i = endNonDataIndex - 1; i >= 1; i--) {
+                let tUpper = rowTokens[i].toUpperCase();
+                if (/^[A-Z]{2}$/.test(tUpper)) {
+                    countryIdx = i;
+                    break;
+                }
+            }
+
+            let opisStart = 1;
+            if (partiaIdx === 1) opisStart = 2;
+            if (dateIdx >= opisStart) opisStart = dateIdx + 1;
+
+            let opisEnd = endNonDataIndex;
+            if (countryIdx !== -1 && countryIdx < opisEnd) opisEnd = countryIdx;
+
+            let opisTokens = [];
+            for (let i = opisStart; i < opisEnd; i++) {
+                let t = rowTokens[i];
+                if (/^\d{8,10}$/.test(t)) continue;
+                opisTokens.push(t);
+            }
+
+            let opis = opisTokens.join(" ").trim();
+            if (!opis) opis = kod;
+
+            let sig = findSignatureForKod(kod);
+
+            return {
+                "KOD": kod,
+                "PARTIA": partia,
+                "DATA": date,
+                "OPIS": opis,
+                "SZTUKI": sztuki,
+                "KARTON": karton,
+                "SYGNATURA_AKTUALNA": sig.aktualna,
+                "SYGNATURA_PL": sig.pl
+            };
+        }
+
+        // 3. Wgrywanie i uniwersalne parsowanie OSL (PDF)
         document.getElementById('fileInput').addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -304,106 +403,60 @@ html_content = """<!DOCTYPE html>
                 globalData = [];
                 metadata = { shipmentId: '', printDate: '' };
 
-                for (let i = 1; i <= pdf.numPages; i++) {
-                    const page = await pdf.getPage(i);
+                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                    const page = await pdf.getPage(pageNum);
                     const textContent = await page.getTextContent();
                     
-                    const items = textContent.items.sort((a, b) => {
-                        let dy = b.transform[5] - a.transform[5];
-                        if (Math.abs(dy) < 5) return a.transform[4] - b.transform[4];
-                        return dy;
-                    });
+                    let rawItems = textContent.items.map(it => ({
+                        str: it.str.trim(),
+                        x: it.transform[4],
+                        y: it.transform[5]
+                    })).filter(it => it.str !== '');
 
-                    let currentY = -1;
-                    let rowTexts = [];
-                    let tableData = [];
-                    let lastTextWasShipmentLabel = false;
-                    
-                    for (let item of items) {
-                        let str = item.str.trim();
-                        if (str === '') continue;
-                        
-                        // Wykrywanie numeru przesyłki (Shipment ID)
-                        if (lastTextWasShipmentLabel || /^\d{8,9}$/.test(str)) {
-                            if (!metadata.shipmentId && /^\d{8,9}$/.test(str)) {
-                                metadata.shipmentId = str;
+                    if (rawItems.length === 0) continue;
+
+                    rawItems.sort((a, b) => b.y - a.y);
+
+                    let lines = [];
+                    let currentLine = [];
+                    let currentY = null;
+
+                    for (let item of rawItems) {
+                        if (item.str.length === 8 || item.str.length === 9) {
+                            if (!metadata.shipmentId && /^\d{8,9}$/.test(item.str)) {
+                                metadata.shipmentId = item.str;
                             }
                         }
-                        if (str.toLowerCase().includes('shipment id') || str.toLowerCase().includes('shipment no')) {
-                            lastTextWasShipmentLabel = true;
-                        } else if (str.length > 0) {
-                            lastTextWasShipmentLabel = false;
+                        if (/^\d{2}-[a-zA-Z]{3}-\d{4}$/.test(item.str) || /^\d{2}-\d{2}-\d{4}$/.test(item.str)) {
+                            if (!metadata.printDate) metadata.printDate = item.str;
                         }
 
-                        // Wykrywanie daty
-                        if (/^\d{2}-[a-zA-Z]{3}-\d{4}$/.test(str) || /^\d{2}-\d{2}-\d{4}$/.test(str) || /^\d{2}\.\d{2}\.\d{4}$/.test(str)) {
-                            if (!metadata.printDate) metadata.printDate = str;
+                        if (currentY === null || Math.abs(currentY - item.y) <= 7) {
+                            currentLine.push(item);
+                            if (currentY === null) currentY = item.y;
+                        } else {
+                            currentLine.sort((a, b) => a.x - b.x);
+                            lines.push(currentLine.map(i => i.str));
+                            currentLine = [item];
+                            currentY = item.y;
                         }
-
-                        let y = item.transform[5];
-                        if (currentY === -1 || Math.abs(currentY - y) > 6) {
-                            if (rowTexts.length > 0) tableData.push(rowTexts);
-                            rowTexts = [];
-                            currentY = y;
-                        }
-                        rowTexts.push(str);
                     }
-                    if (rowTexts.length > 0) tableData.push(rowTexts);
+                    if (currentLine.length > 0) {
+                        currentLine.sort((a, b) => a.x - b.x);
+                        lines.push(currentLine.map(i => i.str));
+                    }
 
-                    tableData.forEach(row => {
-                        // Sprawdzamy wiersze zawierające min. 5 elementów
-                        if (row.length >= 5) {
-                            let kod = row[0];
-                            let kodLower = kod.toLowerCase();
-                            if (kodLower.includes("item") || kodLower.includes("order") || kodLower.includes("page") || kodLower.includes("shipment") || kodLower.includes("consignor") || kodLower.includes("description")) return;
-                            
-                            // Wyszukujemy indeks kraju pochodzenia z rozszerzonej listy
-                            let countryIndex = row.findIndex(v => COUNTRY_CODES.includes(v.toUpperCase()));
-                            
-                            // Wymagamy obecności kraju oraz co najmniej 1 wartości po nim (ilość sztuk)
-                            if (countryIndex !== -1 && countryIndex + 1 < row.length) {
-                                let partia = row[1];
-                                let hasDate = /-[a-zA-Z]{3}-/.test(row[2]) || /-[a-zA-Z]{3}-/.test(row[1]) || /-\d{2}/.test(row[2]) || /^\d{2}-\d{2}-\d{2,4}$/.test(row[2]);
-                                let data = hasDate ? row[2] : "";
-                                
-                                let opisStart = hasDate ? 3 : (partia.length > 5 ? 2 : 1);
-                                let opis = row.slice(opisStart, countryIndex > opisStart ? countryIndex - 1 : countryIndex).join(" ");
-                                
-                                // Sztuki (Qty Units) - pierwsza kolumna po kraju
-                                let sztukiText = row[countryIndex + 1].replace(/\./g, '').replace(/,/g, '');
-                                let sztuki = parseInt(sztukiText) || 0;
-                                
-                                // Kartony (Qty Cases) - opcjonalna druga kolumna po kraju (jeśli istnieje)
-                                let karton = 0;
-                                if (countryIndex + 2 < row.length) {
-                                    let kartonText = row[countryIndex + 2].replace(/\./g, '').replace(/,/g, '');
-                                    let valParsed = parseInt(kartonText);
-                                    // Sprawdzamy czy to prawidłowa liczba (kartony)
-                                    if (!isNaN(valParsed)) {
-                                        karton = valParsed;
-                                    }
-                                }
-                                
-                                let sig = findSignatureForKod(kod);
-
-                                globalData.push({ 
-                                    "KOD": kod, 
-                                    "PARTIA": partia, 
-                                    "DATA": data, 
-                                    "OPIS": opis, 
-                                    "SZTUKI": sztuki, 
-                                    "KARTON": karton,
-                                    "SYGNATURA_AKTUALNA": sig.aktualna,
-                                    "SYGNATURA_PL": sig.pl
-                                });
-                            }
+                    lines.forEach(lineTokens => {
+                        let parsed = parseRowHeuristically(lineTokens);
+                        if (parsed) {
+                            globalData.push(parsed);
                         }
                     });
                 }
                 
                 renderDashboard();
             } catch (error) {
-                console.error(error);
+                console.error("Błąd podczas analizy PDF:", error);
                 alert("Wystąpił błąd podczas przetwarzania pliku PDF: " + error.message);
             } finally {
                 document.getElementById('loading').classList.add('hidden');
@@ -412,11 +465,11 @@ html_content = """<!DOCTYPE html>
 
         function renderDashboard() {
             if(globalData.length === 0) {
-                alert("Nie odnaleziono pozycji towarowych w wgranym pliku PDF.");
+                alert("Nie odnaleziono pozycji towarowych w wgranym pliku PDF. Upewnij się, że plik zawiera tekst (nie jest skanem-obrazkiem).");
                 return;
             }
             
-            document.getElementById('metaShipmentId').innerText = metadata.shipmentId || 'Nieznany';
+            document.getElementById('metaShipmentId').innerText = metadata.shipmentId || 'Brak ID';
             document.getElementById('metaPrintDate').innerText = metadata.printDate || '-';
             document.getElementById('previewShipment').innerText = (metadata.shipmentId || '-') + (metadata.printDate ? ' z dnia ' + metadata.printDate : '');
 
@@ -484,7 +537,7 @@ html_content = """<!DOCTYPE html>
             document.getElementById('dashboard').classList.remove('hidden');
         }
 
-        // Generowanie wzorcowego pliku Excel z sygnaturami
+        // Generowanie pliku Excel
         document.getElementById('btnDownload').addEventListener('click', () => {
             if(globalData.length === 0) return;
 
@@ -544,8 +597,3 @@ html_content = """<!DOCTYPE html>
     </script>
 </body>
 </html>
-"""
-
-with open("Dostawa.html", "w", encoding="utf-8") as f:
-    f.write(html_content)
-print("File generated successfully.")
