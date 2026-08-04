@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Watermark Remover</title>
-    <!-- Tailwind CSS do stylizowania -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .video-container {
@@ -18,6 +18,11 @@
             left: 0;
             cursor: crosshair;
             touch-action: none;
+            pointer-events: none; /* Domyślnie kliknięcia trafiają w odtwarzacz wideo */
+        }
+        /* Gdy ta klasa jest aktywna, włączamy możliwość rysowania na płótnie */
+        #maskCanvas.drawing-active {
+            pointer-events: auto;
         }
     </style>
 </head>
@@ -39,7 +44,7 @@
     <!-- Główna zawartość -->
     <main class="flex-1 max-w-6xl w-full mx-auto p-6 flex flex-col gap-6">
 
-        <!-- Sekcja 1: Uploader (przeciągnij i drop) -->
+        <!-- Sekcja 1: Uploader (przeciągnij i upuść) -->
         <div id="dropZone" class="border-2 border-dashed border-slate-700 hover:border-indigo-500 bg-slate-800/40 rounded-2xl p-12 text-center transition-all cursor-pointer flex flex-col items-center justify-center">
             <svg class="w-16 h-16 text-slate-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 0115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
@@ -49,7 +54,7 @@
             <input type="file" id="videoInput" accept="video/*" class="hidden">
         </div>
 
-        <!-- Sekcja 2: Edytor Masy i Wideo (Ukryty na start) -->
+        <!-- Sekcja 2: Edytor Maski i Wideo -->
         <div id="editorSection" class="hidden flex-col lg:flex-row gap-6">
             
             <!-- Odtwarzacz z Płótnem do Rysowania -->
@@ -58,7 +63,7 @@
                     <video id="videoPlayer" class="block max-h-[500px] w-auto" controls></video>
                     <canvas id="maskCanvas"></canvas>
                 </div>
-                <p class="text-xs text-slate-400 mt-3">Zatrzymaj wideo na klatce ze znakiem i zamaluj go myszką.</p>
+                <p class="text-xs text-slate-400 mt-3">Przełącz na "Rysuj maskę", zatrzymaj film i zamaluj znak wodny.</p>
             </div>
 
             <!-- Panel Kontrolny / Ustawienia AI -->
@@ -66,6 +71,19 @@
                 <div class="space-y-6">
                     <h2 class="text-lg font-semibold text-slate-100 border-b border-slate-700 pb-2">Ustawienia Myszki i AI</h2>
                     
+                    <!-- Przełącznik Trybów: Odtwarzanie vs Rysowanie -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-2">Tryb pracy</label>
+                        <div class="grid grid-cols-2 gap-2 bg-slate-900 p-1 rounded-xl border border-slate-700">
+                            <button id="playModeBtn" class="py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white transition shadow">
+                                ▶️ Odtwarzaj
+                            </button>
+                            <button id="drawModeBtn" class="py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition">
+                                ✏️ Rysuj maskę
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- Rozmiar pędzla -->
                     <div>
                         <label class="block text-sm font-medium text-slate-300 mb-2">Rozmiar pędzla: <span id="brushSizeVal" class="text-indigo-400">20px</span></label>
@@ -127,8 +145,25 @@
         const progressSection = document.getElementById('progressSection');
         const progressBar = document.getElementById('progressBar');
 
+        const playModeBtn = document.getElementById('playModeBtn');
+        const drawModeBtn = document.getElementById('drawModeBtn');
+
         let isDrawing = false;
         let selectedFile = null;
+
+        // Przełączanie Trybów (Odtwarzanie vs Rysowanie)
+        playModeBtn.addEventListener('click', () => {
+            maskCanvas.classList.remove('drawing-active');
+            playModeBtn.className = "py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white transition shadow";
+            drawModeBtn.className = "py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition";
+        });
+
+        drawModeBtn.addEventListener('click', () => {
+            videoPlayer.pause(); // Zatrzymaj film podczas przełączania na rysowanie
+            maskCanvas.classList.add('drawing-active');
+            drawModeBtn.className = "py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white transition shadow";
+            playModeBtn.className = "py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition";
+        });
 
         // Obsługa wczytywania pliku
         dropZone.addEventListener('click', () => videoInput.click());
@@ -153,7 +188,7 @@
             editorSection.classList.add('flex');
         }
 
-        // Dopasowanie wymiarów Canvas do rozdzielczości wyświetlanego wideo
+        // Dopasowanie rozmiaru płótna Canvas do widocznego rozmiaru wideo
         videoPlayer.addEventListener('loadedmetadata', resizeCanvas);
         window.addEventListener('resize', resizeCanvas);
 
@@ -171,19 +206,20 @@
         maskCanvas.addEventListener('mouseleave', stopDrawing);
 
         function startDrawing(e) {
+            if (!maskCanvas.classList.contains('drawing-active')) return;
             isDrawing = true;
             draw(e);
         }
 
         function draw(e) {
-            if (!isDrawing) return;
+            if (!isDrawing || !maskCanvas.classList.contains('drawing-active')) return;
             const rect = maskCanvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
 
             ctx.lineWidth = brushSizeInput.value;
             ctx.lineCap = 'round';
-            ctx.strokeStyle = 'rgba(239, 68, 68, 0.7)'; // Czerwony kolor maski (półprzezroczysty)
+            ctx.strokeStyle = 'rgba(239, 68, 68, 0.7)'; // Czerwony kolor maski
 
             ctx.lineTo(x, y);
             ctx.stroke();
@@ -200,17 +236,17 @@
             ctx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
         });
 
-        // Wysyłanie do backendu AI
+        // Wysyłanie danych do backendu AI
         processBtn.addEventListener('click', async () => {
             if (!selectedFile) return;
 
-            // 1. Zamiana rysunku z Canvas na obrazek PNG (Maska)
+            // 1. Pobieranie rysunku z Canvas jako obraz PNG
             const maskDataUrl = maskCanvas.toDataURL('image/png');
 
-            // 2. Przygotowanie danych FormData do wysłania
+            // 2. Przygotowanie paczki danych
             const formData = new FormData();
             formData.append('video', selectedFile);
-            formData.append('mask', maskDataUrl); // Maska przesłana jako skompresowany base64 PNG
+            formData.append('mask', maskDataUrl);
             formData.append('model', document.getElementById('aiModel').value);
             formData.append('videoWidth', videoPlayer.videoWidth);
             formData.append('videoHeight', videoPlayer.videoHeight);
@@ -219,7 +255,7 @@
             editorSection.classList.add('hidden');
             progressSection.classList.remove('hidden');
 
-            // Symulacja postępu (w rzeczywistości użyłbyś WebSocket lub pollingu z backendu)
+            // Symulacja paska postępu
             let progress = 0;
             const interval = setInterval(() => {
                 progress += 10;
@@ -228,7 +264,7 @@
             }, 500);
 
             try {
-                /* ODKOMENTUJ TO PO SKONFIGUROWANIU BACKENDU PYTHON:
+                /* Po podłączeniu backendu Python:
                 const response = await fetch('/api/remove-watermark-ai', {
                     method: 'POST',
                     body: formData
@@ -237,7 +273,7 @@
                 window.location.href = result.downloadUrl;
                 */
             } catch (error) {
-                console.error("Błąd podczas przetwarzania:", error);
+                console.error("Błąd przetwarzania:", error);
             }
         });
     </script>
