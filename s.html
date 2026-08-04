@@ -17,7 +17,7 @@
             top: 0;
             left: 0;
             cursor: crosshair;
-            touch-action: none; /* Blokuje przewijanie strony palcem na telefonach */
+            touch-action: none;
             pointer-events: none;
         }
         #maskCanvas.drawing-active {
@@ -37,7 +37,7 @@
             </div>
             <h1 class="text-xl font-bold tracking-wide">AI Video Eraser</h1>
         </div>
-        <span class="text-xs bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-3 py-1 rounded-full font-medium">Smart Infill Engine</span>
+        <span class="text-xs bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-3 py-1 rounded-full font-medium">Background Content-Aware Fill</span>
     </header>
 
     <!-- Główna treść -->
@@ -49,25 +49,23 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 0115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
             </svg>
             <p class="text-lg font-medium text-slate-200">Kliknij lub przeciągnij wideo tutaj</p>
-            <p class="text-sm text-slate-500 mt-2">Formaty: MP4, MOV, WEBM</p>
+            <p class="text-sm text-slate-500 mt-2">MP4, MOV, WEBM</p>
             <input type="file" id="videoInput" accept="video/*" class="hidden">
         </div>
 
         <!-- Sekcja 2: Edytor Maski i Wideo -->
         <div id="editorSection" class="hidden flex-col gap-6">
             
-            <!-- Odtwarzacz z Płótnem do Rysowania -->
             <div class="bg-slate-950 p-2 sm:p-4 rounded-2xl border border-slate-800 flex flex-col items-center justify-center">
                 <div class="video-container rounded-lg overflow-hidden shadow-2xl">
                     <video id="videoPlayer" class="block max-h-[60vh] w-auto" playsinline controls></video>
                     <canvas id="maskCanvas"></canvas>
                 </div>
-                <p class="text-xs text-slate-400 mt-3 text-center">Zatrzymaj film, przełącz na "Rysuj maskę" i dokładnie zamaluj sam napis.</p>
+                <p class="text-xs text-slate-400 mt-3 text-center">Przełącz na "Rysuj maskę", pauzuj film i dokładnie zamaluj sam napis.</p>
             </div>
 
             <!-- Panel Kontrolny -->
             <div class="bg-slate-800/50 border border-slate-700/50 p-5 rounded-2xl space-y-5">
-                <!-- Przełącznik Trybów -->
                 <div>
                     <label class="block text-sm font-medium text-slate-300 mb-2">Tryb pracy</label>
                     <div class="grid grid-cols-2 gap-2 bg-slate-900 p-1 rounded-xl border border-slate-700">
@@ -80,15 +78,13 @@
                     </div>
                 </div>
 
-                <!-- Rozmiar pędzla -->
                 <div>
-                    <label class="block text-sm font-medium text-slate-300 mb-2">Rozmiar pędzla: <span id="brushSizeVal" class="text-indigo-400">30px</span></label>
-                    <input type="range" id="brushSize" min="5" max="100" value="30" class="w-full accent-indigo-500 bg-slate-700 rounded-lg cursor-pointer">
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Rozmiar pędzla: <span id="brushSizeVal" class="text-indigo-400">25px</span></label>
+                    <input type="range" id="brushSize" min="5" max="80" value="25" class="w-full accent-indigo-500 bg-slate-700 rounded-lg cursor-pointer">
                 </div>
 
-                <!-- Akcje -->
                 <div class="flex gap-3">
-                    <button id="clearMaskBtn" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm py-2.5 px-3 rounded-xl transition">Wyczyść zaznaczenie</button>
+                    <button id="clearMaskBtn" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm py-2.5 px-3 rounded-xl transition">Wyczyść maskę</button>
                     <button id="processBtn" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 px-4 rounded-xl shadow-lg transition flex items-center justify-center gap-2">
                         <span>Usuń Znak Wodny</span>
                     </button>
@@ -99,8 +95,8 @@
 
         <!-- Sekcja 3: Pasek Postępu -->
         <div id="progressSection" class="hidden bg-slate-800 border border-slate-700 p-6 rounded-2xl text-center space-y-4">
-            <h3 class="text-lg font-medium text-slate-200" id="progressStatus">Wymazywanie znaku wodnego...</h3>
-            <p class="text-sm text-slate-400">Trwa wymazywanie napisu z filmu. Proszę nie zamykać karty.</p>
+            <h3 class="text-lg font-medium text-slate-200">Wymazywanie napisu z filmu...</h3>
+            <p class="text-sm text-slate-400">Trwa próbkowe zastępowanie pikseli tła. Proszę chwilę poczekać.</p>
             <div class="w-full bg-slate-700 h-3 rounded-full overflow-hidden">
                 <div id="progressBar" class="bg-indigo-500 h-full w-0 transition-all duration-100"></div>
             </div>
@@ -111,7 +107,7 @@
             <h3 class="text-lg font-semibold text-emerald-400">Gotowe! Napis został usunięty.</h3>
             <video id="resultVideo" class="max-h-[50vh] rounded-lg border border-slate-700" controls playsinline></video>
             <a id="downloadBtn" download="video_bez_znaku.mp4" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-8 rounded-xl transition text-center shadow-lg">
-                📥 Pobierz wyczyszczone wideo
+                📥 Pobierz gotowe wideo
             </a>
             <button id="resetBtn" class="text-xs text-slate-400 underline mt-2">Przetwórz kolejny plik</button>
         </div>
@@ -142,7 +138,6 @@
         let isDrawing = false;
         let selectedFile = null;
 
-        // Przełączanie trybów
         playModeBtn.addEventListener('click', () => {
             maskCanvas.classList.remove('drawing-active');
             playModeBtn.className = "py-2.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white transition shadow";
@@ -157,7 +152,6 @@
             playModeBtn.className = "py-2.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition";
         });
 
-        // Wczytywanie pliku
         dropZone.addEventListener('click', () => videoInput.click());
         videoInput.addEventListener('change', (e) => { if (e.target.files.length) handleFile(e.target.files[0]); });
 
@@ -177,7 +171,6 @@
             maskCanvas.height = videoPlayer.clientHeight;
         }
 
-        // Rysowanie Myszka + Ekran Dotykowy
         brushSizeInput.addEventListener('input', (e) => brushSizeVal.textContent = `${e.target.value}px`);
 
         maskCanvas.addEventListener('pointerdown', startDrawing);
@@ -209,7 +202,7 @@
             ctx.lineWidth = brushSizeInput.value;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
-            ctx.strokeStyle = 'rgba(239, 68, 68, 0.8)'; // Czerwona maska
+            ctx.strokeStyle = 'rgba(239, 68, 68, 0.9)';
 
             ctx.lineTo(pos.x, pos.y);
             ctx.stroke();
@@ -224,32 +217,50 @@
             ctx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
         });
 
-        // PRZETWARZANIE WIDEO (Poprawione scalanie warstw)
+        // GEOMETRYCZNE ODBIOROWANIE I USUWANIE NAPISU (PATCH INFILL)
         processBtn.addEventListener('click', async () => {
             if (!selectedFile) return;
 
+            // Szukamy obszaru zaznaczenia (Bounding Box maski)
+            const imgData = ctx.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
+            let minX = maskCanvas.width, minY = maskCanvas.height, maxX = 0, maxY = 0;
+            let hasMask = false;
+
+            for (let y = 0; y < maskCanvas.height; y++) {
+                for (let x = 0; x < maskCanvas.width; x++) {
+                    const alpha = imgData.data[(y * maskCanvas.width + x) * 4 + 3];
+                    if (alpha > 50) {
+                        hasMask = true;
+                        if (x < minX) minX = x;
+                        if (x > maxX) maxX = x;
+                        if (y < minY) minY = y;
+                        if (y > maxY) maxY = y;
+                    }
+                }
+            }
+
+            if (!hasMask) {
+                alert("Najpierw zaznacz znak wodny pędzlem w trybie 'Rysuj maskę'!");
+                return;
+            }
+
             editorSection.classList.add('hidden');
             progressSection.classList.remove('hidden');
+
+            // Przeliczamy pozycję zaznaczenia na faktyczny rozmiar filmu wideo
+            const scaleX = videoPlayer.videoWidth / maskCanvas.width;
+            const scaleY = videoPlayer.videoHeight / maskCanvas.height;
+
+            const rx = Math.floor(minX * scaleX);
+            const ry = Math.floor(minY * scaleY);
+            const rw = Math.ceil((maxX - minX) * scaleX);
+            const rh = Math.ceil((maxY - minY) * scaleY);
 
             const processingCanvas = document.createElement('canvas');
             const pCtx = processingCanvas.getContext('2d');
             processingCanvas.width = videoPlayer.videoWidth;
             processingCanvas.height = videoPlayer.videoHeight;
 
-            // Pomocnicze płótno dla rozmytego fragmentu tła
-            const blurCanvas = document.createElement('canvas');
-            blurCanvas.width = videoPlayer.videoWidth;
-            blurCanvas.height = videoPlayer.videoHeight;
-            const bCtx = blurCanvas.getContext('2d');
-
-            // Pomocnicze płótno na przeskalowaną maskę
-            const scaleCanvas = document.createElement('canvas');
-            scaleCanvas.width = videoPlayer.videoWidth;
-            scaleCanvas.height = videoPlayer.videoHeight;
-            const sCtx = scaleCanvas.getContext('2d');
-            sCtx.drawImage(maskCanvas, 0, 0, videoPlayer.videoWidth, videoPlayer.videoHeight);
-
-            // Nagrywanie wynikowego wideo
             const stream = processingCanvas.captureStream(30);
             let recorder;
             try {
@@ -280,27 +291,27 @@
                     return;
                 }
 
-                // 1. Rysuj oryginalne pełne wideo jako tło (zostaje 100% ostre wokół)
-                pCtx.globalCompositeOperation = 'source-over';
+                // 1. Rysujemy całą czystą klatkę wideo
                 pCtx.drawImage(videoPlayer, 0, 0, processingCanvas.width, processingCanvas.height);
 
-                // 2. Przygotuj rozmyte wideo na pomocniczym płótnie
-                bCtx.globalCompositeOperation = 'source-over';
-                bCtx.clearRect(0, 0, blurCanvas.width, blurCanvas.height);
-                bCtx.save();
-                bCtx.filter = 'blur(22px)'; // Wtapianie napisów w tło
-                bCtx.drawImage(videoPlayer, 0, 0, blurCanvas.width, blurCanvas.height);
-                bCtx.restore();
+                // 2. Pobieramy pasek tła TUŻ SPOZA górnej i dolnej krawędzi zaznaczenia (nie zawiera napisu)
+                const sampleHeight = Math.max(10, Math.floor(rh * 0.4));
+                const sampleY = Math.max(0, ry - sampleHeight);
 
-                // 3. Przytnij rozmycie TYLKO do obszaru zaznaczonej czerwonej maski
-                bCtx.globalCompositeOperation = 'destination-in';
-                bCtx.drawImage(scaleCanvas, 0, 0);
+                // 3. Zakrywamy napis teksturą tła wziętego z otoczenia
+                pCtx.save();
+                // Lekki blur tylko na łącznikach patcha, żeby idealnie wtopić brzegi
+                pCtx.filter = 'blur(6px)';
+                
+                // Przykrycie napisu próbką tła znad napisu
+                pCtx.drawImage(
+                    videoPlayer, 
+                    rx, sampleY, rw, sampleHeight, // skąd pobieramy piksele (czyste tło nad napisem)
+                    rx - 2, ry - 2, rw + 4, rh + 4   // dokąd wklejamy (wprost w miejsce napisu)
+                );
+                pCtx.restore();
 
-                // 4. Nałóż wymazany fragment dokładnie na oryginalne wideo
-                pCtx.globalCompositeOperation = 'source-over';
-                pCtx.drawImage(blurCanvas, 0, 0);
-
-                // Aktualizacja paska postępu
+                // Aktualizacja paska
                 const pct = Math.floor((videoPlayer.currentTime / videoPlayer.duration) * 100);
                 progressBar.style.width = `${pct}%`;
 
