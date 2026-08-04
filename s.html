@@ -1,279 +1,221 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Video Watermark Eraser</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .video-wrapper {
-            position: relative;
-            display: inline-block;
-            max-width: 100%;
-        }
-        #maskCanvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            cursor: crosshair;
-            touch-action: none;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Użytkownika PTC - Demo UI</title>
+  <!-- Tailwind CSS z CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- React & ReactDOM z CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <!-- Babel do kompilacji Reacta w przeglądarce -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans select-none">
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen">
 
-    <header class="border-b border-slate-800 bg-slate-950/50 py-4 px-6 flex justify-between items-center">
-        <h1 class="text-xl font-bold tracking-wide text-indigo-400">Video Watermark Eraser</h1>
-        <span class="text-xs bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-3 py-1 rounded-full font-medium">Auto-Responsive Canvas</span>
-    </header>
+  <div id="root"></div>
 
-    <main class="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 flex flex-col gap-6">
+  <script type="text/babel">
+    const { useState, useEffect } = React;
 
-        <div id="dropZone" class="border-2 border-dashed border-slate-700 hover:border-indigo-500 bg-slate-800/40 rounded-2xl p-8 sm:p-12 text-center transition-all cursor-pointer flex flex-col items-center justify-center">
-            <p class="text-lg font-medium text-slate-200">Kliknij lub przeciągnij wideo tutaj</p>
-            <p class="text-sm text-slate-500 mt-2">MP4, MOV, WEBM</p>
-            <input type="file" id="videoInput" accept="video/*" class="hidden">
-        </div>
+    // --- PROSTY ODTWARZACZ REKLAM (MODAL/WIDOK) ---
+    function AdPlayer({ onComplete, onCancel }) {
+      const [timeLeft, setTimeLeft] = useState(10);
+      const [isFinished, setIsFinished] = useState(false);
 
-        <div id="editorSection" class="hidden flex-col gap-6">
-            <div class="bg-slate-950 p-2 sm:p-4 rounded-2xl border border-slate-800 flex flex-col items-center justify-center">
-                <div class="video-wrapper rounded-lg overflow-hidden shadow-2xl">
-                    <video id="videoPlayer" class="block max-h-[60vh] w-auto" playsinline controls></video>
-                    <canvas id="maskCanvas"></canvas>
-                </div>
-                <p class="text-xs text-indigo-300 mt-3 text-center">💡 Kliknij bezpośrednio na napis na wideo i zamaluj go czerwoną plamą.</p>
+      useEffect(() => {
+        if (timeLeft > 0) {
+          const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
+          return () => clearTimeout(timer);
+        } else {
+          setIsFinished(true);
+        }
+      }, [timeLeft]);
+
+      return (
+        <div class="fixed inset-0 bg-slate-950/95 z-50 flex flex-col items-center justify-center p-4">
+          <div class="w-full max-w-xl bg-slate-900 border border-slate-700 rounded-2xl p-6 text-center shadow-2xl space-y-6">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-4">
+              <span class="text-xs font-bold uppercase tracking-wider text-indigo-400">Odtwarzacz Reklam PTC</span>
+              <button onClick={onCancel} class="text-slate-400 hover:text-white text-sm">✕ Zamknij</button>
             </div>
 
-            <div class="bg-slate-800/50 border border-slate-700/50 p-5 rounded-2xl space-y-4">
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-900/60 p-4 rounded-xl border border-slate-700/60">
-                    <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Pędzel: <span id="brushSizeVal" class="text-indigo-400">25px</span></label>
-                        <input type="range" id="brushSize" min="5" max="80" value="25" class="w-full accent-indigo-500 bg-slate-700 rounded-lg cursor-pointer">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Siła rozmycia: <span id="blurVal" class="text-indigo-400">6px</span></label>
-                        <input type="range" id="blurSize" min="2" max="25" value="6" class="w-full accent-indigo-500 bg-slate-700 rounded-lg cursor-pointer">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Przezroczystość: <span id="opacityVal" class="text-indigo-400">80%</span></label>
-                        <input type="range" id="maskOpacity" min="30" max="100" value="80" class="w-full accent-indigo-500 bg-slate-700 rounded-lg cursor-pointer">
-                    </div>
-                </div>
-
-                <div class="flex gap-3">
-                    <button id="clearMaskBtn" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm py-2.5 px-3 rounded-xl transition">Wyczyść zaznaczenie</button>
-                    <button id="processBtn" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 px-4 rounded-xl shadow-lg transition">Usuń Znak Wodny</button>
-                </div>
+            <div class="h-48 bg-slate-800 rounded-xl flex flex-col items-center justify-center border border-dashed border-slate-700">
+              <p class="text-slate-400 text-sm">Miejsce na ramkę iframe z reklamą sponsorowaną</p>
+              <p class="text-xs text-slate-500 mt-2">https://example-crypto-ad.com</p>
             </div>
-        </div>
 
-        <div id="progressSection" class="hidden bg-slate-800 border border-slate-700 p-6 rounded-2xl text-center space-y-4">
-            <h3 class="text-lg font-medium text-slate-200">Przetwarzanie klatek wideo...</h3>
-            <div class="w-full bg-slate-700 h-3 rounded-full overflow-hidden">
-                <div id="progressBar" class="bg-indigo-500 h-full w-0 transition-all duration-100"></div>
+            <div class="space-y-3">
+              {!isFinished ? (
+                <div>
+                  <p class="text-xs text-slate-400">Pozostały czas do zaliczenia nagrody:</p>
+                  <p class="text-4xl font-mono font-bold text-amber-400 mt-1">{timeLeft}s</p>
+                </div>
+              ) : (
+                <div class="space-y-4">
+                  <p class="text-emerald-400 font-bold text-lg">🎉 Reklama obejrzana pomyślnie!</p>
+                  <button
+                    onClick={() => onComplete(0.10)}
+                    class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 font-bold text-white rounded-xl shadow-lg transition"
+                  >
+                    Odbierz +$0.10 USD i wróć do Pulpitu
+                  </button>
+                </div>
+              )}
             </div>
+          </div>
         </div>
+      );
+    }
 
-        <div id="resultSection" class="hidden bg-slate-800 border border-slate-700 p-6 rounded-2xl flex flex-col items-center gap-4 text-center">
-            <h3 class="text-lg font-semibold text-emerald-400">Gotowe! Wygenerowano wyczyszczone wideo.</h3>
-            <video id="resultVideo" class="max-h-[50vh] rounded-lg border border-slate-700" controls playsinline></video>
-            <a id="downloadBtn" download="video_bez_znaku.mp4" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-8 rounded-xl transition shadow-lg">📥 Pobierz wideo</a>
-            <button id="resetBtn" class="text-xs text-slate-400 underline mt-2">Przetwórz kolejny plik</button>
+    // --- GŁÓWNY APPS / DASHBOARD ---
+    function App() {
+      const [view, setView] = useState('dashboard');
+      const [userData, setUserData] = useState({
+        username: 'mobile_tester',
+        balanceUsd: 12.50,
+        cpBalance: 154200,
+        currentStage: 4,
+        pendingAds: 5
+      });
+      const [packQty, setPackQty] = useState(1);
+
+      const handleBuyPacks = (e) => {
+        e.preventDefault();
+        const cost = packQty * 1.0;
+        if (userData.balanceUsd >= cost) {
+          setUserData(prev => ({
+            ...prev,
+            balanceUsd: prev.balanceUsd - cost,
+            cpBalance: prev.cpBalance + (packQty * 11000)
+          }));
+          alert(`Pomyślnie kupiono ${packQty} AdPack(i)! Otrzymujesz +${(packQty * 11000).toLocaleString()} CP.`);
+        } else {
+          alert('Brak wystarczających środków na saldzie USD!');
+        }
+      };
+
+      const handleAdFinished = (reward) => {
+        setUserData(prev => ({
+          ...prev,
+          balanceUsd: prev.balanceUsd + reward,
+          pendingAds: Math.max(0, prev.pendingAds - 1)
+        }));
+        setView('dashboard');
+      };
+
+      return (
+        <div class="max-w-4xl mx-auto p-4 md:p-6 space-y-6">
+          {/* HEADER */}
+          <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4 shadow-lg">
+            <div>
+              <h1 class="text-xl font-bold text-white">Witaj, {userData.username}! 👋</h1>
+              <p class="text-xs text-slate-400">Demo Interfejsu Panelu Użytkownika</p>
+            </div>
+            <div class="flex gap-2">
+              <button onClick={() => alert('Przekierowanie do depozytu USDT...')} class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 font-bold text-xs rounded-lg transition">Wpłać USDT</button>
+              <button onClick={() => alert('Przekierowanie do wypłaty...')} class="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 font-bold text-xs rounded-lg transition">Wypłać</button>
+            </div>
+          </div>
+
+          {/* KARTY STATYSTYK */}
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl shadow">
+              <span class="text-xs font-semibold text-slate-400 uppercase">Saldo Zarobione</span>
+              <p class="text-2xl font-mono font-bold text-emerald-400 mt-1">${userData.balanceUsd.toFixed(2)} USD</p>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl shadow">
+              <span class="text-xs font-semibold text-slate-400 uppercase">Punkty CP</span>
+              <p class="text-2xl font-mono font-bold text-amber-400 mt-1">{userData.cpBalance.toLocaleString()} CP</p>
+            </div>
+            <div class="bg-slate-900 border border-indigo-500/30 p-5 rounded-xl shadow flex items-center justify-between">
+              <div>
+                <span class="text-xs font-semibold text-indigo-300 uppercase">Reklamy Dziś</span>
+                <p class="text-2xl font-mono font-bold text-white mt-1">{userData.pendingAds} dostępnych</p>
+              </div>
+              <button
+                disabled={userData.pendingAds === 0}
+                onClick={() => setView('ad-player')}
+                class={`px-3 py-2 rounded-lg font-bold text-xs transition ${userData.pendingAds > 0 ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}
+              >
+                Oglądaj
+              </button>
+            </div>
+          </div>
+
+          {/* PASEK POSTĘPU STAGE */}
+          <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-3">
+            <div class="flex justify-between items-center text-sm">
+              <span class="font-bold text-white">Poziom: STAGE {userData.currentStage}</span>
+              <span class="text-xs text-indigo-400 font-mono">Próg: 100,000 - 249,999 CP</span>
+            </div>
+            <div class="w-full h-3 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+              <div class="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full" style={{ width: '54%' }}></div>
+            </div>
+            <div class="flex justify-between text-xs text-slate-400">
+              <span>Postęp etapu: 54%</span>
+              <span>Brakuje: 95,799 CP do Stage 5</span>
+            </div>
+          </div>
+
+          {/* KALKULATOR / ZAKUP ADPACKA */}
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-4">
+              <h3 class="font-bold text-white">Kup AdPacki ($1.00 USDT / szt.)</h3>
+              <form onSubmit={handleBuyPacks} class="space-y-4">
+                <div>
+                  <label class="text-xs text-slate-400 block mb-1">Liczba pakietów:</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={packQty}
+                    onChange={(e) => setPackQty(Math.max(1, parseInt(e.target.value) || 1))}
+                    class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white font-mono text-sm"
+                  />
+                </div>
+                <div class="p-3 bg-slate-950 rounded-lg text-xs space-y-1 font-mono text-slate-300">
+                  <p>Koszt: <span class="text-emerald-400 font-bold">${(packQty * 1).toFixed(2)} USD</span></p>
+                  <p>Zyskasz: <span class="text-amber-400 font-bold">+{(packQty * 11000).toLocaleString()} CP</span></p>
+                </div>
+                <button type="submit" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 font-bold text-sm text-white rounded-lg transition">
+                  Kup Teraz (Z Salda)
+                </button>
+              </form>
+            </div>
+
+            {/* TABELA TRANSAKCJI */}
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-3">
+              <h3 class="font-bold text-white">Ostatnia Aktywność</h3>
+              <div class="space-y-2 text-xs font-mono">
+                <div class="flex justify-between p-2.5 bg-slate-950 rounded border border-slate-800">
+                  <span>[Zarobek] Reklama #101</span>
+                  <span class="text-emerald-400">+$0.10 USD</span>
+                </div>
+                <div class="flex justify-between p-2.5 bg-slate-950 rounded border border-slate-800">
+                  <span>[Podatek Dzienny]</span>
+                  <span class="text-red-400">-200 CP</span>
+                </div>
+                <div class="flex justify-between p-2.5 bg-slate-950 rounded border border-slate-800">
+                  <span>[Zakup] 10 AdPacków</span>
+                  <span class="text-amber-400">+110,000 CP</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* MODAL ODTWARZACZA */}
+          {view === 'ad-player' && (
+            <AdPlayer
+              onComplete={handleAdFinished}
+              onCancel={() => setView('dashboard')}
+            />
+          )}
         </div>
+      );
+    }
 
-    </main>
-
-    <script>
-        const dropZone = document.getElementById('dropZone');
-        const videoInput = document.getElementById('videoInput');
-        const editorSection = document.getElementById('editorSection');
-        const videoPlayer = document.getElementById('videoPlayer');
-        const maskCanvas = document.getElementById('maskCanvas');
-        const ctx = maskCanvas.getContext('2d');
-
-        const brushSizeInput = document.getElementById('brushSize');
-        const brushSizeVal = document.getElementById('brushSizeVal');
-        const blurSizeInput = document.getElementById('blurSize');
-        const blurVal = document.getElementById('blurVal');
-        const maskOpacityInput = document.getElementById('maskOpacity');
-        const opacityVal = document.getElementById('opacityVal');
-
-        const clearMaskBtn = document.getElementById('clearMaskBtn');
-        const processBtn = document.getElementById('processBtn');
-        const progressSection = document.getElementById('progressSection');
-        const progressBar = document.getElementById('progressBar');
-        const resultSection = document.getElementById('resultSection');
-        const resultVideo = document.getElementById('resultVideo');
-        const downloadBtn = document.getElementById('downloadBtn');
-        const resetBtn = document.getElementById('resetBtn');
-
-        let isDrawing = false;
-        let selectedFile = null;
-
-        dropZone.addEventListener('click', () => videoInput.click());
-        videoInput.addEventListener('change', (e) => { if (e.target.files.length) handleFile(e.target.files[0]); });
-
-        function handleFile(file) {
-            selectedFile = file;
-            videoPlayer.src = URL.createObjectURL(file);
-            dropZone.classList.add('hidden');
-            editorSection.classList.remove('hidden');
-            editorSection.classList.add('flex');
-        }
-
-        videoPlayer.addEventListener('loadedmetadata', syncCanvasSize);
-        window.addEventListener('resize', syncCanvasSize);
-
-        function syncCanvasSize() {
-            if (!videoPlayer.videoWidth) return;
-            maskCanvas.width = videoPlayer.videoWidth;
-            maskCanvas.height = videoPlayer.videoHeight;
-        }
-
-        brushSizeInput.addEventListener('input', (e) => brushSizeVal.textContent = `${e.target.value}px`);
-        blurSizeInput.addEventListener('input', (e) => blurVal.textContent = `${e.target.value}px`);
-        maskOpacityInput.addEventListener('input', (e) => opacityVal.textContent = `${e.target.value}%`);
-
-        // Przeliczanie pozycji myszy/dotyku uwzględniające skalowanie ekranu
-        function getPos(e) {
-            const rect = maskCanvas.getBoundingClientRect();
-            const scaleX = maskCanvas.width / rect.width;
-            const scaleY = maskCanvas.height / rect.height;
-            return {
-                x: (e.clientX - rect.left) * scaleX,
-                y: (e.clientY - rect.top) * scaleY
-            };
-        }
-
-        maskCanvas.addEventListener('pointerdown', startDrawing);
-        maskCanvas.addEventListener('pointermove', draw);
-        window.addEventListener('pointerup', stopDrawing);
-
-        function startDrawing(e) {
-            videoPlayer.pause();
-            isDrawing = true;
-            syncCanvasSize();
-            
-            const pos = getPos(e);
-            ctx.beginPath();
-            ctx.arc(pos.x, pos.y, (brushSizeInput.value * (maskCanvas.width / maskCanvas.clientWidth)) / 2, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(239, 68, 68, 0.8)';
-            ctx.fill();
-
-            ctx.beginPath();
-            ctx.moveTo(pos.x, pos.y);
-        }
-
-        function draw(e) {
-            if (!isDrawing) return;
-            const pos = getPos(e);
-            
-            ctx.lineWidth = brushSizeInput.value * (maskCanvas.width / maskCanvas.clientWidth);
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            ctx.strokeStyle = 'rgba(239, 68, 68, 0.8)';
-            ctx.lineTo(pos.x, pos.y);
-            ctx.stroke();
-        }
-
-        function stopDrawing() { isDrawing = false; ctx.beginPath(); }
-        clearMaskBtn.addEventListener('click', () => ctx.clearRect(0, 0, maskCanvas.width, maskCanvas.height));
-
-        processBtn.addEventListener('click', async () => {
-            if (!selectedFile) return;
-
-            const imgData = ctx.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
-            let hasMask = false;
-            for (let i = 3; i < imgData.data.length; i += 4) {
-                if (imgData.data[i] > 20) { hasMask = true; break; }
-            }
-
-            if (!hasMask) {
-                alert("Najpierw zamaluj napis na wideo!");
-                return;
-            }
-
-            editorSection.classList.add('hidden');
-            progressSection.classList.remove('hidden');
-
-            const vw = videoPlayer.videoWidth;
-            const vh = videoPlayer.videoHeight;
-
-            const processingCanvas = document.createElement('canvas');
-            processingCanvas.width = vw;
-            processingCanvas.height = vh;
-            const pCtx = processingCanvas.getContext('2d');
-
-            const featheredMask = document.createElement('canvas');
-            featheredMask.width = vw;
-            featheredMask.height = vh;
-            const fmCtx = featheredMask.getContext('2d');
-            fmCtx.filter = 'blur(6px)';
-            fmCtx.drawImage(maskCanvas, 0, 0);
-
-            const blurredFrame = document.createElement('canvas');
-            blurredFrame.width = vw;
-            blurredFrame.height = vh;
-            const bfCtx = blurredFrame.getContext('2d');
-
-            const stream = processingCanvas.captureStream(30);
-            let recorder;
-            try { recorder = new MediaRecorder(stream, { mimeType: 'video/webm' }); }
-            catch (e) { recorder = new MediaRecorder(stream); }
-
-            const chunks = [];
-            recorder.ondataavailable = (e) => chunks.push(e.data);
-            recorder.onstop = () => {
-                const blob = new Blob(chunks, { type: 'video/mp4' });
-                const resultUrl = URL.createObjectURL(blob);
-                resultVideo.src = resultUrl;
-                downloadBtn.href = resultUrl;
-                progressSection.classList.add('hidden');
-                resultSection.classList.remove('hidden');
-            };
-
-            const blurPx = blurSizeInput.value;
-            const opacityPct = maskOpacityInput.value / 100;
-
-            videoPlayer.currentTime = 0;
-            await videoPlayer.play();
-            recorder.start();
-
-            function renderFrame() {
-                if (videoPlayer.paused || videoPlayer.ended) {
-                    recorder.stop();
-                    return;
-                }
-
-                pCtx.globalCompositeOperation = 'source-over';
-                pCtx.globalAlpha = 1.0;
-                pCtx.drawImage(videoPlayer, 0, 0, vw, vh);
-
-                bfCtx.clearRect(0, 0, vw, vh);
-                bfCtx.save();
-                bfCtx.filter = `blur(${blurPx}px)`;
-                bfCtx.drawImage(videoPlayer, 0, 0, vw, vh);
-                bfCtx.restore();
-
-                bfCtx.globalCompositeOperation = 'destination-in';
-                bfCtx.drawImage(featheredMask, 0, 0);
-
-                pCtx.globalCompositeOperation = 'source-over';
-                pCtx.globalAlpha = opacityPct;
-                pCtx.drawImage(blurredFrame, 0, 0);
-
-                const pct = Math.floor((videoPlayer.currentTime / videoPlayer.duration) * 100);
-                progressBar.style.width = `${pct}%`;
-
-                requestAnimationFrame(renderFrame);
-            }
-
-            renderFrame();
-        });
-
-        resetBtn.addEventListener('click', () => location.reload());
-    </script>
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
 </body>
 </html>
