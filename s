@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Watermark Remover</title>
+    <!-- Tailwind CSS do stylizowania -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .video-container {
+            position: relative;
+            display: inline-block;
+            max-width: 100%;
+        }
+        #maskCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            cursor: crosshair;
+            touch-action: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-950/50 py-4 px-6 flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+            <div class="bg-indigo-600 p-2 rounded-lg">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                </svg>
+            </div>
+            <h1 class="text-xl font-bold tracking-wide">AI Video Eraser</h1>
+        </div>
+        <span class="text-xs bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-3 py-1 rounded-full font-medium">Model AI: Deep Inpainting</span>
+    </header>
+
+    <!-- Główna zawartość -->
+    <main class="flex-1 max-w-6xl w-full mx-auto p-6 flex flex-col gap-6">
+
+        <!-- Sekcja 1: Uploader (przeciągnij i drop) -->
+        <div id="dropZone" class="border-2 border-dashed border-slate-700 hover:border-indigo-500 bg-slate-800/40 rounded-2xl p-12 text-center transition-all cursor-pointer flex flex-col items-center justify-center">
+            <svg class="w-16 h-16 text-slate-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 0115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+            </svg>
+            <p class="text-lg font-medium text-slate-200">Przeciągnij plik wideo tutaj lub <span class="text-indigo-400 underline">wybierz z dysku</span></p>
+            <p class="text-sm text-slate-500 mt-2">Obsługiwane formaty: MP4, MOV, WEBM (Max 200MB)</p>
+            <input type="file" id="videoInput" accept="video/*" class="hidden">
+        </div>
+
+        <!-- Sekcja 2: Edytor Masy i Wideo (Ukryty na start) -->
+        <div id="editorSection" class="hidden flex-col lg:flex-row gap-6">
+            
+            <!-- Odtwarzacz z Płótnem do Rysowania -->
+            <div class="flex-1 bg-slate-950 p-4 rounded-2xl border border-slate-800 flex flex-col items-center justify-center">
+                <div class="video-container rounded-lg overflow-hidden shadow-2xl">
+                    <video id="videoPlayer" class="block max-h-[500px] w-auto" controls></video>
+                    <canvas id="maskCanvas"></canvas>
+                </div>
+                <p class="text-xs text-slate-400 mt-3">Zatrzymaj wideo na klatce ze znakiem i zamaluj go myszką.</p>
+            </div>
+
+            <!-- Panel Kontrolny / Ustawienia AI -->
+            <div class="w-full lg:w-80 bg-slate-800/50 border border-slate-700/50 p-5 rounded-2xl flex flex-col justify-between">
+                <div class="space-y-6">
+                    <h2 class="text-lg font-semibold text-slate-100 border-b border-slate-700 pb-2">Ustawienia Myszki i AI</h2>
+                    
+                    <!-- Rozmiar pędzla -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-2">Rozmiar pędzla: <span id="brushSizeVal" class="text-indigo-400">20px</span></label>
+                        <input type="range" id="brushSize" min="5" max="80" value="20" class="w-full accent-indigo-500 bg-slate-700 rounded-lg cursor-pointer">
+                    </div>
+
+                    <!-- Model AI -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-2">Algorytm AI</label>
+                        <select id="aiModel" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <option value="lama">LaMa Inpainting (Najwyższa jakość)</option>
+                            <option value="propainter">ProPainter (Dla ruchomych obiektów)</option>
+                            <option value="opencv">Fast Telea (Szybki, prosty)</option>
+                        </select>
+                    </div>
+
+                    <!-- Przyciski akcji maski -->
+                    <div class="flex gap-2">
+                        <button id="clearMaskBtn" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm py-2 px-3 rounded-lg transition">Wyczyść maskę</button>
+                    </div>
+                </div>
+
+                <!-- Przycisk wysłania do backendu -->
+                <div class="mt-6">
+                    <button id="processBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 font-medium py-3 px-4 rounded-xl shadow-lg shadow-indigo-600/30 transition flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                        <span>Usuń Znak Wodny (AI)</span>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Sekcja 3: Pasek Postępu przetwarzania -->
+        <div id="progressSection" class="hidden bg-slate-800 border border-slate-700 p-6 rounded-2xl text-center space-y-4">
+            <h3 class="text-lg font-medium text-slate-200">Trwa przetwarzanie AI...</h3>
+            <p class="text-sm text-slate-400">Model usuwa znak wodny klatka po klatce. Może to zająć chwilę.</p>
+            <div class="w-full bg-slate-700 h-3 rounded-full overflow-hidden">
+                <div id="progressBar" class="bg-indigo-500 h-full w-0 transition-all duration-300"></div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // Elementy DOM
+        const dropZone = document.getElementById('dropZone');
+        const videoInput = document.getElementById('videoInput');
+        const editorSection = document.getElementById('editorSection');
+        const videoPlayer = document.getElementById('videoPlayer');
+        const maskCanvas = document.getElementById('maskCanvas');
+        const ctx = maskCanvas.getContext('2d');
+        const brushSizeInput = document.getElementById('brushSize');
+        const brushSizeVal = document.getElementById('brushSizeVal');
+        const clearMaskBtn = document.getElementById('clearMaskBtn');
+        const processBtn = document.getElementById('processBtn');
+        const progressSection = document.getElementById('progressSection');
+        const progressBar = document.getElementById('progressBar');
+
+        let isDrawing = false;
+        let selectedFile = null;
+
+        // Obsługa wczytywania pliku
+        dropZone.addEventListener('click', () => videoInput.click());
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('border-indigo-500'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('border-indigo-500'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+        });
+        videoInput.addEventListener('change', (e) => {
+            if (e.target.files.length) handleFile(e.target.files[0]);
+        });
+
+        function handleFile(file) {
+            if (!file.type.startsWith('video/')) return alert('Proszę wybrać plik wideo.');
+            selectedFile = file;
+            const url = URL.createObjectURL(file);
+            videoPlayer.src = url;
+            
+            dropZone.classList.add('hidden');
+            editorSection.classList.remove('hidden');
+            editorSection.classList.add('flex');
+        }
+
+        // Dopasowanie wymiarów Canvas do rozdzielczości wyświetlanego wideo
+        videoPlayer.addEventListener('loadedmetadata', resizeCanvas);
+        window.addEventListener('resize', resizeCanvas);
+
+        function resizeCanvas() {
+            maskCanvas.width = videoPlayer.clientWidth;
+            maskCanvas.height = videoPlayer.clientHeight;
+        }
+
+        // Rysowanie Maski na Canvasie
+        brushSizeInput.addEventListener('input', (e) => brushSizeVal.textContent = `${e.target.value}px`);
+
+        maskCanvas.addEventListener('mousedown', startDrawing);
+        maskCanvas.addEventListener('mousemove', draw);
+        maskCanvas.addEventListener('mouseup', stopDrawing);
+        maskCanvas.addEventListener('mouseleave', stopDrawing);
+
+        function startDrawing(e) {
+            isDrawing = true;
+            draw(e);
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            const rect = maskCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            ctx.lineWidth = brushSizeInput.value;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = 'rgba(239, 68, 68, 0.7)'; // Czerwony kolor maski (półprzezroczysty)
+
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+            ctx.beginPath();
+        }
+
+        clearMaskBtn.addEventListener('click', () => {
+            ctx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
+        });
+
+        // Wysyłanie do backendu AI
+        processBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            // 1. Zamiana rysunku z Canvas na obrazek PNG (Maska)
+            const maskDataUrl = maskCanvas.toDataURL('image/png');
+
+            // 2. Przygotowanie danych FormData do wysłania
+            const formData = new FormData();
+            formData.append('video', selectedFile);
+            formData.append('mask', maskDataUrl); // Maska przesłana jako skompresowany base64 PNG
+            formData.append('model', document.getElementById('aiModel').value);
+            formData.append('videoWidth', videoPlayer.videoWidth);
+            formData.append('videoHeight', videoPlayer.videoHeight);
+
+            // Pokazujemy loader
+            editorSection.classList.add('hidden');
+            progressSection.classList.remove('hidden');
+
+            // Symulacja postępu (w rzeczywistości użyłbyś WebSocket lub pollingu z backendu)
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 10;
+                progressBar.style.width = `${progress}%`;
+                if (progress >= 100) clearInterval(interval);
+            }, 500);
+
+            try {
+                /* ODKOMENTUJ TO PO SKONFIGUROWANIU BACKENDU PYTHON:
+                const response = await fetch('/api/remove-watermark-ai', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                window.location.href = result.downloadUrl;
+                */
+            } catch (error) {
+                console.error("Błąd podczas przetwarzania:", error);
+            }
+        });
+    </script>
+</body>
+</html>
