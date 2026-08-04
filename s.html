@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Video Watermark Eraser</title>
+    <title>Video Watermark Eraser - Subtle Blend</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .video-container {
@@ -28,7 +28,7 @@
 
     <header class="border-b border-slate-800 bg-slate-950/50 py-4 px-6 flex justify-between items-center">
         <h1 class="text-xl font-bold tracking-wide text-indigo-400">Video Watermark Eraser</h1>
-        <span class="text-xs bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-3 py-1 rounded-full font-medium">Side-Texture Infill</span>
+        <span class="text-xs bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-3 py-1 rounded-full font-medium">Subtle Soft Blur</span>
     </header>
 
     <main class="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 flex flex-col gap-6">
@@ -45,18 +45,28 @@
                     <video id="videoPlayer" class="block max-h-[60vh] w-auto" playsinline controls></video>
                     <canvas id="maskCanvas"></canvas>
                 </div>
-                <p class="text-xs text-slate-400 mt-3 text-center">Wybierz "Rysuj maskę", zatrzymaj wideo i dokładnie zamaluj napis.</p>
+                <p class="text-xs text-slate-400 mt-3 text-center">Wybierz "Rysuj maskę" i zaznacz tylko sam napis (z niewielkim zapasem).</p>
             </div>
 
-            <div class="bg-slate-800/50 border border-slate-700/50 p-5 rounded-2xl space-y-5">
+            <div class="bg-slate-800/50 border border-slate-700/50 p-5 rounded-2xl space-y-4">
                 <div class="grid grid-cols-2 gap-2 bg-slate-900 p-1 rounded-xl border border-slate-700">
                     <button id="playModeBtn" class="py-2.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white transition shadow">▶️ Odtwarzaj / Przewijaj</button>
                     <button id="drawModeBtn" class="py-2.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition">✏️ Rysuj maskę</button>
                 </div>
 
-                <div>
-                    <label class="block text-sm font-medium text-slate-300 mb-2">Rozmiar pędzla: <span id="brushSizeVal" class="text-indigo-400">25px</span></label>
-                    <input type="range" id="brushSize" min="5" max="80" value="25" class="w-full accent-indigo-500 bg-slate-700 rounded-lg cursor-pointer">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-900/60 p-4 rounded-xl border border-slate-700/60">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Pędzel: <span id="brushSizeVal" class="text-indigo-400">20px</span></label>
+                        <input type="range" id="brushSize" min="5" max="60" value="20" class="w-full accent-indigo-500 bg-slate-700 rounded-lg cursor-pointer">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Siła rozmycia: <span id="blurVal" class="text-indigo-400">6px</span></label>
+                        <input type="range" id="blurSize" min="2" max="20" value="6" class="w-full accent-indigo-500 bg-slate-700 rounded-lg cursor-pointer">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Przezroczystość maski: <span id="opacityVal" class="text-indigo-400">80%</span></label>
+                        <input type="range" id="maskOpacity" min="30" max="100" value="80" class="w-full accent-indigo-500 bg-slate-700 rounded-lg cursor-pointer">
+                    </div>
                 </div>
 
                 <div class="flex gap-3">
@@ -67,14 +77,14 @@
         </div>
 
         <div id="progressSection" class="hidden bg-slate-800 border border-slate-700 p-6 rounded-2xl text-center space-y-4">
-            <h3 class="text-lg font-medium text-slate-200">Kopiowanie tekstury murawy...</h3>
+            <h3 class="text-lg font-medium text-slate-200">Przetwarzanie wideo...</h3>
             <div class="w-full bg-slate-700 h-3 rounded-full overflow-hidden">
                 <div id="progressBar" class="bg-indigo-500 h-full w-0 transition-all duration-100"></div>
             </div>
         </div>
 
         <div id="resultSection" class="hidden bg-slate-800 border border-slate-700 p-6 rounded-2xl flex flex-col items-center gap-4 text-center">
-            <h3 class="text-lg font-semibold text-emerald-400">Gotowe! Napis został zakryty tłem.</h3>
+            <h3 class="text-lg font-semibold text-emerald-400">Gotowe! Wygenerowano subtelny efekt.</h3>
             <video id="resultVideo" class="max-h-[50vh] rounded-lg border border-slate-700" controls playsinline></video>
             <a id="downloadBtn" download="video_bez_znaku.mp4" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-8 rounded-xl transition shadow-lg">📥 Pobierz wideo</a>
             <button id="resetBtn" class="text-xs text-slate-400 underline mt-2">Przetwórz kolejny plik</button>
@@ -89,8 +99,14 @@
         const videoPlayer = document.getElementById('videoPlayer');
         const maskCanvas = document.getElementById('maskCanvas');
         const ctx = maskCanvas.getContext('2d');
+
         const brushSizeInput = document.getElementById('brushSize');
         const brushSizeVal = document.getElementById('brushSizeVal');
+        const blurSizeInput = document.getElementById('blurSize');
+        const blurVal = document.getElementById('blurVal');
+        const maskOpacityInput = document.getElementById('maskOpacity');
+        const opacityVal = document.getElementById('opacityVal');
+
         const clearMaskBtn = document.getElementById('clearMaskBtn');
         const processBtn = document.getElementById('processBtn');
         const progressSection = document.getElementById('progressSection');
@@ -140,6 +156,8 @@
         }
 
         brushSizeInput.addEventListener('input', (e) => brushSizeVal.textContent = `${e.target.value}px`);
+        blurSizeInput.addEventListener('input', (e) => blurVal.textContent = `${e.target.value}px`);
+        maskOpacityInput.addEventListener('input', (e) => opacityVal.textContent = `${e.target.value}%`);
 
         maskCanvas.addEventListener('pointerdown', startDrawing);
         maskCanvas.addEventListener('pointermove', draw);
@@ -178,19 +196,9 @@
             if (!selectedFile) return;
 
             const imgData = ctx.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
-            let minX = maskCanvas.width, minY = maskCanvas.height, maxX = 0, maxY = 0;
             let hasMask = false;
-
-            for (let y = 0; y < maskCanvas.height; y++) {
-                for (let x = 0; x < maskCanvas.width; x++) {
-                    if (imgData.data[(y * maskCanvas.width + x) * 4 + 3] > 50) {
-                        hasMask = true;
-                        if (x < minX) minX = x;
-                        if (x > maxX) maxX = x;
-                        if (y < minY) minY = y;
-                        if (y > maxY) maxY = y;
-                    }
-                }
+            for (let i = 3; i < imgData.data.length; i += 4) {
+                if (imgData.data[i] > 50) { hasMask = true; break; }
             }
 
             if (!hasMask) {
@@ -201,18 +209,37 @@
             editorSection.classList.add('hidden');
             progressSection.classList.remove('hidden');
 
-            const scaleX = videoPlayer.videoWidth / maskCanvas.width;
-            const scaleY = videoPlayer.videoHeight / maskCanvas.height;
+            const vw = videoPlayer.videoWidth;
+            const vh = videoPlayer.videoHeight;
 
-            const rx = Math.floor(minX * scaleX);
-            const ry = Math.floor(minY * scaleY);
-            const rw = Math.ceil((maxX - minX) * scaleX);
-            const rh = Math.ceil((maxY - minY) * scaleY);
-
+            // Główny canvas renderujący
             const processingCanvas = document.createElement('canvas');
+            processingCanvas.width = vw;
+            processingCanvas.height = vh;
             const pCtx = processingCanvas.getContext('2d');
-            processingCanvas.width = videoPlayer.videoWidth;
-            processingCanvas.height = videoPlayer.videoHeight;
+
+            // Canvas pomocniczy dla wygładzonej maski
+            const scaledMask = document.createElement('canvas');
+            scaledMask.width = vw;
+            scaledMask.height = vh;
+            const smCtx = scaledMask.getContext('2d');
+
+            // Skalowanie maski z ekranu do pełnej rozdzielczości
+            smCtx.drawImage(maskCanvas, 0, 0, vw, vh);
+
+            // Zmiękczenie krawędzi maski (Feathering)
+            const featheredMask = document.createElement('canvas');
+            featheredMask.width = vw;
+            featheredMask.height = vh;
+            const fmCtx = featheredMask.getContext('2d');
+            fmCtx.filter = 'blur(6px)';
+            fmCtx.drawImage(scaledMask, 0, 0);
+
+            // Canvas z rozmytą wersją wideo
+            const blurredFrame = document.createElement('canvas');
+            blurredFrame.width = vw;
+            blurredFrame.height = vh;
+            const bfCtx = blurredFrame.getContext('2d');
 
             const stream = processingCanvas.captureStream(30);
             let recorder;
@@ -230,6 +257,9 @@
                 resultSection.classList.remove('hidden');
             };
 
+            const blurPx = blurSizeInput.value;
+            const opacityPct = maskOpacityInput.value / 100;
+
             videoPlayer.currentTime = 0;
             await videoPlayer.play();
             recorder.start();
@@ -240,23 +270,26 @@
                     return;
                 }
 
-                // 1. Odtwarzamy oryginalną klatkę
-                pCtx.drawImage(videoPlayer, 0, 0, processingCanvas.width, processingCanvas.height);
+                // 1. Rysowanie czystej, oryginalnej klatki
+                pCtx.globalCompositeOperation = 'source-over';
+                pCtx.globalAlpha = 1.0;
+                pCtx.drawImage(videoPlayer, 0, 0, vw, vh);
 
-                // 2. Pobieramy tło Z LEWEJ STRONY NAPISU (z czystej trawy), a nie z góry!
-                const sampleWidth = Math.max(15, Math.floor(rw * 0.2));
-                const sampleX = Math.max(0, rx - sampleWidth - 5);
+                // 2. Przygotowanie delikatnie rozmytego fragmentu pod maską
+                bfCtx.clearRect(0, 0, vw, vh);
+                bfCtx.save();
+                bfCtx.filter = `blur(${blurPx}px)`;
+                bfCtx.drawImage(videoPlayer, 0, 0, vw, vh);
+                bfCtx.restore();
 
-                pCtx.save();
-                pCtx.filter = 'blur(4px)'; // Lekkie wtopienie krawędzi
-                
-                // 3. Rozciągamy czystą trawę w miejsce napisu
-                pCtx.drawImage(
-                    videoPlayer, 
-                    sampleX, ry, sampleWidth, rh,  // POBIERAMY: czystą trawę tuż obok napisu
-                    rx - 2, ry - 1, rw + 4, rh + 2  // WKLEJAMY: idealnie w miejsce napisu
-                );
-                pCtx.restore();
+                // 3. Przycięcie rozmycia do zmiękczonej maski
+                bfCtx.globalCompositeOperation = 'destination-in';
+                bfCtx.drawImage(featheredMask, 0, 0);
+
+                // 4. Nałożenie rozmytego fragmentu na oryginalną klatkę z delikatną przezroczystością
+                pCtx.globalCompositeOperation = 'source-over';
+                pCtx.globalAlpha = opacityPct;
+                pCtx.drawImage(blurredFrame, 0, 0);
 
                 const pct = Math.floor((videoPlayer.currentTime / videoPlayer.duration) * 100);
                 progressBar.style.width = `${pct}%`;
