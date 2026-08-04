@@ -1,599 +1,345 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dostawy OSL - Uniwersalny Generator Formularza Kontroli GM-03-01</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- PDF.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <!-- SheetJS (Excel) -->
-    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body { background-color: #f3f4f6; }
-        .tab-btn.active { border-bottom: 2px solid #4F46E5; color: #4F46E5; font-weight: 600; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OSL PDF Parser & OCR</title>
+  
+  <!-- PDF.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <!-- Tesseract.js CDN (OCR) -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: #f4f6f9;
+      margin: 0;
+      padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .container {
+      max-width: 1200px;
+      width: 100%;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      padding: 30px;
+    }
+
+    h1 {
+      margin-top: 0;
+      color: #333;
+      font-size: 24px;
+      text-align: center;
+    }
+
+    .upload-box {
+      border: 2px dashed #6c5ce7;
+      background-color: #f9f8ff;
+      border-radius: 8px;
+      padding: 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-bottom: 20px;
+    }
+
+    .upload-box:hover {
+      background-color: #f0edff;
+      border-color: #5b4bc4;
+    }
+
+    .upload-box input[type="file"] {
+      display: none;
+    }
+
+    .upload-icon {
+      font-size: 40px;
+      color: #6c5ce7;
+      margin-bottom: 10px;
+    }
+
+    .status {
+      margin: 15px 0;
+      padding: 12px 16px;
+      border-radius: 6px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .status.info {
+      display: block;
+      background-color: #e3f2fd;
+      color: #0d47a1;
+      border: 1px solid #bbdefb;
+    }
+
+    .status.error {
+      display: block;
+      background-color: #ffebee;
+      color: #b71c1c;
+      border: 1px solid #ffcdd2;
+    }
+
+    .status.success {
+      display: block;
+      background-color: #e8f5e9;
+      color: #1b5e20;
+      border: 1px solid #c8e6c9;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      font-size: 13px;
+    }
+
+    th, td {
+      border: 1px solid #e0e0e0;
+      padding: 10px 12px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #6c5ce7;
+      color: white;
+      font-weight: 600;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f8f9fa;
+    }
+
+    tr:hover {
+      background-color: #f1f3f5;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(0,0,0,0.1);
+      border-left-color: #0d47a1;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
 </head>
-<body class="text-gray-800 font-sans p-6">
+<body>
 
-    <div class="max-w-7xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
-        
-        <!-- Nagłówek -->
-        <div class="bg-indigo-600 p-6 text-white text-center">
-            <h1 class="text-3xl font-bold mb-2">📦 Uniwersalny Generator Formularza Kontroli Wejściowej (GM-03-01)</h1>
-            <p class="text-indigo-200">Przetwarzaj dowolne pliki PDF OSL oraz pobieraj sygnatury ze wszystkich zakładek Excela.</p>
-        </div>
+  <div class="container">
+    <h1>Generator GM-03-01 / Parser OSL</h1>
 
-        <div class="p-8">
-            <!-- Wgrywanie plików (3 Sekcje) -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                
-                <!-- 1. PDF OSL -->
-                <div class="border-2 border-dashed border-indigo-300 bg-indigo-50/20 rounded-lg p-6 text-center hover:bg-indigo-50/50 transition">
-                    <input type="file" id="fileInput" accept=".pdf" class="hidden" />
-                    <label for="fileInput" class="cursor-pointer flex flex-col items-center">
-                        <svg class="w-10 h-10 text-indigo-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
-                        <span class="text-base font-semibold text-gray-700">1. Wgraj OSL (PDF)</span>
-                        <span class="text-xs text-indigo-600 mt-1 font-semibold" id="pdfFileName">Brak pliku PDF</span>
-                    </label>
-                </div>
-
-                <!-- 2. Baza Sygnatur Excel (Wszystkie Zakładki) -->
-                <div class="border-2 border-dashed border-purple-300 bg-purple-50/20 rounded-lg p-6 text-center hover:bg-purple-50/50 transition">
-                    <input type="file" id="signaturesInput" accept=".xlsx, .xls, .ods" class="hidden" />
-                    <label for="signaturesInput" class="cursor-pointer flex flex-col items-center">
-                        <svg class="w-10 h-10 text-purple-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h10M7 11h10M7 15h10M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z"></path></svg>
-                        <span class="text-base font-semibold text-gray-700">2. Wgraj Sygnatury (.xlsx/.ods)</span>
-                        <span class="text-xs text-purple-600 mt-1 font-semibold" id="signaturesFileName">Brak pliku sygnatur</span>
-                    </label>
-                </div>
-
-                <!-- 3. Pusty wzór Excel (Opcjonalnie) -->
-                <div class="border-2 border-dashed border-amber-300 bg-amber-50/20 rounded-lg p-6 text-center hover:bg-amber-50/50 transition">
-                    <input type="file" id="templateInput" accept=".xlsx, .xls, .ods" class="hidden" />
-                    <label for="templateInput" class="cursor-pointer flex flex-col items-center">
-                        <svg class="w-10 h-10 text-amber-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 01-2-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                        <span class="text-base font-semibold text-amber-900">3. Wzór GM-03-01 (Opcja)</span>
-                        <span class="text-xs text-amber-600 mt-1 font-semibold" id="templateFileName">Użyj domyślnego szablonu</span>
-                    </label>
-                </div>
-
-            </div>
-
-            <!-- Loader -->
-            <div id="loading" class="hidden text-center my-8">
-                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                <p class="mt-2 text-indigo-600 font-medium">Analizowanie dokumentu PDF i przeszukiwanie sygnatur...</p>
-            </div>
-
-            <!-- Główna sekcja Dashboardu -->
-            <div id="dashboard" class="hidden mt-6">
-                
-                <!-- Zakładki -->
-                <div class="flex border-b mb-6">
-                    <button onclick="switchTab('tab-dash')" id="btn-tab-dash" class="tab-btn active px-4 py-2 text-gray-600 focus:outline-none">📊 Dashboard</button>
-                    <button onclick="switchTab('tab-data')" id="btn-tab-data" class="tab-btn px-4 py-2 text-gray-600 focus:outline-none">📋 Podgląd Formularza i Pobieranie</button>
-                </div>
-
-                <!-- Tab: Dashboard -->
-                <div id="tab-dash">
-                    <div class="flex flex-wrap justify-between items-center bg-gray-50 p-4 rounded-lg border mb-6 text-sm text-gray-700">
-                        <div><strong>Nr Dokumentu Dostawy:</strong> <span id="metaShipmentId" class="text-indigo-600 font-bold">-</span></div>
-                        <div><strong>Data wydruku/dostawy:</strong> <span id="metaPrintDate" class="text-indigo-600 font-bold">-</span></div>
-                        <div><strong>Status Sygnatur:</strong> <span id="metaSigStatus" class="text-purple-600 font-bold">Oczekuje na wgranie pliku</span></div>
-                    </div>
-
-                    <!-- KPI Cards -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                        <div class="bg-indigo-50 p-6 rounded-lg border border-indigo-100">
-                            <p class="text-sm text-indigo-500 font-semibold uppercase">Łączna ilość sztuk</p>
-                            <p id="kpiSztuki" class="text-3xl font-bold text-indigo-700 mt-1">0</p>
-                        </div>
-                        <div class="bg-emerald-50 p-6 rounded-lg border border-emerald-100">
-                            <p class="text-sm text-emerald-500 font-semibold uppercase">Łączna ilość kartonów</p>
-                            <p id="kpiKarton" class="text-3xl font-bold text-emerald-700 mt-1">0</p>
-                        </div>
-                        <div class="bg-purple-50 p-6 rounded-lg border border-purple-100">
-                            <p class="text-sm text-purple-500 font-semibold uppercase">Dopasowane Sygnatury</p>
-                            <p id="kpiSignatures" class="text-3xl font-bold text-purple-700 mt-1">0 / 0</p>
-                        </div>
-                    </div>
-
-                    <!-- Wykres -->
-                    <div class="bg-white border rounded-lg p-4 mb-4">
-                        <h3 class="text-lg font-semibold mb-4">TOP 10 produktów w dostawie</h3>
-                        <div class="relative h-64 w-full">
-                            <canvas id="myChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Tab: Dane -->
-                <div id="tab-data" class="hidden">
-                    <div class="flex flex-wrap justify-between items-center gap-4 mb-4">
-                        <h2 class="text-xl font-bold">Wzór formularza GM-03-01 (z sygnaturami)</h2>
-                        <button id="btnDownload" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-6 rounded-lg shadow transition flex items-center gap-2">
-                            <span>📥 Pobierz wypełniony plik Excel</span>
-                        </button>
-                    </div>
-
-                    <!-- Nagłówek Wzoru -->
-                    <div class="bg-gray-50 border rounded-t-lg p-4 text-xs font-mono border-b-0 space-y-1 text-gray-600">
-                        <div class="flex justify-between">
-                            <div><strong>DOSTAWCA:</strong> Forever Direct E.U. B.V.</div>
-                            <div><strong>ODBIORCA:</strong> Forever Living Products Poland Sp. z o.o.</div>
-                            <div><strong>NR DOKUMENTU DOSTAWY:</strong> <span id="previewShipment">-</span></div>
-                        </div>
-                        <div class="text-center font-bold text-sm text-gray-800 pt-2 border-t mt-2">
-                            Dokument nr GM-03-01 | Kontrola wejściowa wyrobów gotowych | Wydanie 3 (13.09.2023)
-                        </div>
-                    </div>
-
-                    <div class="overflow-x-auto border rounded-b-lg">
-                        <table class="min-w-full text-left text-sm whitespace-nowrap">
-                            <thead class="bg-gray-100 uppercase font-medium border-b">
-                                <tr>
-                                    <th class="px-4 py-3">KOD</th>
-                                    <th class="px-4 py-3">PARTIA</th>
-                                    <th class="px-4 py-3">DATA</th>
-                                    <th class="px-4 py-3">OPIS</th>
-                                    <th class="px-4 py-3">SZTUKI</th>
-                                    <th class="px-4 py-3">KARTON</th>
-                                    <th class="px-4 py-3 bg-purple-100 text-purple-900 border-l border-r">Sygnatura etykiety (aktualna)</th>
-                                    <th class="px-4 py-3 bg-purple-100 text-purple-900 border-r">Sygnatura etykiety PL</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tableBody" class="divide-y divide-gray-200">
-                                <!-- Wiersze dodawane przez JS -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                
-            </div>
-        </div>
+    <div class="upload-box" id="dropZone" onclick="document.getElementById('fileInput').click()">
+      <div class="upload-icon">📄</div>
+      <strong>Kliknij lub przeciągnij plik PDF (OSL) tutaj</strong>
+      <p style="margin: 5px 0 0 0; color: #666; font-size: 13px;">Obsługuje cyfrowe pliki PDF oraz skany (OCR)</p>
+      <input type="file" id="fileInput" accept="application/pdf" onchange="handleFileSelect(event)">
     </div>
 
-    <script>
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    <div id="statusBox" class="status"></div>
 
-        let globalData = [];
-        let metadata = { shipmentId: '', printDate: '' };
-        let signaturesMap = {}; 
-        let myChart = null;
-        let userTemplateWorkbook = null;
+    <div id="tableContainer"></div>
+  </div>
 
-        // 1. Wgrywanie pliku z sygnaturami (PRZESZUKUJE WSZYSTKIE ZAKŁADKI)
-        document.getElementById('signaturesInput').addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            document.getElementById('signaturesFileName').innerText = file.name;
+  <script>
+    // Konfiguracja PDF.js Worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-            try {
-                const data = await file.arrayBuffer();
-                const wb = XLSX.read(data, { type: 'array' });
-                signaturesMap = {};
+    const dropZone = document.getElementById('dropZone');
+    const statusBox = document.getElementById('statusBox');
+    const tableContainer = document.getElementById('tableContainer');
 
-                wb.SheetNames.forEach(sheetName => {
-                    const sheet = wb.Sheets[sheetName];
-                    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+    // Obsługa Drag & Drop
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.style.backgroundColor = '#f0edff';
+    });
 
-                    let colKod = -1, colAktualna = -1, colPL = -1;
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.style.backgroundColor = '#f9f8ff';
+    });
 
-                    for (let r = 0; r < rows.length; r++) {
-                        const row = rows[r];
-                        if (!row) continue;
-                        
-                        for (let c = 0; c < row.length; c++) {
-                            let cellVal = String(row[c] || '').toLowerCase().trim();
-                            if (cellVal.includes('kod') || cellVal.includes('sku') || cellVal === 'item') colKod = c;
-                            if (cellVal.includes('aktualna')) colAktualna = c;
-                            if (cellVal.includes('etykiety pl') || cellVal.includes('etykietypl') || cellVal.includes('sygnatura etykiety pl') || cellVal === 'pl') colPL = c;
-                        }
-                        
-                        if (colKod !== -1 && (colAktualna !== -1 || colPL !== -1)) {
-                            for (let i = r + 1; i < rows.length; i++) {
-                                let itemRow = rows[i];
-                                if (!itemRow || itemRow[colKod] === undefined) continue;
-                                
-                                let kodRaw = String(itemRow[colKod]).trim();
-                                let aktualna = colAktualna !== -1 && itemRow[colAktualna] !== undefined ? String(itemRow[colAktualna]).trim() : '';
-                                let pl = colPL !== -1 && itemRow[colPL] !== undefined ? String(itemRow[colPL]).trim() : '';
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.style.backgroundColor = '#f9f8ff';
+      if (e.dataTransfer.files.length > 0) {
+        processFile(e.dataTransfer.files[0]);
+      }
+    });
 
-                                if (kodRaw && kodRaw !== '') {
-                                    let cleanKey = kodRaw.toUpperCase();
-                                    if (!signaturesMap[cleanKey]) {
-                                        signaturesMap[cleanKey] = { aktualna, pl };
-                                    } else {
-                                        if (aktualna) signaturesMap[cleanKey].aktualna = aktualna;
-                                        if (pl) signaturesMap[cleanKey].pl = pl;
-                                    }
-                                }
-                            }
-                            break; 
-                        }
-                    }
-                });
+    function handleFileSelect(event) {
+      if (event.target.files.length > 0) {
+        processFile(event.target.files[0]);
+      }
+    }
 
-                document.getElementById('metaSigStatus').innerText = `Przeszukano ${wb.SheetNames.length} zakładek, wczytano ${Object.keys(signaturesMap).length} sygnatur`;
-                
-                if (globalData.length > 0) {
-                    applySignaturesToGlobalData();
-                    renderDashboard();
-                }
-            } catch (err) {
-                console.error("Błąd podczas odczytu pliku sygnatur:", err);
-                alert("Wystąpił błąd podczas odczytywania pliku z sygnaturami.");
-            }
+    function showStatus(text, type = 'info', showSpinner = false) {
+      statusBox.className = `status ${type}`;
+      statusBox.innerHTML = showSpinner ? `<span class="spinner"></span>${text}` : text;
+    }
+
+    async function processFile(file) {
+      if (file.type !== 'application/pdf') {
+        showStatus('Wybierz poprawny plik PDF.', 'error');
+        return;
+      }
+
+      showStatus('Odczytywanie warstwy tekstowej PDF...', 'info', true);
+      tableContainer.innerHTML = '';
+
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        
+        let fullText = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const textContent = await page.getTextContent();
+          const pageText = textContent.items.map(item => item.str).join(' ');
+          fullText += pageText + '\n';
+        }
+
+        // Faza 1: Próba odczytu z cyfrowego tekstu
+        let items = parseOSLText(fullText);
+
+        // Faza 2: Jeśli brak wyników – uruchom OCR (Fallback dla skanów)
+        if (items.length === 0) {
+          showStatus('Wykryto skan bez warstwy tekstowej. Uruchamianie silnika OCR (Tesseract)...', 'info', true);
+          
+          let ocrText = '';
+          const worker = await Tesseract.createWorker('pol');
+
+          for (let i = 1; i <= pdf.numPages; i++) {
+            showStatus(`Przetwarzanie OCR strony ${i} z ${pdf.numPages}...`, 'info', true);
+            const page = await pdf.getPage(i);
+            const canvas = await renderPageToCanvas(page);
+            const { data: { text } } = await worker.recognize(canvas);
+            ocrText += text + '\n';
+          }
+
+          await worker.terminate();
+          items = parseOSLText(ocrText);
+        }
+
+        if (items.length === 0) {
+          throw new Error('Nie odnaleziono pozycji towarowych w pliku. Upewnij się, że dokument zawiera tabelę OSL.');
+        }
+
+        showStatus(`Pomyślnie przetworzono plik. Znaleziono pozycji: ${items.length}`, 'success');
+        renderTable(items);
+
+      } catch (err) {
+        showStatus(`Błąd: ${err.message}`, 'error');
+        console.error(err);
+      }
+    }
+
+    // Renderowanie strony PDF do Canvas dla OCR
+    async function renderPageToCanvas(pdfPage) {
+      const viewport = pdfPage.getViewport({ scale: 2.0 });
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+
+      await pdfPage.render({ canvasContext: context, viewport: viewport }).promise;
+      return canvas;
+    }
+
+    // Logika parsująca tabelę z surowego tekstu
+    function parseOSLText(rawText) {
+      const items = [];
+      const cleanedText = rawText.replace(/\|/g, ' ');
+
+      // Regex dopasowany do pozycji OSL (z uwzględnieniem kodów alfanumerycznych)
+      const rowRegex = /([A-Z0-9]+)\s+([A-Z0-9]+)\s+(\d{2}-[A-Z]{3}-\d{2})\s+(.+?)\s+(\d{8})\s+([A-Z]{2})\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)/gm;
+
+      let match;
+      while ((match = rowRegex.exec(cleanedText)) !== null) {
+        items.push({
+          itemNumber: match[1].trim(),
+          lotId: match[2].trim(),
+          expiryDate: match[3].trim(),
+          description: match[4].trim(),
+          commodityCode: match[5].trim(),
+          origin: match[6].trim(),
+          qtyUnits: parseFormattedNumber(match[7]),
+          qtyCases: parseFormattedNumber(match[8]),
+          netWeight: parseFormattedNumber(match[9]),
+          grossWeight: parseFormattedNumber(match[10])
         });
+      }
 
-        // 2. Wgrywanie wzoru Excel
-        document.getElementById('templateInput').addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            document.getElementById('templateFileName').innerText = file.name;
-            const data = await file.arrayBuffer();
-            userTemplateWorkbook = XLSX.read(data, { type: 'array' });
-        });
+      return items;
+    }
 
-        function switchTab(tabId) {
-            document.getElementById('tab-dash').classList.add('hidden');
-            document.getElementById('tab-data').classList.add('hidden');
-            document.getElementById('btn-tab-dash').classList.remove('active');
-            document.getElementById('btn-tab-data').classList.remove('active');
-            
-            document.getElementById(tabId).classList.remove('hidden');
-            document.getElementById('btn-' + tabId).classList.add('active');
-        }
+    function parseFormattedNumber(val) {
+      if (!val) return 0;
+      const clean = val.replace(/\./g, '').replace(',', '.');
+      const parsed = parseFloat(clean);
+      return isNaN(parsed) ? 0 : parsed;
+    }
 
-        function findSignatureForKod(kod) {
-            if (!kod) return { aktualna: '', pl: '' };
-            let cleanKod = String(kod).toUpperCase().trim();
-            
-            if (signaturesMap[cleanKod]) return signaturesMap[cleanKod];
+    // Wyświetlanie wyników w tabeli HTML
+    function renderTable(items) {
+      let html = `
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Kod (SKU)</th>
+              <th>Nr Partii (LOT)</th>
+              <th>Data Ważności</th>
+              <th>Nazwa Towaru</th>
+              <th>Kod Taryfy</th>
+              <th>Kraj</th>
+              <th>Ilość (Szt)</th>
+              <th>Kartonów</th>
+              <th>Waga Netto (kg)</th>
+              <th>Waga Brutto (kg)</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
 
-            let withSku = "SKU" + cleanKod;
-            if (signaturesMap[withSku]) return signaturesMap[withSku];
+      items.forEach((item, index) => {
+        html += `
+          <tr>
+            <td>${index + 1}</td>
+            <td><strong>${item.itemNumber}</strong></td>
+            <td>${item.lotId}</td>
+            <td>${item.expiryDate}</td>
+            <td>${item.description}</td>
+            <td>${item.commodityCode}</td>
+            <td>${item.origin}</td>
+            <td>${item.qtyUnits.toLocaleString('pl-PL')}</td>
+            <td>${item.qtyCases.toLocaleString('pl-PL')}</td>
+            <td>${item.netWeight.toLocaleString('pl-PL', { minimumFractionDigits: 2 })}</td>
+            <td>${item.grossWeight.toLocaleString('pl-PL', { minimumFractionDigits: 2 })}</td>
+          </tr>
+        `;
+      });
 
-            if (cleanKod.startsWith("SKU")) {
-                let sansSku = cleanKod.replace(/^SKU/, '');
-                if (signaturesMap[sansSku]) return signaturesMap[sansSku];
-            }
-
-            return { aktualna: '', pl: '' };
-        }
-
-        function applySignaturesToGlobalData() {
-            globalData.forEach(item => {
-                let sig = findSignatureForKod(item.KOD);
-                item.SYGNATURA_AKTUALNA = sig.aktualna;
-                item.SYGNATURA_PL = sig.pl;
-            });
-        }
-
-        // UNIWERSALNY PARSER WIERSZY
-        function parseRowHeuristically(rowTokens) {
-            if (!rowTokens || rowTokens.length < 2) return null;
-
-            let fullLineText = rowTokens.join(" ").toLowerCase();
-            
-            if (fullLineText.includes("item number") || 
-                fullLineText.includes("order summary") || 
-                fullLineText.includes("shipment id") || 
-                fullLineText.includes("consignor") || 
-                fullLineText.includes("ship to") || 
-                fullLineText.includes("page ") || 
-                fullLineText.includes("net weight") || 
-                fullLineText.includes("gross weight") ||
-                fullLineText.includes("qty units") ||
-                fullLineText.includes("total")) {
-                return null;
-            }
-
-            let quantIdxs = [];
-            for (let i = rowTokens.length - 1; i >= 0; i--) {
-                let tokenClean = rowTokens[i].replace(/\./g, '').replace(/,/g, '').trim();
-                if (/^\d+$/.test(tokenClean)) {
-                    quantIdxs.unshift(i);
-                    if (quantIdxs.length === 2) break;
-                } else if (quantIdxs.length > 0) {
-                    break;
-                }
-            }
-
-            if (quantIdxs.length === 0) return null;
-
-            let sztuki = 0;
-            let karton = 0;
-
-            if (quantIdxs.length === 1) {
-                let val = parseInt(rowTokens[quantIdxs[0]].replace(/\./g, '').replace(/,/g, ''));
-                sztuki = isNaN(val) ? 0 : val;
-            } else if (quantIdxs.length === 2) {
-                let v1 = parseInt(rowTokens[quantIdxs[0]].replace(/\./g, '').replace(/,/g, ''));
-                let v2 = parseInt(rowTokens[quantIdxs[1]].replace(/\./g, '').replace(/,/g, ''));
-                sztuki = isNaN(v1) ? 0 : v1;
-                karton = isNaN(v2) ? 0 : v2;
-            }
-
-            let endNonDataIndex = quantIdxs[0];
-
-            let kod = rowTokens[0];
-            if (!kod || kod.length < 2 || /^(total|subtotal|page|note|date)$/i.test(kod)) return null;
-
-            let date = "";
-            let dateIdx = -1;
-            let dateRegex = /^(\d{2}-[a-zA-Z]{3}-\d{2,4}|\d{2}\/\d{2}\/\d{2,4}|\d{4}-\d{2}-\d{2}|\d{2}\.\d{2}\.\d{4})$/;
-            
-            for (let i = 1; i < endNonDataIndex; i++) {
-                if (dateRegex.test(rowTokens[i])) {
-                    date = rowTokens[i];
-                    dateIdx = i;
-                    break;
-                }
-            }
-
-            let partia = "";
-            let partiaIdx = -1;
-            if (dateIdx > 1) {
-                partia = rowTokens[1];
-                partiaIdx = 1;
-            } else if (rowTokens.length > 2 && dateIdx === -1) {
-                if (/^[a-zA-Z0-9]{4,12}$/.test(rowTokens[1])) {
-                    partia = rowTokens[1];
-                    partiaIdx = 1;
-                }
-            }
-
-            let countryIdx = -1;
-            for (let i = endNonDataIndex - 1; i >= 1; i--) {
-                let tUpper = rowTokens[i].toUpperCase();
-                if (/^[A-Z]{2}$/.test(tUpper)) {
-                    countryIdx = i;
-                    break;
-                }
-            }
-
-            let opisStart = 1;
-            if (partiaIdx === 1) opisStart = 2;
-            if (dateIdx >= opisStart) opisStart = dateIdx + 1;
-
-            let opisEnd = endNonDataIndex;
-            if (countryIdx !== -1 && countryIdx < opisEnd) opisEnd = countryIdx;
-
-            let opisTokens = [];
-            for (let i = opisStart; i < opisEnd; i++) {
-                let t = rowTokens[i];
-                if (/^\d{8,10}$/.test(t)) continue;
-                opisTokens.push(t);
-            }
-
-            let opis = opisTokens.join(" ").trim();
-            if (!opis) opis = kod;
-
-            let sig = findSignatureForKod(kod);
-
-            return {
-                "KOD": kod,
-                "PARTIA": partia,
-                "DATA": date,
-                "OPIS": opis,
-                "SZTUKI": sztuki,
-                "KARTON": karton,
-                "SYGNATURA_AKTUALNA": sig.aktualna,
-                "SYGNATURA_PL": sig.pl
-            };
-        }
-
-        // 3. Wgrywanie i uniwersalne parsowanie OSL (PDF)
-        document.getElementById('fileInput').addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            document.getElementById('pdfFileName').innerText = file.name;
-            
-            document.getElementById('loading').classList.remove('hidden');
-            document.getElementById('dashboard').classList.add('hidden');
-            
-            try {
-                const arrayBuffer = await file.arrayBuffer();
-                const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
-                globalData = [];
-                metadata = { shipmentId: '', printDate: '' };
-
-                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-                    const page = await pdf.getPage(pageNum);
-                    const textContent = await page.getTextContent();
-                    
-                    let rawItems = textContent.items.map(it => ({
-                        str: it.str.trim(),
-                        x: it.transform[4],
-                        y: it.transform[5]
-                    })).filter(it => it.str !== '');
-
-                    if (rawItems.length === 0) continue;
-
-                    rawItems.sort((a, b) => b.y - a.y);
-
-                    let lines = [];
-                    let currentLine = [];
-                    let currentY = null;
-
-                    for (let item of rawItems) {
-                        if (item.str.length === 8 || item.str.length === 9) {
-                            if (!metadata.shipmentId && /^\d{8,9}$/.test(item.str)) {
-                                metadata.shipmentId = item.str;
-                            }
-                        }
-                        if (/^\d{2}-[a-zA-Z]{3}-\d{4}$/.test(item.str) || /^\d{2}-\d{2}-\d{4}$/.test(item.str)) {
-                            if (!metadata.printDate) metadata.printDate = item.str;
-                        }
-
-                        if (currentY === null || Math.abs(currentY - item.y) <= 7) {
-                            currentLine.push(item);
-                            if (currentY === null) currentY = item.y;
-                        } else {
-                            currentLine.sort((a, b) => a.x - b.x);
-                            lines.push(currentLine.map(i => i.str));
-                            currentLine = [item];
-                            currentY = item.y;
-                        }
-                    }
-                    if (currentLine.length > 0) {
-                        currentLine.sort((a, b) => a.x - b.x);
-                        lines.push(currentLine.map(i => i.str));
-                    }
-
-                    lines.forEach(lineTokens => {
-                        let parsed = parseRowHeuristically(lineTokens);
-                        if (parsed) {
-                            globalData.push(parsed);
-                        }
-                    });
-                }
-                
-                renderDashboard();
-            } catch (error) {
-                console.error("Błąd podczas analizy PDF:", error);
-                alert("Wystąpił błąd podczas przetwarzania pliku PDF: " + error.message);
-            } finally {
-                document.getElementById('loading').classList.add('hidden');
-            }
-        });
-
-        function renderDashboard() {
-            if(globalData.length === 0) {
-                alert("Nie odnaleziono pozycji towarowych w wgranym pliku PDF. Upewnij się, że plik zawiera tekst (nie jest skanem-obrazkiem).");
-                return;
-            }
-            
-            document.getElementById('metaShipmentId').innerText = metadata.shipmentId || 'Brak ID';
-            document.getElementById('metaPrintDate').innerText = metadata.printDate || '-';
-            document.getElementById('previewShipment').innerText = (metadata.shipmentId || '-') + (metadata.printDate ? ' z dnia ' + metadata.printDate : '');
-
-            let sumSztuki = 0;
-            let sumKarton = 0;
-            let matchedSignaturesCount = 0;
-            let opisCounts = {};
-
-            const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = '';
-
-            globalData.forEach(row => {
-                sumSztuki += row.SZTUKI;
-                sumKarton += row.KARTON;
-                opisCounts[row.OPIS] = (opisCounts[row.OPIS] || 0) + row.SZTUKI;
-
-                if (row.SYGNATURA_AKTUALNA || row.SYGNATURA_PL) {
-                    matchedSignaturesCount++;
-                }
-
-                let tr = document.createElement('tr');
-                tr.innerHTML = `<td class="px-4 py-2 border-b font-medium text-gray-700">${row.KOD}</td>
-                                <td class="px-4 py-2 border-b text-gray-500">${row.PARTIA}</td>
-                                <td class="px-4 py-2 border-b text-gray-500">${row.DATA}</td>
-                                <td class="px-4 py-2 border-b text-gray-800">${row.OPIS}</td>
-                                <td class="px-4 py-2 border-b font-bold text-indigo-600">${row.SZTUKI}</td>
-                                <td class="px-4 py-2 border-b font-bold text-emerald-600">${row.KARTON}</td>
-                                <td class="px-4 py-2 border-b font-semibold text-purple-700 bg-purple-50/50">${row.SYGNATURA_AKTUALNA || '-'}</td>
-                                <td class="px-4 py-2 border-b font-semibold text-purple-700 bg-purple-50/50">${row.SYGNATURA_PL || '-'}</td>`;
-                tbody.appendChild(tr);
-            });
-
-            document.getElementById('kpiSztuki').innerText = sumSztuki.toLocaleString('pl-PL');
-            document.getElementById('kpiKarton').innerText = sumKarton.toLocaleString('pl-PL');
-            document.getElementById('kpiSignatures').innerText = `${matchedSignaturesCount} / ${globalData.length}`;
-
-            let sortedOpis = Object.keys(opisCounts).sort((a, b) => opisCounts[b] - opisCounts[a]).slice(0, 10);
-            let chartData = sortedOpis.map(k => opisCounts[k]);
-
-            const ctx = document.getElementById('myChart').getContext('2d');
-            if (myChart) myChart.destroy();
-            
-            myChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: sortedOpis.map(lbl => lbl.length > 25 ? lbl.substring(0, 25) + '...' : lbl),
-                    datasets: [{
-                        label: 'Ilość sztuk',
-                        data: chartData,
-                        backgroundColor: '#4F46E5',
-                        borderRadius: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { 
-                        y: { beginAtZero: true },
-                        x: { ticks: { autoSkip: false, maxRotation: 45, minRotation: 45 } }
-                    }
-                }
-            });
-
-            document.getElementById('dashboard').classList.remove('hidden');
-        }
-
-        // Generowanie pliku Excel
-        document.getElementById('btnDownload').addEventListener('click', () => {
-            if(globalData.length === 0) return;
-
-            let wb, ws;
-
-            let formattedRows = globalData.map(item => ({
-                "KOD": item.KOD,
-                "PARTIA": item.PARTIA,
-                "DATA": item.DATA,
-                "OPIS": item.OPIS,
-                "SZTUKI": item.SZTUKI,
-                "KARTON": item.KARTON,
-                "Sygnatura etykiety (aktualna)": item.SYGNATURA_AKTUALNA,
-                "Sygnatura etykiety PL": item.SYGNATURA_PL
-            }));
-
-            if (userTemplateWorkbook) {
-                wb = userTemplateWorkbook;
-                let sheetName = wb.SheetNames[0];
-                ws = wb.Sheets[sheetName];
-                
-                XLSX.utils.sheet_add_json(ws, formattedRows, {
-                    header: ["KOD", "PARTIA", "DATA", "OPIS", "SZTUKI", "KARTON", "Sygnatura etykiety (aktualna)", "Sygnatura etykiety PL"],
-                    skipHeader: true,
-                    origin: "A7"
-                });
-            } else {
-                let excelData = [
-                    ["DOSTAWCA", "Forever Direct E.U. B.V.", "", "ODBIORCA", "Forever Living Products Poland Sp. z o.o.", "NR DOKUMENTU DOSTAWY:", (metadata.shipmentId || '') + (metadata.printDate ? " z dnia " + metadata.printDate : '')],
-                    ["", "", "", "Aleje Jerozolimskie 92 | 00-807 Warszawa", "", "Data dostawy:", ""],
-                    ["", "", "", "Magazyn Centralny Forever Living Products Poland", "", "", ""],
-                    ["", "", "", "ul. Nowa 3; 05-816 Opacz Kolonia", "", "", ""],
-                    ["Dokument nr GM-03-01", "Kontrola wejściowa wyrobów gotowych", "", "", "Wydanie 3", "13.09.2023", "", ""],
-                    ["KOD", "PARTIA", "DATA", "OPIS", "SZTUKI", "KARTON", "Sygnatura etykiety (aktualna)", "Sygnatura etykiety PL"]
-                ];
-
-                formattedRows.forEach(item => {
-                    excelData.push([
-                        item["KOD"],
-                        item["PARTIA"],
-                        item["DATA"],
-                        item["OPIS"],
-                        item["SZTUKI"],
-                        item["KARTON"],
-                        item["Sygnatura etykiety (aktualna)"],
-                        item["Sygnatura etykiety PL"]
-                    ]);
-                });
-
-                ws = XLSX.utils.aoa_to_sheet(excelData);
-                wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Kontrola wejściowa");
-            }
-
-            XLSX.writeFile(wb, "Kontrola_Wejsciowa_GM-03-01.xlsx");
-        });
-    </script>
+      html += '</tbody></table>';
+      tableContainer.innerHTML = html;
+    }
+  </script>
 </body>
 </html>
