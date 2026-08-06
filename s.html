@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Śledzenie twarzy - Kropka</title>
+    <!-- Biblioteki MediaPipe do obsługi kamery i wykrywania twarzy -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/face_detection.js" crossorigin="anonymous"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000;
+            font-family: sans-serif;
+        }
+        video {
+            display: none;
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            transform: scaleX(-1); /* Efekt lustra dla wygody */
+        }
+        #dot {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background-color: #ff3b30;
+            border: 3px solid #ffffff;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            transition: left 0.05s linear, top 0.05s linear;
+            z-index: 10;
+        }
+        #info {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            background: rgba(0,0,0,0.6);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 20;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <video id="webcam" autoplay playsinline></video>
+    <canvas id="output_canvas"></canvas>
+    <div id="dot"></div>
+    <div id="info">Szukanie twarzy...</div>
+
+    <script>
+        const videoElement = document.getElementById('webcam');
+        const canvasElement = document.getElementById('output_canvas');
+        const canvasCtx = canvasElement.getContext('2d');
+        const dot = document.getElementById('dot');
+        const info = document.getElementById('info');
+
+        function onResults(results) {
+            canvasElement.width = window.innerWidth;
+            canvasElement.height = window.innerHeight;
+
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            // Rysowanie obrazu z kamery na pełnym ekranie
+            canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+            canvasCtx.restore();
+
+            if (results.detections && results.detections.length > 0) {
+                const detection = results.detections[0];
+                const bbox = detection.boundingBox;
+
+                // Obliczanie współrzędnych środka twarzy (uwzględniając odbicie lustrzane)
+                const x = (1.0 - bbox.xCenter) * canvasElement.width;
+                const y = bbox.yCenter * canvasElement.height;
+
+                dot.style.left = `${x}px`;
+                dot.style.top = `${y}px`;
+                dot.style.display = 'block';
+                info.textContent = 'Twarz wykryta!';
+            } else {
+                dot.style.display = 'none';
+                info.textContent = 'Nie znaleziono twarzy. Spójrz w kamerę.';
+            }
+        }
+
+        const faceDetection = new FaceDetection({locateFile: (file) => {
+            return `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/${file}`;
+        }});
+
+        faceDetection.setOptions({
+            model: 'short',
+            minDetectionConfidence: 0.5
+        });
+
+        faceDetection.onResults(onResults);
+
+        const camera = new Camera(videoElement, {
+            onFrame: async () => {
+                await faceDetection.send({image: videoElement});
+            },
+            width: 640,
+            height: 480
+        });
+
+        camera.start().catch(err => {
+            info.textContent = 'Błąd dostępu do kamery!';
+            console.error(err);
+        });
+    </script>
+</body>
+</html>
