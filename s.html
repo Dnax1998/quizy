@@ -3,122 +3,183 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Śledzenie twarzy - Kropka</title>
-    <!-- Biblioteki MediaPipe do obsługi kamery i wykrywania twarzy -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/face_detection.js" crossorigin="anonymous"></script>
+    <title>Testowy Pomiar Prędkości</title>
     <style>
         body {
             margin: 0;
-            overflow: hidden;
-            background: #000;
+            background: #111;
+            color: white;
             font-family: sans-serif;
+            text-align: center;
+            overflow: hidden;
         }
-        video {
-            display: none;
+        #container {
+            position: relative;
+            width: 100vw;
+            height: 60vh;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        video, canvas {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
         canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            object-fit: cover;
-            transform: scaleX(-1); /* Efekt lustra dla wygody */
+            z-index: 2;
         }
-        #dot {
+        .line {
             position: absolute;
-            width: 30px;
-            height: 30px;
-            background-color: #ff3b30;
-            border: 3px solid #ffffff;
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            pointer-events: none;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
-            transition: left 0.05s linear, top 0.05s linear;
-            z-index: 10;
+            width: 100%;
+            height: 2px;
+            background: rgba(255, 0, 0, 0.7);
+            z-index: 5;
         }
-        #info {
+        #lineA { top: 30%; }
+        #lineB { top: 70%; }
+        
+        #car-sim {
             position: absolute;
-            bottom: 20px;
+            width: 40px;
+            height: 20px;
+            background: #ff3b30;
+            top: -20px;
             left: 50%;
             transform: translateX(-50%);
+            z-index: 4;
+            display: none;
+            border-radius: 4px;
+        }
+        #panel {
+            padding: 15px;
+            background: #222;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 5px;
+            background: #007aff;
             color: white;
-            background: rgba(0,0,0,0.6);
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            z-index: 20;
-            pointer-events: none;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:active { background: #005bb5; }
+        #result {
+            font-size: 28px;
+            font-weight: bold;
+            color: #4cd964;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
 
-    <video id="webcam" autoplay playsinline></video>
-    <canvas id="output_canvas"></canvas>
-    <div id="dot"></div>
-    <div id="info">Szukanie twarzy...</div>
+    <h2>Detektor Prędkości (Wersja Testowa)</h2>
+    
+    <div id="container">
+        <video id="webcam" autoplay playsinline></video>
+        <canvas id="canvas"></canvas>
+        <div id="lineA" class="line"></div>
+        <div id="lineB" class="line"></div>
+        <div id="car-sim"></div>
+    </div>
+
+    <div id="panel">
+        <button onclick="startCamera()">Włącz Kamerę</button>
+        <button onclick="simulateCar()">Symuluj Auto</button>
+        <div id="result">Prędkość: -- km/h</div>
+        <div id="status" style="font-size: 12px; color: #aaa; margin-top: 5px;">Wskazówka: Kamera musi stać całkowicie nieruchomo!</div>
+    </div>
 
     <script>
-        const videoElement = document.getElementById('webcam');
-        const canvasElement = document.getElementById('output_canvas');
-        const canvasCtx = canvasElement.getContext('2d');
-        const dot = document.getElementById('dot');
-        const info = document.getElementById('info');
+        const video = document.getElementById('webcam');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const resultDiv = document.getElementById('result');
+        const carSim = document.getElementById('car-sim');
 
-        function onResults(results) {
-            canvasElement.width = window.innerWidth;
-            canvasElement.height = window.innerHeight;
+        let streaming = false;
+        let startTime = 0;
+        let measuring = false;
 
-            canvasCtx.save();
-            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-            // Rysowanie obrazu z kamery na pełnym ekranie
-            canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
-            canvasCtx.restore();
+        // Załóżmy, że odległość między liniami Czerwonymi w rzeczywistości to np. 5 metrów
+        const realDistanceMeters = 5.0; 
+        
+        // Współczynnik kalibracji (ile metrów przypada na 1 piksel pionowy ekranu w tej symulacji)
+        // W realnej kamerze wymaga to zaawansowanej kalibracji perspektywy.
+        const pixelsToMetersRatio = 0.05; 
 
-            if (results.detections && results.detections.length > 0) {
-                const detection = results.detections[0];
-                const bbox = detection.boundingBox;
-
-                // Obliczanie współrzędnych środka twarzy (uwzględniając odbicie lustrzane)
-                const x = (1.0 - bbox.xCenter) * canvasElement.width;
-                const y = bbox.yCenter * canvasElement.height;
-
-                dot.style.left = `${x}px`;
-                dot.style.top = `${y}px`;
-                dot.style.display = 'block';
-                info.textContent = 'Twarz wykryta!';
-            } else {
-                dot.style.display = 'none';
-                info.textContent = 'Nie znaleziono twarzy. Spójrz w kamerę.';
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+                video.srcObject = stream;
+                streaming = true;
+                document.getElementById('status').textContent = "Kamera aktywna. System gotowy do wykrywania ruchu.";
+            } catch (err) {
+                alert("Błąd dostępu do kamery: " + err);
             }
         }
 
-        const faceDetection = new FaceDetection({locateFile: (file) => {
-            return `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/${file}`;
-        }});
+        function simulateCar() {
+            if (measuring) return;
+            measuring = true;
+            resultDiv.textContent = "Prędkość: Pomiar...";
+            
+            let containerHeight = document.getElementById('container').clientHeight;
+            let lineAYPos = containerHeight * 0.3;
+            let lineBYPos = containerHeight * 0.7;
+            
+            let currentTop = 0;
+            carSim.style.display = 'block';
+            carSim.style.top = currentTop + 'px';
 
-        faceDetection.setOptions({
-            model: 'short',
-            minDetectionConfidence: 0.5
-        });
+            // Ustalamy sztuczną prędkość animacji (np. 3 piksele na klatkę)
+            let speedPixelsPerFrame = 4; 
+            let pixelDistance = Math.abs(lineBYPos - lineAYPos);
+            
+            let t1 = 0;
+            let t2 = 0;
 
-        faceDetection.onResults(onResults);
+            function animate() {
+                currentTop += speedPixelsPerFrame;
+                carSim.style.top = currentTop + 'px';
 
-        const camera = new Camera(videoElement, {
-            onFrame: async () => {
-                await faceDetection.send({image: videoElement});
-            },
-            width: 640,
-            height: 480
-        });
+                // Moment przejścia przez linię A (30% wysokości)
+                if (currentTop >= lineAYPos && t1 === 0) {
+                    t1 = performance.now();
+                }
 
-        camera.start().catch(err => {
-            info.textContent = 'Błąd dostępu do kamery!';
-            console.error(err);
-        });
+                // Moment przejścia przez linię B (70% wysokości)
+                if (currentTop >= lineBYPos && t2 === 0) {
+                    t2 = performance.now();
+                    
+                    // Obliczenia fizyczne
+                    let timeSeconds = (t2 - t1) / 1000.0; // czas w sekundach
+                    let distanceMeters = pixelDistance * pixelsToMetersRatio; // dystans w metrach
+                    
+                    let speedMps = distanceMeters / timeSeconds; // metry na sekundę
+                    let speedKmh = speedMps * 3.6; // przeliczenie na km/h
+
+                    resultDiv.textContent = `Prędkość: ${speedKmh.toFixed(1)} km/h`;
+                    measuring = false;
+                    setTimeout(() => { carSim.style.display = 'none'; }, 1000);
+                    return;
+                }
+
+                if (currentTop < containerHeight) {
+                    requestAnimationFrame(animate);
+                } else {
+                    measuring = false;
+                    carSim.style.display = 'none';
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
     </script>
 </body>
 </html>
