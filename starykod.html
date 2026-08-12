@@ -128,7 +128,6 @@
         <button class="btn-secondary" id="exportCsvBtn">📥 Eksportuj CSV</button>
         <button class="btn-secondary" id="manageProductsBtn">📋 Produkty</button>
         <button class="btn-secondary" id="manageLabelsBtn">🏷️ Stan etykiet</button>
-        <button class="btn-secondary" id="openLabelGeneratorBtn">🏷️ Etykiety</button>
     </div>
 
     <div class="racks-tabs">
@@ -327,7 +326,6 @@
     const cancelMoveBtn = document.getElementById('cancelMoveBtn');
     const copyModeIndicator = document.getElementById('copyModeIndicator');
     const cancelCopyBtn = document.getElementById('cancelCopyBtn');
-    const openLabelGeneratorBtn = document.getElementById('openLabelGeneratorBtn');
     
     let currentEditingLocation = null;
     let currentBatches = [];
@@ -342,39 +340,6 @@
         toast.textContent = msg;
         toast.style.opacity = 1;
         setTimeout(() => toast.style.opacity = 0, 3000);
-    }
-
-    // Funkcja drukująca pojedynczą etykietę w poprawnym układzie: Kod -> Data -> Kartony -> Sygnatura
-    function printSingleLabel(batch, product) {
-        const printWin = window.open('', '_blank');
-        printWin.document.write(`
-            <!DOCTYPE html>
-            <html lang="pl">
-            <head>
-                <meta charset="UTF-8">
-                <title>Etykieta - ${batch.productName || product?.name || ''}</title>
-                <style>
-                    body { font-family: Arial, sans-serif; padding: 20px; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-                    .etykieta { width: 340px; border: 2px solid #000; padding: 20px; background: #fff; font-size: 15px; }
-                    .etykieta div { margin-bottom: 10px; }
-                    .etykieta strong { display: inline-block; width: 130px; }
-                    @media print { body { padding: 0; } }
-                </style>
-            </head>
-            <body>
-                <div class="etykieta">
-                    <div><strong>Kod produktu:</strong> ${batch.productCode || product?.code || '—'}</div>
-                    <div><strong>Data:</strong> ${batch.prodDateString || '—'}</div>
-                    <div><strong>Ilość kartonów:</strong> ${batch.cartons || 0}</div>
-                    <div><strong>Sygnatura:</strong> ${batch.signature || '—'}</div>
-                </div>
-                <script>
-                    window.onload = function() { window.print(); }
-                <\/script>
-            </body>
-            </html>
-        `);
-        printWin.document.close();
     }
 
     // ========== SUBSKRYPCJE ==========
@@ -556,12 +521,11 @@
                 <div class="batch-header">
                     <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
                         <span style="font-weight: 600;">Produkt ${index+1}</span>
-                        <label class="ocr-upload-label" title="Wgraj zdjęcie ze specyfikacją">
-                            📷 Skanuj (OCR)
+                        <label class="ocr-upload-label" title="Wgraj zdjęcie etykiety z palety">
+                            📷 Wgraj zdjęcie etykiety
                             <input type="file" accept="image/*" class="ocr-input" data-index="${index}" style="display:none;">
                         </label>
-                        <button type="button" class="btn btn-secondary btn-print-label" data-index="${index}" style="padding:4px 10px; font-size:12px; border-radius:20px;">🖨️ Drukuj etykietę</button>
-                        <span class="ocr-status" data-index="${index}" style="font-size:12px; color:#2563eb; margin-left:4px; display:none; font-weight:600;">⏳ Analizuję...</span>
+                        <span class="ocr-status" data-index="${index}" style="font-size:12px; color:#2563eb; margin-left:4px; display:none; font-weight:600;">⏳ Analizuję zdjęcie...</span>
                     </div>
                     <button class="batch-remove" data-index="${index}">🗑️</button>
                 </div>
@@ -638,17 +602,7 @@
             });
         });
 
-        // Obsługa drukowania pojedynczej etykiety z poziomu modalu
-        document.querySelectorAll('.btn-print-label').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const idx = parseInt(btn.dataset.index);
-                const batch = currentBatches[idx];
-                const prod = productsList.find(p => p.id === batch.productId);
-                printSingleLabel(batch, prod);
-            });
-        });
-
-        // Event Listener dla mechanizmu OCR ze zdjęć
+        // Ulepszony mechanizm OCR dopasowujący zdjęcie etykiety bezpośrednio do pól formularza
         document.querySelectorAll('.ocr-input').forEach(input => {
             input.addEventListener('change', async (e) => {
                 const file = e.target.files[0];
@@ -656,42 +610,78 @@
                 const index = parseInt(input.dataset.index);
                 const statusSpan = document.querySelector(`.ocr-status[data-index="${index}"]`);
                 statusSpan.style.display = 'inline';
-                statusSpan.textContent = '⏳ Analizuję zdjęcie...';
+                statusSpan.textContent = '⏳ Analizuję etykietę...';
                 
                 try {
                     const result = await Tesseract.recognize(file, 'eng');
                     const text = result.data.text;
-                    
-                    const dateRegex = /\d{2}[\.\-\/]\d{2}[\.\-\/]\d{2,4}[a-zA-Z]?/;
-                    const tokens = text.split(/[\s\n]+/).filter(t => t.length > 0);
+                    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
                     
                     let foundCode = "";
                     let foundDate = "";
                     let foundCartons = "";
                     let foundSignature = "";
                     
-                    tokens.forEach(token => {
-                        if (dateRegex.test(token) && !foundDate) {
-                            foundDate = token.replace(/,/g, '.');
-                            return;
+                    lines.forEach(line => {
+                        const upperLine = line.toUpperCase();
+                        
+                        // Szukanie daty (np. dd.mm.rrrr)
+                        const dateMatch = line.match(/\d{1,2}[./-]\d{1,2}[./-]\d{2,4}[a-zA-Z]*/);
+                        if (dateMatch && !foundDate) {
+                            foundDate = dateMatch[0].replace(/,/g, '.');
                         }
-                        if (/^\d{1,3}[,\.]\d{1,2}$/.test(token) && !foundSignature) {
-                            foundSignature = token.replace(',', '.');
-                            return;
+                        
+                        // Szukanie sygnatury (np. 25.5 lub formaty numeryczne z kropką)
+                        const sigMatch = line.match(/(?:syg|sygnatura)?[:\s]*(\d{1,3}[.,]\d{1,2})/i);
+                        if (sigMatch && !foundSignature) {
+                            foundSignature = sigMatch[1].replace(',', '.');
+                        } else if (/^\d{1,3}[.,]\d{1,2}$/.test(line) && !foundSignature) {
+                            foundSignature = line.replace(',', '.');
                         }
-                        if (/^\d+$/.test(token)) {
-                            if (productsList.some(p => p.code === token || (p.name && p.name.includes(token)))) {
-                                foundCode = token;
-                            } else if (!foundCartons) {
-                                foundCartons = token;
-                            } else if (!foundCode) {
-                                foundCode = token;
+                        
+                        // Szukanie produktu na podstawie bazy produktów (kod lub nazwa)
+                        productsList.forEach(p => {
+                            if (p.code && upperLine.includes(p.code.toUpperCase()) && !foundCode) {
+                                foundCode = p.code;
+                            } else if (p.name && upperLine.includes(p.name.toUpperCase()) && !foundCode) {
+                                foundCode = p.code || p.name;
+                            }
+                        });
+
+                        // Szukanie liczby kartonów
+                        const cartonsMatch = line.match(/(?:karton|kartony|kartonów|il[oó]ść)?[:\s]*(\d+)/i);
+                        if (cartonsMatch && !foundCartons && !dateMatch && !sigMatch) {
+                            const num = parseInt(cartonsMatch[1]);
+                            if (num < 10000) {
+                                foundCartons = num;
                             }
                         }
                     });
 
+                    // Jeśli wiersze nie pokryły wszystkiego, przeszukaj tokeny uniwersalnie
+                    if (!foundDate || !foundCartons || !foundCode) {
+                        const tokens = text.split(/[\s\n]+/).filter(t => t.length > 0);
+                        const dateRegex = /\d{1,2}[./-]\d{1,2}[./-]\d{2,4}[a-zA-Z]?/;
+                        tokens.forEach(token => {
+                            if (dateRegex.test(token) && !foundDate) {
+                                foundDate = token.replace(/,/g, '.');
+                            }
+                            if (/^\d{1,3}[,\.]\d{1,2}$/.test(token) && !foundSignature) {
+                                foundSignature = token.replace(',', '.');
+                            }
+                            if (/^\d+$/.test(token)) {
+                                if (productsList.some(p => p.code === token || (p.name && p.name.includes(token))) && !foundCode) {
+                                    foundCode = token;
+                                } else if (!foundCartons) {
+                                    foundCartons = token;
+                                }
+                            }
+                        });
+                    }
+
+                    // Przypisanie wyników do formularza
                     if (foundCode) {
-                        const prod = productsList.find(p => p.code === foundCode || (p.name && p.name.includes(foundCode)));
+                        const prod = productsList.find(p => p.code === foundCode || (p.name && p.name.toUpperCase().includes(foundCode.toUpperCase())));
                         if (prod) {
                             currentBatches[index].productId = prod.id;
                             currentBatches[index].productName = prod.name;
@@ -702,14 +692,14 @@
                     if (foundCartons) currentBatches[index].cartons = parseInt(foundCartons);
                     if (foundSignature) currentBatches[index].signature = foundSignature;
 
-                    statusSpan.textContent = '✅ Odczytano!';
+                    statusSpan.textContent = '✅ Dopasowano!';
                     setTimeout(() => { statusSpan.style.display = 'none'; }, 2000);
                     renderBatchesList(); 
                 } catch (err) {
-                    console.error("Błąd czytania:", err);
+                    console.error("Błąd odczytu etykiety:", err);
                     statusSpan.textContent = '❌ Błąd';
                     setTimeout(() => { statusSpan.style.display = 'none'; }, 3000);
-                    alert("Błąd podczas czytania obrazu: " + err.message);
+                    alert("Błąd podczas odczytu zdjęcia etykiety: " + err.message);
                 }
                 input.value = '';
             });
@@ -1386,10 +1376,6 @@
         doExportCsv(rackChoice);
     });
     cancelExportCsvBtn.addEventListener('click', () => exportCsvModal.style.display = 'none');
-
-    openLabelGeneratorBtn.addEventListener('click', () => {
-        window.open('etykieta.html', '_blank');
-    });
 
     // ========== INICJALIZACJA ==========
     tabs.forEach(tab => tab.addEventListener('click', () => {
