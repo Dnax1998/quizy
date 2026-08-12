@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>Magazyn Regały + OKLEJENIE + ETYKIETY</title>
+    <title>Magazyn Regały + OKLEJENIE + ETYKIETY + SKANOWANIE ZDJĘĆ</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <!-- Biblioteka OCR do odczytu zdjęć kartki -->
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    <!-- Biblioteka do czytania tekstu ze zdjęć (OCR) -->
+    <script src="https://unpkg.com/tesseract.js@v4.1.4/dist/tesseract.min.js"></script>
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
         body { margin: 0; padding: 16px; background: #f4f6f9; }
@@ -58,7 +58,10 @@
         .batch-checkbox { grid-column: span 2; display: flex; align-items: center; gap: 8px; margin-top: 4px; }
         .batch-checkbox input { width: 18px; height: 18px; }
         .batch-remove { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 18px; padding: 0 4px; }
-        .add-batch-btn { margin-top: 8px; }
+        .add-batch-btn { margin-top: 8px; width: 100%; }
+        
+        .ocr-upload-label { font-size: 12px; font-weight: 600; background: #cbd5e1; color: #1e293b; border: 1px solid #94a3b8; padding: 4px 10px; border-radius: 20px; cursor: pointer; margin-left: 12px; transition: 0.2s; display: inline-flex; align-items: center; }
+        .ocr-upload-label:hover { background: #94a3b8; color: white; }
 
         .product-batches-table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 14px; }
         .product-batches-table th { text-align: left; padding: 8px; background: #f1f5f9; position: sticky; top: 0; }
@@ -76,6 +79,7 @@
         .move-mode-indicator { background: #fef3c7; border: 2px dashed #f59e0b; padding: 12px; border-radius: 16px; margin-bottom: 16px; text-align: center; display: none; }
         .copy-mode-indicator { background: #d1fae5; border: 2px dashed #10b981; padding: 12px; border-radius: 16px; margin-bottom: 16px; text-align: center; display: none; }
 
+        /* Style stanu etykiet */
         .labels-modal-card { max-width: 900px !important; width: 95%; border-radius: 24px; background: #ffffff; box-shadow: 0 20px 40px rgba(15, 23, 42, 0.15); }
         .labels-modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 16px; }
         .labels-modal-header h3 { margin: 0; font-size: 1.5rem; color: #0f172a; }
@@ -161,13 +165,7 @@
         <hr style="margin: 20px 0; border: none; border-top: 1px solid #e2e8f0;">
         <label style="font-weight:600;">📦 Produkty na palecie</label>
         <div id="batchesContainer" class="batch-list"></div>
-        
-        <div style="display: flex; gap: 8px; margin-top: 8px;">
-            <button class="btn btn-secondary add-batch-btn" id="addBatchBtn" style="flex: 1;">➕ Dodaj produkt</button>
-            <button class="btn add-batch-btn" id="scanCardBtn" style="flex: 1; background: #8b5cf6; color: white;">📷 Wczytaj ze zdjęcia</button>
-            <input type="file" id="cardFileInput" accept="image/*" style="display: none;">
-        </div>
-
+        <button class="btn btn-secondary add-batch-btn" id="addBatchBtn">➕ Dodaj produkt</button>
         <div class="flex-row">
             <button class="btn" id="cancelEditBtn">Anuluj</button>
             <button class="btn btn-primary" id="saveSlotBtn">Zapisz</button>
@@ -264,12 +262,11 @@
 
     function parseDateWithSuffix(str) {
         if (!str) return new Date();
-        const cleanDateMatch = str.match(/(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})/);
+        const cleanDateMatch = str.match(/(\d{1,2})[./-](\d{1,2})[./-](\d{4})/);
         if (cleanDateMatch) {
             const day = parseInt(cleanDateMatch[1]);
             const month = parseInt(cleanDateMatch[2]) - 1;
-            let year = parseInt(cleanDateMatch[3]);
-            if (year < 100) year += 2000;
+            const year = parseInt(cleanDateMatch[3]);
             return new Date(year, month, day);
         }
         return new Date();
@@ -302,8 +299,6 @@
     const moveSlotBtn = document.getElementById('moveSlotBtn');
     const copySlotBtn = document.getElementById('copySlotBtn');
     const addBatchBtn = document.getElementById('addBatchBtn');
-    const scanCardBtn = document.getElementById('scanCardBtn');
-    const cardFileInput = document.getElementById('cardFileInput');
     const productsModal = document.getElementById('productsModal');
     const newProductName = document.getElementById('newProductName');
     const newProductCode = document.getElementById('newProductCode');
@@ -346,7 +341,7 @@
     function showToast(msg) {
         toast.textContent = msg;
         toast.style.opacity = 1;
-        setTimeout(() => toast.style.opacity = 0, 2000);
+        setTimeout(() => toast.style.opacity = 0, 3000);
     }
 
     // ========== SUBSKRYPCJE ==========
@@ -526,7 +521,14 @@
             const signatureVal = batch.signature || '';
             html += `<div class="batch-item" data-index="${index}">
                 <div class="batch-header">
-                    <span>Produkt ${index+1}</span>
+                    <div style="display: flex; align-items: center;">
+                        <span style="font-weight: 600;">Produkt ${index+1}</span>
+                        <label class="ocr-upload-label" title="Wgraj zdjęcie ze specyfikacją">
+                            📷 Skanuj kartkę (OCR)
+                            <input type="file" accept="image/*" class="ocr-input" data-index="${index}" style="display:none;">
+                        </label>
+                        <span class="ocr-status" data-index="${index}" style="font-size:12px; color:#2563eb; margin-left:8px; display:none; font-weight:600;">⏳ Analizuję...</span>
+                    </div>
                     <button class="batch-remove" data-index="${index}">🗑️</button>
                 </div>
                 <div class="batch-fields">
@@ -537,8 +539,8 @@
                             ${productsList.map(p => `<option value="${p.id}" ${p.id === batch.productId ? 'selected' : ''}>${p.name} (${p.code || ''})</option>`).join('')}
                         </select>
                     </div>
-                    <input type="text" class="batch-signature" placeholder="Sygnatura (np. 26.5)" value="${signatureVal}" style="grid-column: span 2; margin-bottom: 4px;">
-                    <input type="text" class="batch-date" value="${dateVal}" placeholder="Data (np. 12.05.25B)">
+                    <input type="text" class="batch-signature" placeholder="Sygnatura (np. 25.5)" value="${signatureVal}" style="grid-column: span 2; margin-bottom: 4px;">
+                    <input type="text" class="batch-date" value="${dateVal}" placeholder="Data (np. 12.05.2026A)">
                     <input type="number" class="batch-cartons" placeholder="Kartony" min="0" value="${batch.cartons || 0}">
                     <input type="number" class="batch-pieces" placeholder="Sztuki" min="0" value="${batch.pieces || 0}">
                     <div class="batch-checkbox">
@@ -548,7 +550,7 @@
                 </div>
             </div>`;
         });
-        batchesContainer.innerHTML = html || '<div style="color:#64748b; text-align:center;">Brak produktów. Kliknij "Dodaj produkt" lub "Wczytaj ze zdjęcia".</div>';
+        batchesContainer.innerHTML = html || '<div style="color:#64748b; text-align:center;">Brak produktów. Kliknij "Dodaj produkt".</div>';
         
         document.querySelectorAll('.filter-input').forEach(filterInput => {
             const index = filterInput.dataset.index;
@@ -601,6 +603,86 @@
                 renderBatchesList();
             });
         });
+
+        // Event Listener dla mechanizmu OCR ze zdjęć
+        document.querySelectorAll('.ocr-input').forEach(input => {
+            input.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const index = parseInt(input.dataset.index);
+                const statusSpan = document.querySelector(`.ocr-status[data-index="${index}"]`);
+                statusSpan.style.display = 'inline';
+                statusSpan.textContent = '⏳ Analizuję zdjęcie...';
+                
+                try {
+                    // Wywołanie Tesseract z językiem angielskim (dla dobrego radzenia sobie z cyframi)
+                    const result = await Tesseract.recognize(file, 'eng');
+                    const text = result.data.text;
+                    console.log("OCR Wykryto:", text);
+                    
+                    const dateRegex = /\d{2}[\.\-\/]\d{2}[\.\-\/]\d{2,4}[a-zA-Z]?/;
+                    const tokens = text.split(/[\s\n]+/).filter(t => t.length > 0);
+                    
+                    let foundCode = "";
+                    let foundDate = "";
+                    let foundCartons = "";
+                    let foundSignature = "";
+                    
+                    // Rozpoznawanie tokenów wyciągniętych przez OCR
+                    tokens.forEach(token => {
+                        // Data (np. 12.05.25B)
+                        if (dateRegex.test(token) && !foundDate) {
+                            foundDate = token.replace(/,/g, '.');
+                            return;
+                        }
+                        // Sygnatura (np. 26.5 lub 26,5)
+                        if (/^\d{1,3}[,\.]\d{1,2}$/.test(token) && !foundSignature) {
+                            foundSignature = token.replace(',', '.');
+                            return;
+                        }
+                        // Liczby całkowite
+                        if (/^\d+$/.test(token)) {
+                            // Mapowanie do kodu produktu (np. 815)
+                            if (productsList.some(p => p.code === token || (p.name && p.name.includes(token)))) {
+                                foundCode = token;
+                            } else if (!foundCartons) {
+                                foundCartons = token; // Najpewniej to Ilość Kartonów (np. 630)
+                            } else if (!foundCode) {
+                                foundCode = token; // Bezpiecznik
+                            }
+                        }
+                    });
+
+                    // Zapis do pól partii (Batch)
+                    if (foundCode) {
+                        const prod = productsList.find(p => p.code === foundCode || (p.name && p.name.includes(foundCode)));
+                        if (prod) {
+                            currentBatches[index].productId = prod.id;
+                            currentBatches[index].productName = prod.name;
+                            currentBatches[index].productCode = prod.code;
+                        } else {
+                            showToast(`⚠️ Znaleziono kod ${foundCode}, ale nie ma go w bazie produktów! Dodaj produkt.`, 4000);
+                        }
+                    }
+                    if (foundDate) currentBatches[index].prodDateString = foundDate;
+                    if (foundCartons) currentBatches[index].cartons = parseInt(foundCartons);
+                    if (foundSignature) currentBatches[index].signature = foundSignature;
+
+                    statusSpan.textContent = '✅ Odczytano pomyślnie!';
+                    setTimeout(() => { statusSpan.style.display = 'none'; }, 2000);
+                    
+                    // Odświeżenie widoku w formularzu modalu
+                    renderBatchesList(); 
+                } catch (err) {
+                    console.error("Błąd czytania:", err);
+                    statusSpan.textContent = '❌ Błąd czytania';
+                    setTimeout(() => { statusSpan.style.display = 'none'; }, 3000);
+                    alert("Przepraszamy, błąd podczas czytania obrazu: " + err.message);
+                }
+                
+                input.value = ''; // Reset uploada
+            });
+        });
     }
 
     function collectBatchesFromForm() {
@@ -635,89 +717,6 @@
     addBatchBtn.addEventListener('click', () => {
         currentBatches.push({ signature: '', cartons: 0, pieces: 0, oklejony: false });
         renderBatchesList();
-    });
-
-    // ========== ODZYT ZDJĘCIA KARTKI (OCR) ==========
-    scanCardBtn.addEventListener('click', () => {
-        cardFileInput.click();
-    });
-
-    cardFileInput.addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        showToast('⏳ Analizowanie zdjęcia kartki...');
-        scanCardBtn.disabled = true;
-        scanCardBtn.textContent = '⏳ Skanowanie...';
-
-        try {
-            const worker = await Tesseract.createWorker('eng');
-            const ret = await worker.recognize(file);
-            await worker.terminate();
-
-            const text = ret.data.text;
-
-            // Dzielenie tekstu na linie
-            const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-
-            let extractedCode = '';
-            let extractedDate = '';
-            let extractedCartons = 0;
-            let extractedSignature = '';
-
-            // Szukanie daty (np. 12.05.25B lub 12.05.2025)
-            const dateMatch = text.match(/\b(\d{1,2}[\.\/-]\d{1,2}[\.\/-]\d{2,4}[A-Za-z]?)\b/);
-            if (dateMatch) extractedDate = dateMatch[1];
-
-            // Szukanie sygnatury (np. 26.5 lub 26,5)
-            const sigMatch = text.match(/\b(\d+[\.,]\d+)\b/);
-            if (sigMatch) extractedSignature = sigMatch[1].replace(',', '.');
-
-            // Pomocnicza tablica na pozostałe liczby całkowite
-            const cleanIntegers = [];
-            lines.forEach(line => {
-                if (extractedDate && line.includes(extractedDate)) return;
-                if (extractedSignature && line.includes(extractedSignature)) return;
-                const matches = line.match(/\b\d+\b/g);
-                if (matches) {
-                    matches.forEach(m => cleanIntegers.push(m));
-                }
-            });
-
-            // Standardowy układ z kartki: Kod jest na samej górze (np. 815), Kartony pod datą (np. 630)
-            if (cleanIntegers.length >= 1) extractedCode = cleanIntegers[0];
-            if (cleanIntegers.length >= 2) extractedCartons = parseInt(cleanIntegers[1]) || 0;
-
-            // Szukanie dopasowanego produktu w bazie
-            let matchedProduct = null;
-            if (extractedCode) {
-                matchedProduct = productsList.find(p => p.code && p.code.trim().toLowerCase() === extractedCode.toLowerCase()) ||
-                                 productsList.find(p => p.code && p.code.includes(extractedCode)) ||
-                                 productsList.find(p => p.name && p.name.includes(extractedCode));
-            }
-
-            currentBatches.push({
-                productId: matchedProduct ? matchedProduct.id : '',
-                productName: matchedProduct ? matchedProduct.name : '',
-                productCode: matchedProduct ? matchedProduct.code : extractedCode,
-                signature: extractedSignature,
-                prodDateString: extractedDate,
-                prodDate: firebase.firestore.Timestamp.fromDate(parseDateWithSuffix(extractedDate)),
-                cartons: extractedCartons,
-                pieces: 0,
-                oklejony: false
-            });
-
-            renderBatchesList();
-            showToast('✅ Odczytano dane z kartki');
-        } catch (err) {
-            console.error(err);
-            alert('Błąd skanowania zdjęcia: ' + err.message);
-        } finally {
-            scanCardBtn.disabled = false;
-            scanCardBtn.textContent = '📷 Wczytaj ze zdjęcia';
-            cardFileInput.value = '';
-        }
     });
 
     // ========== MODAL EDYCJI ==========
@@ -823,7 +822,7 @@
                     const newQty = newCounts[prodId][sig] || 0;
                     const diff = newQty - oldQty; 
                     
-                    if (diff > 0) { 
+                    if (diff > 0) {
                         const currentStock = labelsBySignature[sig] || 0;
                         labelsBySignature[sig] = Math.max(0, currentStock - diff);
                         updated = true;
@@ -1028,6 +1027,7 @@
     manageProductsBtn.addEventListener('click', () => productsModal.style.display = 'flex');
     closeProductsBtn.addEventListener('click', () => productsModal.style.display = 'none');
 
+
     function getLabelsNeededForProduct(productId) {
         let totalNeeded = 0;
         const prod = productsList.find(p => p.id === productId);
@@ -1082,7 +1082,7 @@
                     </div>
                     
                     <div class="add-sig-inline">
-                        <input type="text" placeholder="Nowa sygnatura (np. 26.5)" class="new-sig-name" data-prod-id="${prod.id}">
+                        <input type="text" placeholder="Nowa sygnatura (np. 25.5)" class="new-sig-name" data-prod-id="${prod.id}">
                         <input type="number" placeholder="Ilość (szt.)" class="new-sig-count" data-prod-id="${prod.id}" min="0">
                         <button class="btn-sig-add" data-prod-id="${prod.id}">➕ Dodaj sygnaturę</button>
                     </div>
@@ -1137,7 +1137,7 @@
                 const sigName = nameInput.value.trim();
                 const sigCount = parseInt(countInput.value) || 0;
                 
-                if(!sigName) { alert('Wpisz sygnaturę (np. 26.5)'); return; }
+                if(!sigName) { alert('Wpisz sygnaturę (np. 25.5)'); return; }
                 try {
                     const prodRef = db.collection("products").doc(prodId);
                     const doc = await prodRef.get();
@@ -1357,7 +1357,6 @@
     });
     cancelExportCsvBtn.addEventListener('click', () => exportCsvModal.style.display = 'none');
 
-    // ========== PRZYCISK ETYKIETY ==========
     openLabelGeneratorBtn.addEventListener('click', () => {
         window.open('etykieta.html', '_blank');
     });
