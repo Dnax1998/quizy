@@ -3,183 +3,136 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Testowy Pomiar Prędkości</title>
+    <title>Generator Kodów QR z Tekstem</title>
+    <!-- Biblioteka do obsługi kodów QR -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
             margin: 0;
-            background: #111;
-            color: white;
-            font-family: sans-serif;
-            text-align: center;
-            overflow: hidden;
-        }
-        #container {
-            position: relative;
-            width: 100vw;
-            height: 60vh;
-            background: #000;
+            padding: 20px;
             display: flex;
             justify-content: center;
             align-items: center;
+            min-height: 100vh;
         }
-        video, canvas {
-            position: absolute;
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
             width: 100%;
-            height: 100%;
-            object-fit: cover;
+            max-width: 450px;
+            text-align: center;
         }
-        canvas {
-            z-index: 2;
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
         }
-        .line {
-            position: absolute;
+        textarea {
             width: 100%;
-            height: 2px;
-            background: rgba(255, 0, 0, 0.7);
-            z-index: 5;
+            height: 120px;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 16px;
+            resize: vertical;
+            box-sizing: border-box;
+            margin-bottom: 15px;
         }
-        #lineA { top: 30%; }
-        #lineB { top: 70%; }
-        
-        #car-sim {
-            position: absolute;
-            width: 40px;
-            height: 20px;
-            background: #ff3b30;
-            top: -20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 4;
-            display: none;
+        textarea:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+        #qrcode {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        #qrcode img {
+            border: 5px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             border-radius: 4px;
         }
-        #panel {
-            padding: 15px;
-            background: #222;
-        }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            margin: 5px;
-            background: #007aff;
+        .btn {
+            background-color: #007bff;
             color: white;
             border: none;
-            border-radius: 5px;
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 8px;
             cursor: pointer;
+            width: 100%;
+            transition: background 0.2s;
         }
-        button:active { background: #005bb5; }
-        #result {
-            font-size: 28px;
-            font-weight: bold;
-            color: #4cd964;
-            margin-top: 10px;
+        .btn:hover {
+            background-color: #0056b3;
         }
     </style>
 </head>
 <body>
 
-    <h2>Detektor Prędkości (Wersja Testowa)</h2>
-    
-    <div id="container">
-        <video id="webcam" autoplay playsinline></video>
-        <canvas id="canvas"></canvas>
-        <div id="lineA" class="line"></div>
-        <div id="lineB" class="line"></div>
-        <div id="car-sim"></div>
-    </div>
+    <div class="container">
+        <h2>Generator Kodów QR</h2>
+        <textarea id="textInput" placeholder="Wpisz tutaj dowolny tekst, wiadomość lub link...">Witaj! To jest przykładowy tekst ukryty w kodzie QR.</textarea>
+        
+        <div id="qrcode"></div>
 
-    <div id="panel">
-        <button onclick="startCamera()">Włącz Kamerę</button>
-        <button onclick="simulateCar()">Symuluj Auto</button>
-        <div id="result">Prędkość: -- km/h</div>
-        <div id="status" style="font-size: 12px; color: #aaa; margin-top: 5px;">Wskazówka: Kamera musi stać całkowicie nieruchomo!</div>
+        <button class="btn" id="downloadBtn" style="display:none;">Pobierz kod QR (PNG)</button>
     </div>
 
     <script>
-        const video = document.getElementById('webcam');
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        const resultDiv = document.getElementById('result');
-        const carSim = document.getElementById('car-sim');
+        const textInput = document.getElementById('textInput');
+        const qrcodeContainer = document.getElementById('qrcode');
+        const downloadBtn = document.getElementById('downloadBtn');
 
-        let streaming = false;
-        let startTime = 0;
-        let measuring = false;
+        // Inicjalizacja obiektu QR
+        let qrCodeInstance = new QRCode(qrcodeContainer, {
+            text: textInput.value,
+            width: 220,
+            height: 220,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+        });
 
-        // Załóżmy, że odległość między liniami Czerwonymi w rzeczywistości to np. 5 metrów
-        const realDistanceMeters = 5.0; 
-        
-        // Współczynnik kalibracji (ile metrów przypada na 1 piksel pionowy ekranu w tej symulacji)
-        // W realnej kamerze wymaga to zaawansowanej kalibracji perspektywy.
-        const pixelsToMetersRatio = 0.05; 
-
-        async function startCamera() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
-                video.srcObject = stream;
-                streaming = true;
-                document.getElementById('status').textContent = "Kamera aktywna. System gotowy do wykrywania ruchu.";
-            } catch (err) {
-                alert("Błąd dostępu do kamery: " + err);
+        // Funkcja aktualizująca kod przy pisaniu
+        function updateQRCode() {
+            const text = textInput.value;
+            qrcodeContainer.innerHTML = ""; // Czyszczenie starego kodu
+            
+            if (text.trim() !== "") {
+                qrCodeInstance = new QRCode(qrcodeContainer, {
+                    text: text,
+                    width: 220,
+                    height: 220,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+                downloadBtn.style.display = "block";
+            } else {
+                downloadBtn.style.display = "none";
             }
         }
 
-        function simulateCar() {
-            if (measuring) return;
-            measuring = true;
-            resultDiv.textContent = "Prędkość: Pomiar...";
-            
-            let containerHeight = document.getElementById('container').clientHeight;
-            let lineAYPos = containerHeight * 0.3;
-            let lineBYPos = containerHeight * 0.7;
-            
-            let currentTop = 0;
-            carSim.style.display = 'block';
-            carSim.style.top = currentTop + 'px';
+        textInput.addEventListener('input', updateQRCode);
 
-            // Ustalamy sztuczną prędkość animacji (np. 3 piksele na klatkę)
-            let speedPixelsPerFrame = 4; 
-            let pixelDistance = Math.abs(lineBYPos - lineAYPos);
-            
-            let t1 = 0;
-            let t2 = 0;
-
-            function animate() {
-                currentTop += speedPixelsPerFrame;
-                carSim.style.top = currentTop + 'px';
-
-                // Moment przejścia przez linię A (30% wysokości)
-                if (currentTop >= lineAYPos && t1 === 0) {
-                    t1 = performance.now();
-                }
-
-                // Moment przejścia przez linię B (70% wysokości)
-                if (currentTop >= lineBYPos && t2 === 0) {
-                    t2 = performance.now();
-                    
-                    // Obliczenia fizyczne
-                    let timeSeconds = (t2 - t1) / 1000.0; // czas w sekundach
-                    let distanceMeters = pixelDistance * pixelsToMetersRatio; // dystans w metrach
-                    
-                    let speedMps = distanceMeters / timeSeconds; // metry na sekundę
-                    let speedKmh = speedMps * 3.6; // przeliczenie na km/h
-
-                    resultDiv.textContent = `Prędkość: ${speedKmh.toFixed(1)} km/h`;
-                    measuring = false;
-                    setTimeout(() => { carSim.style.display = 'none'; }, 1000);
-                    return;
-                }
-
-                if (currentTop < containerHeight) {
-                    requestAnimationFrame(animate);
-                } else {
-                    measuring = false;
-                    carSim.style.display = 'none';
-                }
+        // Obsługa pobierania wygenerowanego kodu
+        downloadBtn.addEventListener('click', function() {
+            const img = qrcodeContainer.querySelector('img');
+            if (img) {
+                const imgSrc = img.src;
+                const link = document.createElement('a');
+                link.href = imgSrc;
+                link.download = 'kod-qr.png';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
             }
-
-            requestAnimationFrame(animate);
-        }
+        });
     </script>
+
 </body>
 </html>
