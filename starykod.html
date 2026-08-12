@@ -603,7 +603,7 @@
             });
         });
 
-        // POPRAWIONY OCR - DOKŁADNE DOPASOWANIE WZORCA ETYKIETY
+        // ŚCISŁY OCR - SEKWENCYJNE CZYTANIE ETYKIETY WG UKŁADU
         document.querySelectorAll('.ocr-input').forEach(input => {
             input.addEventListener('change', async (e) => {
                 const file = e.target.files[0];
@@ -623,65 +623,48 @@
                     let foundCartons = "";
                     let foundSignature = "";
                     
-                    // Krok 1: Przeszukiwanie strukturalne wierszy
-                    lines.forEach((line, idx) => {
-                        const cleanLine = line.trim();
-                        const upperLine = cleanLine.toUpperCase();
-                        
-                        // Szukamy formatu daty DD.MM.YY lub DD.MM.YYYY
-                        const dateMatch = cleanLine.match(/\b\d{1,2}[./-]\d{1,2}[./-]\d{2,4}\b/);
+                    // KROK 1: Pierwsza linia to kod/produkt (np. wielki numer na górze)
+                    if (lines.length > 0) {
+                        foundCode = lines[0];
+                    }
+
+                    // KROK 2: Szukamy daty w tekście (oraz powiązanych kartonów tuż po niej)
+                    for (let i = 0; i < lines.length; i++) {
+                        const dateMatch = lines[i].match(/\b\d{1,2}[./-]\d{1,2}[./-]\d{2,4}\b/) || lines[i].match(/\b\d{1,2}[./-]\d{1,2}\b/);
                         if (dateMatch && !foundDate) {
                             foundDate = dateMatch[0].replace(/,/g, '.');
-                            return;
-                        }
-                        
-                        // Szukamy formatu sygnatury XX.X (z kropką lub przecinkiem)
-                        const sigMatch = cleanLine.match(/^(\d{1,3}[.,]\d{1,2})$/);
-                        if (sigMatch && !foundSignature && foundDate) {
-                            // Jeśli data już wystąpiła, a to jest kolejna liczba z kropką na dole -> to sygnatura
-                            foundSignature = sigMatch[1].replace(',', '.');
-                            return;
-                        }
-
-                        // Sprawdzenie czy linia pasuje do bazy produktów
-                        productsList.forEach(p => {
-                            if (p.code && (upperLine === p.code.toUpperCase() || upperLine.includes(p.code.toUpperCase())) && !foundCode) {
-                                foundCode = p.code;
-                            } else if (p.name && upperLine.includes(p.name.toUpperCase()) && !foundCode) {
-                                foundCode = p.code || p.name;
+                            // Trzecia wartość to ilość kartonów (zazwyczaj linia bezpośrednio pod datą)
+                            if (i + 1 < lines.length) {
+                                const nextLine = lines[i + 1].replace(/[^0-9]/g, '');
+                                if (nextLine && parseInt(nextLine) < 1000) {
+                                    foundCartons = nextLine;
+                                }
                             }
-                        });
-
-                        // Pojedyncze liczby bez kropki
-                        if (/^\d{1,4}$/.test(cleanLine)) {
-                            const num = parseInt(cleanLine);
-                            // Pierwsza linia to zazwyczaj wielki numer produktu na górze (np. 289)
-                            if (!foundCode && (idx === 0 || !foundDate)) {
-                                foundCode = cleanLine;
-                            } else if (foundDate && !foundCartons && num < 1000) {
-                                // Liczba tuż pod datą to kartony (np. 4)
-                                foundCartons = num;
-                            }
+                            break;
                         }
-                    });
+                    }
 
-                    // Jeśli sygnatury nie wyłapało wyżej, szukamy na samym końcu tekstu formatu XX.X
-                    if (!foundSignature) {
-                        for (let i = lines.length - 1; i >= 0; i--) {
-                            const match = lines[i].match(/(\d{1,3}[.,]\d{1,2})/);
-                            if (match) {
-                                foundSignature = match[1].replace(',', '.');
+                    // Jeśli nie znaleziono kartonów pod datą, szukamy pojedynczej małej liczby
+                    if (!foundCartons) {
+                        for (let i = 0; i < lines.length; i++) {
+                            const clean = lines[i].replace(/[^0-9]/g, '');
+                            if (clean && parseInt(clean) > 0 && parseInt(clean) < 500 && lines[i] !== foundCode && !lines[i].includes('.')) {
+                                foundCartons = clean;
                                 break;
                             }
                         }
                     }
 
-                    // Awaryjne pobranie pierwszego tekstu jako kodu/produktu jeśli nic nie pasowało
-                    if (!foundCode && lines.length > 0) {
-                        foundCode = lines[0].replace(/[^a-zA-Z0-9]/g, '');
+                    // KROK 3: Sygnatura na samym dole (np. format XX.X)
+                    for (let i = lines.length - 1; i >= 0; i--) {
+                        const sigMatch = lines[i].match(/\b(\d{1,3}[.,]\d{1,2})\b/);
+                        if (sigMatch) {
+                            foundSignature = sigMatch[1].replace(',', '.');
+                            break;
+                        }
                     }
 
-                    // Przypisanie do formularza
+                    // Przypisanie do danych formularza
                     if (foundCode) {
                         const prod = productsList.find(p => p.code === foundCode || (p.name && p.name.toUpperCase().includes(foundCode.toUpperCase())) || p.id === foundCode);
                         if (prod) {
