@@ -537,8 +537,8 @@
                             ${productsList.map(p => `<option value="${p.id}" ${p.id === batch.productId ? 'selected' : ''}>${p.name} (${p.code || ''})</option>`).join('')}
                         </select>
                     </div>
-                    <input type="text" class="batch-signature" placeholder="Sygnatura (np. 25.5)" value="${signatureVal}" style="grid-column: span 2; margin-bottom: 4px;">
-                    <input type="text" class="batch-date" value="${dateVal}" placeholder="Data (np. 12.05.2026A)">
+                    <input type="text" class="batch-signature" placeholder="Sygnatura (np. 25.1)" value="${signatureVal}" style="grid-column: span 2; margin-bottom: 4px;">
+                    <input type="text" class="batch-date" value="${dateVal}" placeholder="Data (np. 16.10.25)">
                     <input type="number" class="batch-cartons" placeholder="Kartony" min="0" value="${batch.cartons || 0}">
                     <input type="number" class="batch-pieces" placeholder="Sztuki" min="0" value="${batch.pieces || 0}">
                     <div class="batch-checkbox">
@@ -602,7 +602,7 @@
             });
         });
 
-        // Ulepszony mechanizm OCR dopasowujący zdjęcie etykiety bezpośrednio do pól formularza
+        // POPRAWIONY MECHANIZM OCR DLA ETYKIET MAGAZYNOWYCH
         document.querySelectorAll('.ocr-input').forEach(input => {
             input.addEventListener('change', async (e) => {
                 const file = e.target.files[0];
@@ -622,70 +622,65 @@
                     let foundCartons = "";
                     let foundSignature = "";
                     
-                    lines.forEach(line => {
-                        const upperLine = line.toUpperCase();
+                    lines.forEach((line, idx) => {
+                        const cleanLine = line.trim();
+                        const upperLine = cleanLine.toUpperCase();
                         
-                        // Szukanie daty (np. dd.mm.rrrr)
-                        const dateMatch = line.match(/\d{1,2}[./-]\d{1,2}[./-]\d{2,4}[a-zA-Z]*/);
+                        // 1. Szukanie daty (np. 16.10.25) - format z trzema członami oddzielonymi kropką/myślnikiem
+                        const dateMatch = cleanLine.match(/\b\d{1,2}[./-]\d{1,2}[./-]\d{2,4}\b/);
                         if (dateMatch && !foundDate) {
                             foundDate = dateMatch[0].replace(/,/g, '.');
+                            return;
                         }
                         
-                        // Szukanie sygnatury (np. 25.5 lub formaty numeryczne z kropką)
-                        const sigMatch = line.match(/(?:syg|sygnatura)?[:\s]*(\d{1,3}[.,]\d{1,2})/i);
+                        // 2. Szukanie sygnatury (np. 25.1) - format z dwoma członami np. XX.X lub XX.XX
+                        const sigMatch = cleanLine.match(/^(?:syg|sygnatura)?[:\s]*(\d{1,3}[.,]\d{1,2})$/i);
                         if (sigMatch && !foundSignature) {
                             foundSignature = sigMatch[1].replace(',', '.');
-                        } else if (/^\d{1,3}[.,]\d{1,2}$/.test(line) && !foundSignature) {
-                            foundSignature = line.replace(',', '.');
+                            return;
                         }
                         
-                        // Szukanie produktu na podstawie bazy produktów (kod lub nazwa)
+                        // 3. Sprawdzenie dopasowania do bazy produktów (nazwa lub kod)
                         productsList.forEach(p => {
-                            if (p.code && upperLine.includes(p.code.toUpperCase()) && !foundCode) {
+                            if (p.code && (upperLine === p.code.toUpperCase() || upperLine.includes(p.code.toUpperCase())) && !foundCode) {
                                 foundCode = p.code;
                             } else if (p.name && upperLine.includes(p.name.toUpperCase()) && !foundCode) {
                                 foundCode = p.code || p.name;
                             }
                         });
 
-                        // Szukanie liczby kartonów
-                        const cartonsMatch = line.match(/(?:karton|kartony|kartonów|il[oó]ść)?[:\s]*(\d+)/i);
-                        if (cartonsMatch && !foundCartons && !dateMatch && !sigMatch) {
-                            const num = parseInt(cartonsMatch[1]);
-                            if (num < 10000) {
+                        // 4. Jeśli linia to sam krótki numer (np. główny numer na górze "289" lub liczba kartonów "4")
+                        if (/^\d{1,4}$/.test(cleanLine)) {
+                            const num = parseInt(cleanLine);
+                            // Jeśli to pierwsza linia i nie mamy jeszcze kodu, duży numer na górze to zazwyczaj kod produktu
+                            if (!foundCode && idx === 0) {
+                                foundCode = cleanLine;
+                            } else if (!foundCartons && num < 1000) {
+                                // Liczba pod datą lub pojedyncza mniejsza liczba to kartony
                                 foundCartons = num;
                             }
                         }
                     });
 
-                    // Jeśli wiersze nie pokryły wszystkiego, przeszukaj tokeny uniwersalnie
-                    if (!foundDate || !foundCartons || !foundCode) {
+                    // Jeśli nie znaleziono kodu produktu w pierwszej linii, sprawdzamy wszystkie tokeny
+                    if (!foundCode) {
                         const tokens = text.split(/[\s\n]+/).filter(t => t.length > 0);
-                        const dateRegex = /\d{1,2}[./-]\d{1,2}[./-]\d{2,4}[a-zA-Z]?/;
-                        tokens.forEach(token => {
-                            if (dateRegex.test(token) && !foundDate) {
-                                foundDate = token.replace(/,/g, '.');
-                            }
-                            if (/^\d{1,3}[,\.]\d{1,2}$/.test(token) && !foundSignature) {
-                                foundSignature = token.replace(',', '.');
-                            }
-                            if (/^\d+$/.test(token)) {
-                                if (productsList.some(p => p.code === token || (p.name && p.name.includes(token))) && !foundCode) {
-                                    foundCode = token;
-                                } else if (!foundCartons) {
-                                    foundCartons = token;
-                                }
-                            }
-                        });
+                        if (tokens.length > 0) {
+                            foundCode = tokens[0].replace(/[^a-zA-Z0-9]/g, '');
+                        }
                     }
 
-                    // Przypisanie wyników do formularza
+                    // Przypisanie odczytanych wartości do formularza
                     if (foundCode) {
-                        const prod = productsList.find(p => p.code === foundCode || (p.name && p.name.toUpperCase().includes(foundCode.toUpperCase())));
+                        const prod = productsList.find(p => p.code === foundCode || (p.name && p.name.toUpperCase().includes(foundCode.toUpperCase())) || p.id === foundCode);
                         if (prod) {
                             currentBatches[index].productId = prod.id;
                             currentBatches[index].productName = prod.name;
                             currentBatches[index].productCode = prod.code;
+                        } else {
+                            // Jeśli nie ma dokładnego dopasowania w bazie, ustawiamy jako kod/nazwę wpisaną na etykiecie
+                            currentBatches[index].productName = foundCode;
+                            currentBatches[index].productCode = foundCode;
                         }
                     }
                     if (foundDate) currentBatches[index].prodDateString = foundDate;
@@ -717,11 +712,11 @@
             const oklejonyCb = item.querySelector('.batch-oklejony');
             const prodId = selectEl.value;
             const prod = productsList.find(p => p.id === prodId);
-            if (prodId && dateInput.value) {
+            if ((prodId || selectEl.options[selectEl.selectedIndex]?.text) && dateInput.value) {
                 const rawValue = dateInput.value;
                 batches.push({
-                    productId: prodId,
-                    productName: prod?.name || '',
+                    productId: prodId || null,
+                    productName: prod?.name || selectEl.options[selectEl.selectedIndex]?.text || '',
                     productCode: prod?.code || '',
                     signature: signatureInput.value.trim(),
                     prodDateString: rawValue,
@@ -1104,7 +1099,7 @@
                     </div>
                     
                     <div class="add-sig-inline">
-                        <input type="text" placeholder="Nowa sygnatura (np. 25.5)" class="new-sig-name" data-prod-id="${prod.id}">
+                        <input type="text" placeholder="Nowa sygnatura (np. 25.1)" class="new-sig-name" data-prod-id="${prod.id}">
                         <input type="number" placeholder="Ilość (szt.)" class="new-sig-count" data-prod-id="${prod.id}" min="0">
                         <button class="btn-sig-add" data-prod-id="${prod.id}">➕ Dodaj sygnaturę</button>
                     </div>
@@ -1159,7 +1154,7 @@
                 const sigName = nameInput.value.trim();
                 const sigCount = parseInt(countInput.value) || 0;
                 
-                if(!sigName) { alert('Wpisz sygnaturę (np. 25.5)'); return; }
+                if(!sigName) { alert('Wpisz sygnaturę (np. 25.1)'); return; }
                 try {
                     const prodRef = db.collection("products").doc(prodId);
                     const doc = await prodRef.get();
