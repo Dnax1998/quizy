@@ -256,7 +256,9 @@
         appId: "1:251843942343:web:2c81227b12ab4ad0052be2"
     };
 
-    firebase.initializeApp(firebaseConfig);
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
     const db = firebase.firestore();
 
     function parseDateWithSuffix(str) {
@@ -623,17 +625,14 @@
                     let foundCartons = "";
                     let foundSignature = "";
                     
-                    // KROK 1: Pierwsza linia to kod/produkt (np. wielki numer na górze)
                     if (lines.length > 0) {
                         foundCode = lines[0];
                     }
 
-                    // KROK 2: Szukamy daty w tekście (oraz powiązanych kartonów tuż po niej)
                     for (let i = 0; i < lines.length; i++) {
                         const dateMatch = lines[i].match(/\b\d{1,2}[./-]\d{1,2}[./-]\d{2,4}\b/) || lines[i].match(/\b\d{1,2}[./-]\d{1,2}\b/);
                         if (dateMatch && !foundDate) {
                             foundDate = dateMatch[0].replace(/,/g, '.');
-                            // Trzecia wartość to ilość kartonów (zazwyczaj linia bezpośrednio pod datą)
                             if (i + 1 < lines.length) {
                                 const nextLine = lines[i + 1].replace(/[^0-9]/g, '');
                                 if (nextLine && parseInt(nextLine) < 1000) {
@@ -644,7 +643,6 @@
                         }
                     }
 
-                    // Jeśli nie znaleziono kartonów pod datą, szukamy pojedynczej małej liczby
                     if (!foundCartons) {
                         for (let i = 0; i < lines.length; i++) {
                             const clean = lines[i].replace(/[^0-9]/g, '');
@@ -655,7 +653,6 @@
                         }
                     }
 
-                    // KROK 3: Sygnatura na samym dole (np. format XX.X)
                     for (let i = lines.length - 1; i >= 0; i--) {
                         const sigMatch = lines[i].match(/\b(\d{1,3}[.,]\d{1,2})\b/);
                         if (sigMatch) {
@@ -664,7 +661,6 @@
                         }
                     }
 
-                    // Przypisanie do danych formularza
                     if (foundCode) {
                         const prod = productsList.find(p => p.code === foundCode || (p.name && p.name.toUpperCase().includes(foundCode.toUpperCase())) || p.id === foundCode);
                         if (prod) {
