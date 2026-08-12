@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Generator Kodów QR z Tekstem</title>
-    <!-- Biblioteka do obsługi kodów QR -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         body {
@@ -65,6 +64,7 @@
             cursor: pointer;
             width: 100%;
             transition: background 0.2s;
+            display: none;
         }
         .btn:hover {
             background-color: #0056b3;
@@ -75,11 +75,11 @@
 
     <div class="container">
         <h2>Generator Kodów QR</h2>
-        <textarea id="textInput" placeholder="Wpisz tutaj dowolny tekst, wiadomość lub link...">Witaj! To jest przykładowy tekst ukryty w kodzie QR.</textarea>
+        <textarea id="textInput" placeholder="Wpisz tutaj dowolny tekst, wiadomość lub link...">Siemanko</textarea>
         
         <div id="qrcode"></div>
 
-        <button class="btn" id="downloadBtn" style="display:none;">Pobierz kod QR (PNG)</button>
+        <button class="btn" id="downloadBtn">Pobierz kod QR (PNG)</button>
     </div>
 
     <script>
@@ -87,9 +87,8 @@
         const qrcodeContainer = document.getElementById('qrcode');
         const downloadBtn = document.getElementById('downloadBtn');
 
-        // Inicjalizacja obiektu QR
-        let qrCodeInstance = new QRCode(qrcodeContainer, {
-            text: textInput.value,
+        // Tworzenie instancji generatora
+        const qr = new QRCode(qrcodeContainer, {
             width: 220,
             height: 220,
             colorDark: "#000000",
@@ -97,35 +96,29 @@
             correctLevel: QRCode.CorrectLevel.H
         });
 
-        // Funkcja aktualizująca kod przy pisaniu
         function updateQRCode() {
             const text = textInput.value;
-            qrcodeContainer.innerHTML = ""; // Czyszczenie starego kodu
+            qr.makeCode(text); // Aktualizacja kodu bez psucia DOM
             
             if (text.trim() !== "") {
-                qrCodeInstance = new QRCode(qrcodeContainer, {
-                    text: text,
-                    width: 220,
-                    height: 220,
-                    colorDark: "#000000",
-                    colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.H
-                });
                 downloadBtn.style.display = "block";
             } else {
                 downloadBtn.style.display = "none";
             }
         }
 
+        // Odśwież na starcie dla domyślnego tekstu
+        updateQRCode();
+
+        // Nasłuchiwanie wpisywania
         textInput.addEventListener('input', updateQRCode);
 
-        // Obsługa pobierania wygenerowanego kodu
+        // Obsługa pobierania
         downloadBtn.addEventListener('click', function() {
             const img = qrcodeContainer.querySelector('img');
             if (img) {
-                const imgSrc = img.src;
                 const link = document.createElement('a');
-                link.href = imgSrc;
+                link.href = img.src;
                 link.download = 'kod-qr.png';
                 document.body.appendChild(link);
                 link.click();
