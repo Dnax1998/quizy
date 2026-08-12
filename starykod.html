@@ -1,11 +1,13 @@
-html_content = r'''<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>Magazyn Regały + OKLEJENIE + ETYKIETY</title>
+    <title>Magazyn Regały + OKLEJENIE + ETYKIETY + SKANOWANIE ZDJĘĆ</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <!-- Biblioteka do czytania tekstu ze zdjęć (OCR) -->
+    <script src="https://unpkg.com/tesseract.js@v4.1.4/dist/tesseract.min.js"></script>
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
         body { margin: 0; padding: 16px; background: #f4f6f9; }
@@ -57,6 +59,9 @@ html_content = r'''<!DOCTYPE html>
         .batch-checkbox input { width: 18px; height: 18px; }
         .batch-remove { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 18px; padding: 0 4px; }
         .add-batch-btn { margin-top: 8px; width: 100%; }
+        
+        .ocr-upload-label { font-size: 12px; font-weight: 600; background: #cbd5e1; color: #1e293b; border: 1px solid #94a3b8; padding: 4px 10px; border-radius: 20px; cursor: pointer; margin-left: 12px; transition: 0.2s; display: inline-flex; align-items: center; }
+        .ocr-upload-label:hover { background: #94a3b8; color: white; }
 
         .product-batches-table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 14px; }
         .product-batches-table th { text-align: left; padding: 8px; background: #f1f5f9; position: sticky; top: 0; }
@@ -74,7 +79,7 @@ html_content = r'''<!DOCTYPE html>
         .move-mode-indicator { background: #fef3c7; border: 2px dashed #f59e0b; padding: 12px; border-radius: 16px; margin-bottom: 16px; text-align: center; display: none; }
         .copy-mode-indicator { background: #d1fae5; border: 2px dashed #10b981; padding: 12px; border-radius: 16px; margin-bottom: 16px; text-align: center; display: none; }
 
-        /* === NOWE STYLE DLA FILTRU I INTERFEJSU STANU ETYKIET === */
+        /* Style stanu etykiet */
         .labels-modal-card { max-width: 900px !important; width: 95%; border-radius: 24px; background: #ffffff; box-shadow: 0 20px 40px rgba(15, 23, 42, 0.15); }
         .labels-modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 16px; }
         .labels-modal-header h3 { margin: 0; font-size: 1.5rem; color: #0f172a; }
@@ -336,7 +341,7 @@ html_content = r'''<!DOCTYPE html>
     function showToast(msg) {
         toast.textContent = msg;
         toast.style.opacity = 1;
-        setTimeout(() => toast.style.opacity = 0, 2000);
+        setTimeout(() => toast.style.opacity = 0, 3000);
     }
 
     // ========== SUBSKRYPCJE ==========
@@ -516,16 +521,17 @@ html_content = r'''<!DOCTYPE html>
             const signatureVal = batch.signature || '';
             html += `<div class="batch-item" data-index="${index}">
                 <div class="batch-header">
-                    <span>Produkt ${index+1}</span>
+                    <div style="display: flex; align-items: center;">
+                        <span style="font-weight: 600;">Produkt ${index+1}</span>
+                        <label class="ocr-upload-label" title="Wgraj zdjęcie ze specyfikacją">
+                            📷 Skanuj kartkę (OCR)
+                            <input type="file" accept="image/*" class="ocr-input" data-index="${index}" style="display:none;">
+                        </label>
+                        <span class="ocr-status" data-index="${index}" style="font-size:12px; color:#2563eb; margin-left:8px; display:none; font-weight:600;">⏳ Analizuję...</span>
+                    </div>
                     <button class="batch-remove" data-index="${index}">🗑️</button>
                 </div>
                 <div class="batch-fields">
-                    <div style="grid-column: span 2; display: flex; gap: 8px; align-items: center; background: #e0e7ff; padding: 8px; border-radius: 8px; margin-bottom: 4px;">
-                        <input type="file" accept="image/*" capture="environment" class="batch-file-input" data-index="${index}" style="display:none;">
-                        <button type="button" class="btn btn-sm btn-primary scan-btn" data-index="${index}" style="font-size: 12px; padding: 6px 12px; border-radius: 6px;">📷 Wgraj kartkę (OCR)</button>
-                        <span class="scan-status" data-index="${index}" style="font-size:12px; font-weight:600;"></span>
-                        ${batch.imageUrl ? `<a href="${batch.imageUrl}" target="_blank" style="font-size:12px; color:#2563eb; margin-left:auto;">🖼️ Zobacz zdjęcie</a>` : ''}
-                    </div>
                     <div style="grid-column: span 2;">
                         <input type="text" class="filter-input" data-index="${index}" placeholder="🔍 Filtruj produkty..." autocomplete="off" style="margin-bottom:6px;">
                         <select class="batch-product-select" data-index="${index}" style="width:100%;">
@@ -590,88 +596,6 @@ html_content = r'''<!DOCTYPE html>
             });
         });
 
-        document.querySelectorAll('.scan-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const idx = btn.dataset.index;
-                document.querySelector(`.batch-file-input[data-index="${idx}"]`).click();
-            });
-        });
-
-        document.querySelectorAll('.batch-file-input').forEach(input => {
-            input.addEventListener('change', async (e) => {
-                const idx = parseInt(input.dataset.index);
-                const file = e.target.files[0];
-                if (!file) return;
-
-                const statusEl = document.querySelector(`.scan-status[data-index="${idx}"]`);
-                statusEl.textContent = "⏳ Skanowanie...";
-                statusEl.style.color = "#d97706";
-
-                try {
-                    const fileRef = firebase.storage().ref().child(`kartki/${Date.now()}_${file.name}`);
-                    await fileRef.put(file);
-                    const url = await fileRef.getDownloadURL();
-                    currentBatches[idx].imageUrl = url;
-                } catch (err) {
-                    console.warn("Brak uprawnień do zapisu w Storage (Storage zignorowane).", err);
-                }
-
-                try {
-                    const worker = await Tesseract.createWorker("pol");
-                    const ret = await worker.recognize(file);
-                    const text = ret.data.text;
-                    await worker.terminate();
-
-                    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-                    let code = '', date = '', cartons = '', signature = '';
-                    
-                    const dateRegex = /\d{1,2}[./-]\d{1,2}[./-]\d{2,4}[a-zA-Z]*/;
-                    const dateLineIndex = lines.findIndex(l => dateRegex.test(l));
-
-                    if (dateLineIndex !== -1) {
-                        date = lines[dateLineIndex].match(dateRegex)[0];
-                        if (dateLineIndex > 0) code = lines[dateLineIndex - 1].replace(/[^\d]/g, '');
-                        if (dateLineIndex + 1 < lines.length) cartons = lines[dateLineIndex + 1].replace(/[^\d,.]/g, '');
-                        if (dateLineIndex + 2 < lines.length) signature = lines[dateLineIndex + 2].replace(/\s/g, '');
-                    } else {
-                        if(lines.length >= 1) code = lines[0].replace(/[^\d]/g, '');
-                        if(lines.length >= 2) date = lines[1];
-                        if(lines.length >= 3) cartons = lines[2].replace(/[^\d,.]/g, '');
-                        if(lines.length >= 4) signature = lines[3];
-                    }
-
-                    if (code) {
-                        const selectEl = document.querySelector(`.batch-product-select[data-index="${idx}"]`);
-                        const matchedOption = Array.from(selectEl.options).find(opt => {
-                            const txt = opt.textContent;
-                            return txt.includes(`(${code})`) || txt.includes(` ${code} `) || txt.endsWith(code) || txt.startsWith(code);
-                        });
-                        if (matchedOption) {
-                            currentBatches[idx].productId = matchedOption.value;
-                            const prod = productsList.find(p => p.id === matchedOption.value);
-                            if(prod) {
-                                currentBatches[idx].productName = prod.name;
-                                currentBatches[idx].productCode = prod.code;
-                            }
-                        }
-                    }
-                    if (date) currentBatches[idx].prodDateString = date;
-                    if (cartons) currentBatches[idx].cartons = parseInt(cartons.replace(/,/g, '.')) || 0;
-                    if (signature) currentBatches[idx].signature = signature;
-
-                    statusEl.textContent = "✅ Sukces!";
-                    statusEl.style.color = "#10b981";
-                    
-                    setTimeout(() => renderBatchesList(), 1000);
-
-                } catch (err) {
-                    statusEl.textContent = "❌ Błąd OCR";
-                    statusEl.style.color = "#ef4444";
-                    console.error(err);
-                }
-            });
-        });
-
         document.querySelectorAll('.batch-remove').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const idx = parseInt(btn.dataset.index);
@@ -679,11 +603,91 @@ html_content = r'''<!DOCTYPE html>
                 renderBatchesList();
             });
         });
+
+        // Event Listener dla mechanizmu OCR ze zdjęć
+        document.querySelectorAll('.ocr-input').forEach(input => {
+            input.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const index = parseInt(input.dataset.index);
+                const statusSpan = document.querySelector(`.ocr-status[data-index="${index}"]`);
+                statusSpan.style.display = 'inline';
+                statusSpan.textContent = '⏳ Analizuję zdjęcie...';
+                
+                try {
+                    // Wywołanie Tesseract z językiem angielskim (dla dobrego radzenia sobie z cyframi)
+                    const result = await Tesseract.recognize(file, 'eng');
+                    const text = result.data.text;
+                    console.log("OCR Wykryto:", text);
+                    
+                    const dateRegex = /\d{2}[\.\-\/]\d{2}[\.\-\/]\d{2,4}[a-zA-Z]?/;
+                    const tokens = text.split(/[\s\n]+/).filter(t => t.length > 0);
+                    
+                    let foundCode = "";
+                    let foundDate = "";
+                    let foundCartons = "";
+                    let foundSignature = "";
+                    
+                    // Rozpoznawanie tokenów wyciągniętych przez OCR
+                    tokens.forEach(token => {
+                        // Data (np. 12.05.25B)
+                        if (dateRegex.test(token) && !foundDate) {
+                            foundDate = token.replace(/,/g, '.');
+                            return;
+                        }
+                        // Sygnatura (np. 26.5 lub 26,5)
+                        if (/^\d{1,3}[,\.]\d{1,2}$/.test(token) && !foundSignature) {
+                            foundSignature = token.replace(',', '.');
+                            return;
+                        }
+                        // Liczby całkowite
+                        if (/^\d+$/.test(token)) {
+                            // Mapowanie do kodu produktu (np. 815)
+                            if (productsList.some(p => p.code === token || (p.name && p.name.includes(token)))) {
+                                foundCode = token;
+                            } else if (!foundCartons) {
+                                foundCartons = token; // Najpewniej to Ilość Kartonów (np. 630)
+                            } else if (!foundCode) {
+                                foundCode = token; // Bezpiecznik
+                            }
+                        }
+                    });
+
+                    // Zapis do pól partii (Batch)
+                    if (foundCode) {
+                        const prod = productsList.find(p => p.code === foundCode || (p.name && p.name.includes(foundCode)));
+                        if (prod) {
+                            currentBatches[index].productId = prod.id;
+                            currentBatches[index].productName = prod.name;
+                            currentBatches[index].productCode = prod.code;
+                        } else {
+                            showToast(`⚠️ Znaleziono kod ${foundCode}, ale nie ma go w bazie produktów! Dodaj produkt.`, 4000);
+                        }
+                    }
+                    if (foundDate) currentBatches[index].prodDateString = foundDate;
+                    if (foundCartons) currentBatches[index].cartons = parseInt(foundCartons);
+                    if (foundSignature) currentBatches[index].signature = foundSignature;
+
+                    statusSpan.textContent = '✅ Odczytano pomyślnie!';
+                    setTimeout(() => { statusSpan.style.display = 'none'; }, 2000);
+                    
+                    // Odświeżenie widoku w formularzu modalu
+                    renderBatchesList(); 
+                } catch (err) {
+                    console.error("Błąd czytania:", err);
+                    statusSpan.textContent = '❌ Błąd czytania';
+                    setTimeout(() => { statusSpan.style.display = 'none'; }, 3000);
+                    alert("Przepraszamy, błąd podczas czytania obrazu: " + err.message);
+                }
+                
+                input.value = ''; // Reset uploada
+            });
+        });
     }
 
     function collectBatchesFromForm() {
         const batches = [];
-        document.querySelectorAll('.batch-item').forEach((item, idx) => {
+        document.querySelectorAll('.batch-item').forEach(item => {
             const selectEl = item.querySelector('.batch-product-select');
             const signatureInput = item.querySelector('.batch-signature');
             const dateInput = item.querySelector('.batch-date');
@@ -703,8 +707,7 @@ html_content = r'''<!DOCTYPE html>
                     prodDate: firebase.firestore.Timestamp.fromDate(parseDateWithSuffix(rawValue)),
                     cartons: parseInt(cartonsInput.value) || 0,
                     pieces: parseInt(piecesInput.value) || 0,
-                    oklejony: oklejonyCb ? oklejonyCb.checked : false,
-                    imageUrl: currentBatches[idx]?.imageUrl || null
+                    oklejony: oklejonyCb ? oklejonyCb.checked : false
                 });
             }
         });
@@ -733,8 +736,7 @@ html_content = r'''<!DOCTYPE html>
             prodDate: b.prodDate,
             cartons: b.cartons || 0,
             pieces: b.pieces || 0,
-            oklejony: b.oklejony || false,
-            imageUrl: b.imageUrl || null
+            oklejony: b.oklejony || false
         }));
         if (currentBatches.length === 0 && data.productName) {
             currentBatches.push({
@@ -746,8 +748,7 @@ html_content = r'''<!DOCTYPE html>
                 prodDate: data.prodDate,
                 cartons: 0,
                 pieces: data.quantity || 0,
-                oklejony: false,
-                imageUrl: null
+                oklejony: false
             });
         }
         renderBatchesList();
@@ -764,11 +765,9 @@ html_content = r'''<!DOCTYPE html>
         try {
             const slotRef = db.collection("slots").doc(currentEditingLocation);
             
-            // Pobieranie starego stanu zapisanych partii
             const oldBatchesSnapshot = await slotRef.collection("batches").get();
             const oldBatches = oldBatchesSnapshot.docs.map(doc => doc.data());
             
-            // Zliczanie starych ilości oklejonych towarów wg produktu i sygnatury
             const oldCounts = {};
             oldBatches.forEach(b => {
                 if (b.oklejony && b.productId) {
@@ -781,7 +780,6 @@ html_content = r'''<!DOCTYPE html>
                 }
             });
             
-            // Zliczanie nowych ilości oklejonych towarów wg produktu i sygnatury z formularza
             const newCounts = {};
             newBatches.forEach(b => {
                 if (b.oklejony && b.productId) {
@@ -794,7 +792,6 @@ html_content = r'''<!DOCTYPE html>
                 }
             });
 
-            // Zapis danych slotu głównego
             const slotData = {
                 productId: mainProduct.productId, productName: mainProduct.productName, productCode: mainProduct.productCode,
                 palletType: type, prodDateString: mainProduct.prodDateString || '', updatedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -807,598 +804,581 @@ html_content = r'''<!DOCTYPE html>
                 await slotRef.collection("batches").add({
                     productId: b.productId, productName: b.productName, productCode: b.productCode,
                     signature: b.signature || '', prodDateString: b.prodDateString, prodDate: b.prodDate, 
-                    cartons: b.cartons, pieces: b.pieces, oklejony: b.oklejony, imageUrl: b.imageUrl || null
+                    cartons: b.cartons, pieces: b.pieces, oklejony: b.oklejony
                 });
             }
 
-            // Aktualizacja zapasów etykiet w bazie (Tylko odejmowanie, brak zwrotu przy uncheck/skasowaniu)
             for (const prodId of Object.keys(newCounts)) {
                 const prodRef = db.collection("products").doc(prodId);
                 const prodDoc = await prodRef.get();
-                if (prodDoc.exists) {
-                    const pData = prodDoc.data();
-                    let sigs = pData.signatures || {};
-                    let changed = false;
-
-                    for (const sig of Object.keys(newCounts[prodId])) {
-                        const newQ = newCounts[prodId][sig];
-                        const oldQ = (oldCounts[prodId] && oldCounts[prodId][sig]) ? oldCounts[prodId][sig] : 0;
-                        
-                        if (newQ > oldQ) {
-                            const diff = newQ - oldQ;
-                            if (sigs[sig] && typeof sigs[sig].count === 'number') {
-                                sigs[sig].count -= diff;
-                                if (sigs[sig].count < 0) sigs[sig].count = 0;
-                                changed = true;
-                            }
-                        }
-                    }
-
-                    if (changed) {
-                        await prodRef.update({ signatures: sigs });
+                if (!prodDoc.exists) continue;
+                
+                const prodData = prodDoc.data();
+                let labelsBySignature = prodData.labelsBySignature || {};
+                let updated = false;
+                
+                for (const sig of Object.keys(newCounts[prodId])) {
+                    const oldQty = (oldCounts[prodId] && oldCounts[prodId][sig]) || 0;
+                    const newQty = newCounts[prodId][sig] || 0;
+                    const diff = newQty - oldQty; 
+                    
+                    if (diff > 0) {
+                        const currentStock = labelsBySignature[sig] || 0;
+                        labelsBySignature[sig] = Math.max(0, currentStock - diff);
+                        updated = true;
                     }
                 }
+                if (updated) {
+                    await prodRef.update({ labelsBySignature });
+                }
             }
-            
+
+            showToast('✅ Zapisano');
             editModal.style.display = 'none';
-            showToast("Zapisano (etykiety ew. odjęte)");
-        } catch (err) {
-            console.error("Błąd zapisu:", err);
-            alert("Błąd zapisu!");
-        }
+        } catch (err) { alert('Błąd zapisu: ' + err.message); }
     });
 
-    cancelEditBtn.addEventListener('click', () => editModal.style.display = 'none');
-    
     clearSlotBtn.addEventListener('click', async () => {
-        if (!currentEditingLocation || !confirm('Czy na pewno wyczyścić to pole?')) return;
+        if (!currentEditingLocation) return;
+        if (!confirm('Na pewno wyczyścić to pole?')) return;
         try {
             const slotRef = db.collection("slots").doc(currentEditingLocation);
-            const snapshot = await slotRef.collection("batches").get();
-            await Promise.all(snapshot.docs.map(doc => doc.ref.delete()));
+            const batchesSnapshot = await slotRef.collection("batches").get();
+            await Promise.all(batchesSnapshot.docs.map(d => d.ref.delete()));
             await slotRef.delete();
+            showToast('🗑️ Pole wyczyszczone');
             editModal.style.display = 'none';
-            showToast("Wyczyszczono pole");
-        } catch (err) {
-            console.error("Błąd czyszczenia:", err);
-            alert("Błąd!");
-        }
+        } catch (err) { alert('Błąd: ' + err.message); }
     });
 
+    // ========== PRZENOSZENIE I KOPIOWANIE ==========
+    function isSlotAvailable(locId) {
+        const data = allSlotsData[locId];
+        return !data || !data.productName;
+    }
+
+    async function movePalette(sourceLocId, targetLocId) {
+        const sourceData = allSlotsData[sourceLocId];
+        if (!sourceData || !sourceData.productName) { alert('Slot źródłowy jest pusty.'); return false; }
+        if (!isSlotAvailable(targetLocId)) { alert('Slot docelowy jest zajęty.'); return false; }
+        try {
+            const targetSlotRef = db.collection("slots").doc(targetLocId);
+            const newSlotData = {
+                productId: sourceData.productId,
+                productName: sourceData.productName,
+                productCode: sourceData.productCode,
+                palletType: sourceData.palletType,
+                prodDateString: sourceData.prodDateString || '',
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            await targetSlotRef.set(newSlotData);
+            const sourceBatches = slotBatches[sourceLocId] || [];
+            for (const b of sourceBatches) {
+                await targetSlotRef.collection("batches").add({
+                    productId: b.productId, productName: b.productName, productCode: b.productCode,
+                    signature: b.signature || '',
+                    prodDateString: b.prodDateString || '', prodDate: b.prodDate, cartons: b.cartons || 0, pieces: b.pieces || 0, oklejony: b.oklejony || false
+                });
+            }
+            const sourceRef = db.collection("slots").doc(sourceLocId);
+            const sourceBatchesSnapshot = await sourceRef.collection("batches").get();
+            await Promise.all(sourceBatchesSnapshot.docs.map(d => d.ref.delete()));
+            await sourceRef.delete();
+            showToast('✅ Paleta przeniesiona');
+            return true;
+        } catch (err) { alert('Błąd przenoszenia: ' + err.message); return false; }
+    }
+
+    async function copyPalette(sourceLocId, targetLocId) {
+        const sourceData = allSlotsData[sourceLocId];
+        if (!sourceData || !sourceData.productName) { alert('Slot źródłowy jest pusty.'); return false; }
+        if (!isSlotAvailable(targetLocId)) { alert('Slot docelowy jest zajęty.'); return false; }
+        try {
+            const targetSlotRef = db.collection("slots").doc(targetLocId);
+            const newSlotData = {
+                productId: sourceData.productId,
+                productName: sourceData.productName,
+                productCode: sourceData.productCode,
+                palletType: sourceData.palletType,
+                prodDateString: sourceData.prodDateString || '',
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            await targetSlotRef.set(newSlotData);
+            const sourceBatches = slotBatches[sourceLocId] || [];
+            for (const b of sourceBatches) {
+                await targetSlotRef.collection("batches").add({
+                    productId: b.productId, productName: b.productName, productCode: b.productCode,
+                    signature: b.signature || '',
+                    prodDateString: b.prodDateString || '', prodDate: b.prodDate, cartons: b.cartons || 0, pieces: b.pieces || 0, oklejony: b.oklejony || false
+                });
+            }
+            showToast('✅ Paleta skopiowana');
+            return true;
+        } catch (err) { alert('Błąd kopiowania: ' + err.message); return false; }
+    }
+
     moveSlotBtn.addEventListener('click', () => {
+        if (!currentEditingLocation) return;
+        const data = allSlotsData[currentEditingLocation];
+        if (!data || !data.productName) { alert('Slot jest pusty.'); return; }
         moveSourceLocation = currentEditingLocation;
         editModal.style.display = 'none';
         moveModeIndicator.style.display = 'block';
+        copyModeIndicator.style.display = 'none';
+        showToast('🎯 Kliknij na pusty slot, aby przenieść paletę');
     });
+    cancelMoveBtn.addEventListener('click', () => { moveSourceLocation = null; moveModeIndicator.style.display = 'none'; });
 
-    cancelMoveBtn.addEventListener('click', () => {
-        moveSourceLocation = null;
-        moveModeIndicator.style.display = 'none';
-    });
-    
     copySlotBtn.addEventListener('click', () => {
+        if (!currentEditingLocation) return;
+        const data = allSlotsData[currentEditingLocation];
+        if (!data || !data.productName) { alert('Slot jest pusty.'); return; }
         copySourceLocation = currentEditingLocation;
         editModal.style.display = 'none';
         copyModeIndicator.style.display = 'block';
+        moveModeIndicator.style.display = 'none';
+        showToast('📋 Kliknij na pusty slot, aby skopiować paletę');
     });
+    cancelCopyBtn.addEventListener('click', () => { copySourceLocation = null; copyModeIndicator.style.display = 'none'; });
 
-    cancelCopyBtn.addEventListener('click', () => {
-        copySourceLocation = null;
-        copyModeIndicator.style.display = 'none';
-    });
-
-    async function handleSlotClick(locId) {
-        if (moveSourceLocation) {
-            if (locId === moveSourceLocation) { moveSourceLocation = null; moveModeIndicator.style.display = 'none'; return; }
-            const targetData = allSlotsData[locId] || null;
-            if (targetData && (targetData.productName || (slotBatches[locId] && slotBatches[locId].length > 0))) {
-                alert("Docelowe pole nie jest puste!"); return;
-            }
-            await movePalette(moveSourceLocation, locId);
-            moveSourceLocation = null;
-            moveModeIndicator.style.display = 'none';
-            return;
-        }
-        
-        if (copySourceLocation) {
-            if (locId === copySourceLocation) { copySourceLocation = null; copyModeIndicator.style.display = 'none'; return; }
-            const targetData = allSlotsData[locId] || null;
-            if (targetData && (targetData.productName || (slotBatches[locId] && slotBatches[locId].length > 0))) {
-                alert("Docelowe pole nie jest puste!"); return;
-            }
-            await copyPalette(copySourceLocation, locId);
-            copySourceLocation = null;
-            copyModeIndicator.style.display = 'none';
-            return;
-        }
-        openEditModal(locId);
-    }
-
-    async function movePalette(sourceId, targetId) {
-        try {
-            const sourceRef = db.collection("slots").doc(sourceId);
-            const targetRef = db.collection("slots").doc(targetId);
-            const sourceDoc = await sourceRef.get();
-            if (!sourceDoc.exists) return;
-            
-            const sourceData = sourceDoc.data();
-            await targetRef.set({ ...sourceData, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
-            
-            const sourceBatchesSnapshot = await sourceRef.collection("batches").get();
-            const sourceBatches = sourceBatchesSnapshot.docs.map(d => d.data());
-            
-            for (const b of sourceBatches) {
-                await targetRef.collection("batches").add({
-                    productId: b.productId, productName: b.productName, productCode: b.productCode,
-                    signature: b.signature || '',
-                    prodDateString: b.prodDateString || '', prodDate: b.prodDate, cartons: b.cartons || 0, pieces: b.pieces || 0, oklejony: b.oklejony || false, imageUrl: b.imageUrl || null
-                });
-            }
-            
-            await Promise.all(sourceBatchesSnapshot.docs.map(doc => doc.ref.delete()));
-            await sourceRef.delete();
-            showToast(`Przeniesiono do ${targetId}`);
-        } catch (err) {
-            console.error(err); alert("Błąd przenoszenia");
-        }
-    }
-
-    async function copyPalette(sourceId, targetId) {
-        try {
-            const sourceRef = db.collection("slots").doc(sourceId);
-            const targetRef = db.collection("slots").doc(targetId);
-            const sourceDoc = await sourceRef.get();
-            if (!sourceDoc.exists) return;
-            
-            const sourceData = sourceDoc.data();
-            await targetRef.set({ ...sourceData, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
-            
-            const sourceBatchesSnapshot = await sourceRef.collection("batches").get();
-            const sourceBatches = sourceBatchesSnapshot.docs.map(d => d.data());
-            
-            for (const b of sourceBatches) {
-                await targetRef.collection("batches").add({
-                    productId: b.productId, productName: b.productName, productCode: b.productCode,
-                    signature: b.signature || '',
-                    prodDateString: b.prodDateString || '', prodDate: b.prodDate, cartons: b.cartons || 0, pieces: b.pieces || 0, oklejony: b.oklejony || false, imageUrl: b.imageUrl || null
-                });
-            }
-            showToast(`Skopiowano do ${targetId}`);
-        } catch (err) {
-            console.error(err); alert("Błąd kopiowania");
-        }
-    }
-
-    rackView.addEventListener('click', (e) => {
+    rackView.addEventListener('click', async (e) => {
         const slot = e.target.closest('.slot');
-        if (slot) handleSlotClick(slot.dataset.locationId);
-    });
-
-    tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            tabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            currentRack = tab.dataset.rack;
-            renderCurrentRack();
-            applySearchHighlight();
-        });
-    });
-
-    // ========== BAZA PRODUKTÓW ==========
-    manageProductsBtn.addEventListener('click', () => {
-        productsModal.style.display = 'flex';
-        renderProductsList();
-    });
-    closeProductsBtn.addEventListener('click', () => productsModal.style.display = 'none');
-
-    addProductBtn.addEventListener('click', async () => {
-        const name = newProductName.value.trim();
-        const code = newProductCode.value.trim();
-        const ppc = parseInt(newProductPpc.value) || 0;
-        if (!name) { alert("Podaj nazwę produktu!"); return; }
-        
-        try {
-            await db.collection("products").add({ name, code, piecesPerCarton: ppc, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-            newProductName.value = ''; newProductCode.value = ''; newProductPpc.value = '';
-            showToast("Produkt dodany");
-        } catch (err) {
-            console.error(err); alert("Błąd dodawania produktu");
+        if (!slot) return;
+        const locId = slot.dataset.locationId;
+        if (moveSourceLocation) {
+            e.stopPropagation();
+            if (locId === moveSourceLocation) { alert('Nie można przenieść palety w to samo miejsce.'); return; }
+            const success = await movePalette(moveSourceLocation, locId);
+            if (success) { moveSourceLocation = null; moveModeIndicator.style.display = 'none'; }
+        } else if (copySourceLocation) {
+            e.stopPropagation();
+            if (locId === copySourceLocation) { alert('Nie można skopiować palety w to samo miejsce.'); return; }
+            const success = await copyPalette(copySourceLocation, locId);
+            if (success) { copySourceLocation = null; copyModeIndicator.style.display = 'none'; }
+        } else {
+            if (locId) openEditModal(locId);
         }
     });
 
+    // ========== PRODUKTY ==========
     function renderProductsList() {
+        if (productsList.length === 0) {
+            productsListContainer.innerHTML = '<div style="text-align:center; color:#64748b;">Brak produktów.</div>';
+            return;
+        }
         let html = '';
-        productsList.forEach(p => {
+        productsList.forEach(prod => {
             html += `<div class="product-item">
                 <div class="product-info">
-                    <strong>${p.name}</strong> ${p.code ? `(${p.code})` : ''} - 📦 ${p.piecesPerCarton || 0} szt/karton
+                    <strong>${prod.name}</strong><br>
+                    <span style="font-size:12px; color:#64748b;">Kod: ${prod.code || '—'} | W kartonie: <b>${prod.piecesPerCarton || 0} szt.</b></span>
                 </div>
                 <div class="product-actions">
-                    <button class="icon-btn" onclick="deleteProduct('${p.id}')">🗑️</button>
+                    <button class="icon-btn edit-product" data-id="${prod.id}">✏️</button>
+                    <button class="icon-btn delete-product" data-id="${prod.id}">🗑️</button>
                 </div>
             </div>`;
         });
-        productsListContainer.innerHTML = html || '<div style="color:#64748b;">Brak produktów.</div>';
+        productsListContainer.innerHTML = html;
+        document.querySelectorAll('.edit-product').forEach(btn => btn.addEventListener('click', () => editProduct(btn.dataset.id)));
+        document.querySelectorAll('.delete-product').forEach(btn => btn.addEventListener('click', () => deleteProduct(btn.dataset.id)));
     }
 
-    window.deleteProduct = async function(id) {
-        if (!confirm("Na pewno usunąć ten produkt?")) return;
+    async function addProduct() {
+        const name = newProductName.value.trim();
+        if (!name) { alert('Podaj nazwę'); return; }
+        const ppc = parseInt(newProductPpc.value) || 0;
         try {
-            await db.collection("products").doc(id).delete();
-            showToast("Produkt usunięty");
-        } catch (err) {
-            console.error(err); alert("Błąd usuwania");
-        }
-    };
-
-    function updateProductFilterSelect() {
-        productFilterSelect.innerHTML = '<option value="">-- Wybierz produkt --</option>';
-        productsList.forEach(p => {
-            const opt = document.createElement('option');
-            opt.value = p.id;
-            opt.textContent = `${p.name} (${p.code || ''})`;
-            productFilterSelect.appendChild(opt);
-        });
+            await db.collection("products").add({
+                name, 
+                code: newProductCode.value.trim() || null,
+                piecesPerCarton: ppc,
+                labelsBySignature: {},
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            newProductName.value = newProductCode.value = newProductPpc.value = '';
+            showToast('✅ Produkt dodany');
+        } catch (err) { alert('Błąd: ' + err.message); }
     }
 
-    // ========== PARTIE WG PRODUKTU (FIFO) ==========
-    batchesByProductBtn.addEventListener('click', () => {
-        productBatchesModal.style.display = 'flex';
-        productFilterSelect.value = '';
-        fifoProductSearch.value = '';
-        renderProductBatchesTable();
-    });
-    closeProductBatchesBtn.addEventListener('click', () => productBatchesModal.style.display = 'none');
-
-    fifoProductSearch.addEventListener('input', () => {
-        const query = fifoProductSearch.value.toLowerCase();
-        productFilterSelect.innerHTML = '<option value="">-- Wybierz produkt --</option>';
-        productsList.forEach(p => {
-            if (p.name.toLowerCase().includes(query) || (p.code && p.code.toLowerCase().includes(query))) {
-                const opt = document.createElement('option');
-                opt.value = p.id; opt.textContent = `${p.name} (${p.code || ''})`;
-                productFilterSelect.appendChild(opt);
-            }
-        });
-        if (productFilterSelect.options.length === 2) {
-            productFilterSelect.selectedIndex = 1;
-            productFilterSelect.dispatchEvent(new Event('change'));
-        }
-    });
-
-    productFilterSelect.addEventListener('change', renderProductBatchesTable);
-
-    function renderProductBatchesTable() {
-        const prodId = productFilterSelect.value;
-        if (!prodId) {
-            batchesTableBody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#64748b;">Wybierz produkt z listy, aby zobaczyć jego partie.</td></tr>';
-            return;
-        }
+    async function editProduct(id) {
+        const prod = productsList.find(p => p.id === id);
+        if (!prod) return;
+        const newName = prompt('Nowa nazwa:', prod.name); if (newName === null) return;
+        const newCode = prompt('Nowy kod:', prod.code || '');
+        const newPpc = prompt('Sztuk w jednym kartonie:', prod.piecesPerCarton || 0);
         
-        let foundBatches = [];
-        Object.entries(slotBatches).forEach(([locId, batches]) => {
+        if (!newName.trim()) { alert('Nazwa wymagana'); return; }
+        try {
+            await db.collection("products").doc(id).update({ 
+                name: newName.trim(), 
+                code: newCode.trim() || null,
+                piecesPerCarton: parseInt(newPpc) || 0
+            });
+            showToast('✅ Zaktualizowano');
+        } catch (err) { alert('Błąd: ' + err.message); }
+    }
+    async function deleteProduct(id) {
+        if (!confirm('Usunąć produkt?')) return;
+        try { await db.collection("products").doc(id).delete(); showToast('🗑️ Usunięto'); }
+        catch (err) { alert('Błąd: ' + err.message); }
+    }
+    addProductBtn.addEventListener('click', addProduct);
+    manageProductsBtn.addEventListener('click', () => productsModal.style.display = 'flex');
+    closeProductsBtn.addEventListener('click', () => productsModal.style.display = 'none');
+
+
+    function getLabelsNeededForProduct(productId) {
+        let totalNeeded = 0;
+        const prod = productsList.find(p => p.id === productId);
+        const ppc = prod ? (prod.piecesPerCarton || 0) : 0;
+        
+        Object.values(slotBatches).forEach(batches => {
             batches.forEach(b => {
-                if (b.productId === prodId) {
-                    foundBatches.push({ locId, ...b });
+                if (b.productId === productId && !b.oklejony) {
+                    const qty = (parseInt(b.cartons || 0) * ppc) + parseInt(b.pieces || 0);
+                    totalNeeded += qty;
                 }
             });
         });
-        
-        foundBatches.sort((a,b) => (a.prodDate?.seconds || 0) - (b.prodDate?.seconds || 0));
-        
-        if (foundBatches.length === 0) {
-            batchesTableBody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#64748b;">Brak partii dla tego produktu.</td></tr>';
-            return;
-        }
-        
-        let html = '';
-        foundBatches.forEach(b => {
-            const dStr = b.prodDateString || (b.prodDate?.toDate ? b.prodDate.toDate().toLocaleDateString('pl-PL') : '');
-            const typeInfo = allSlotsData[b.locId]?.palletType || '-';
-            html += `<tr onclick="highlightSlotFromFifo('${b.locId}')">
-                <td><strong>${b.locId}</strong></td>
-                <td>${dStr}</td>
-                <td>${b.signature || '-'}</td>
-                <td>${b.cartons || 0}</td>
-                <td>${b.pieces || 0}</td>
-                <td>${typeInfo}</td>
-                <td>${b.oklejony ? '✅' : '❌'}</td>
-            </tr>`;
-        });
-        batchesTableBody.innerHTML = html;
+        return totalNeeded;
     }
 
-    window.highlightSlotFromFifo = function(locId) {
-        productBatchesModal.style.display = 'none';
-        const parts = locId.split('-');
-        if (parts.length > 0) {
-            const rackMatch = parts[0].match(/R([ABCD])/);
-            if (rackMatch) {
-                const r = rackMatch[1];
-                document.querySelector(`.rack-tab[data-rack="${r}"]`).click();
-            }
-        }
-        
-        setTimeout(() => {
-            document.querySelectorAll('.slot').forEach(s => { s.style.outline = 'none'; s.style.boxShadow = ''; });
-            const el = document.querySelector(`.slot[data-location-id="${locId}"]`);
-            if (el) {
-                el.style.outline = '4px solid #FFD700';
-                el.style.boxShadow = '0 0 0 4px rgba(0, 0, 0, 0.5)';
-                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                setTimeout(() => { el.style.outline = 'none'; el.style.boxShadow = ''; }, 3000);
-            }
-        }, 300);
-    };
-
-    // ========== STAN ETYKIET ==========
-    manageLabelsBtn.addEventListener('click', () => {
-        labelsModal.style.display = 'flex';
-        renderLabelsList();
-    });
-    closeLabelsBtn.addEventListener('click', () => labelsModal.style.display = 'none');
-
     function renderLabelsList() {
+        if (productsList.length === 0) {
+            labelsListContainer.innerHTML = '<div style="text-align:center; color:#64748b; padding:20px;">Brak produktów w bazie.</div>';
+            return;
+        }
         let html = '';
-        let sortedProducts = [...productsList].sort((a,b) => (a.name || '').localeCompare(b.name || ''));
-        
-        sortedProducts.forEach(prod => {
-            const sigs = prod.signatures || {};
-            const sigKeys = Object.keys(sigs);
+        productsList.forEach(prod => {
+            const needed = getLabelsNeededForProduct(prod.id);
+            const sigs = prod.labelsBySignature || {};
             
-            // Obliczamy ile potrzeba okleić w systemie
-            let neededPerSig = {};
-            Object.entries(slotBatches).forEach(([locId, batches]) => {
-                batches.forEach(b => {
-                    if (b.productId === prod.id && !b.oklejony) {
-                        const sigName = (b.signature || 'ogólne').trim();
-                        const qty = (parseInt(b.cartons || 0) * (prod.piecesPerCarton || 0)) + parseInt(b.pieces || 0);
-                        if (!neededPerSig[sigName]) neededPerSig[sigName] = 0;
-                        neededPerSig[sigName] += qty;
-                    }
-                });
-            });
-
-            // Łączymy klucze (z bazy + te w systemie)
-            const allSigNames = Array.from(new Set([...sigKeys, ...Object.keys(neededPerSig)]));
-            allSigNames.sort();
-
-            let sigsHtml = '';
-            let totalNeeded = 0;
-
-            if (allSigNames.length > 0) {
-                allSigNames.forEach(sigName => {
-                    const currentCount = (sigs[sigName] && sigs[sigName].count !== undefined) ? sigs[sigName].count : 0;
-                    const neededCount = neededPerSig[sigName] || 0;
-                    totalNeeded += neededCount;
-                    
-                    let bg = 'white';
-                    if (currentCount < neededCount) bg = '#fee2e2'; // czerwony = brakuje
-                    else if (currentCount > 0) bg = '#dcfce7'; // zielony = mamy nadmiar
-
-                    sigsHtml += `<div class="sig-row" style="background: ${bg};">
-                        <span class="sig-badge">${sigName === 'ogólne' ? 'Ogólne' : sigName}</span>
-                        <input type="number" class="sig-count-input" id="sig_input_${prod.id}_${btoa(encodeURIComponent(sigName))}" value="${currentCount}" min="0">
-                        <span style="font-size:11px; color:#64748b; margin-left:4px;">szt</span>
-                        <button class="btn-sig-save" onclick="saveSignatureCount('${prod.id}', '${encodeURIComponent(sigName)}')">💾</button>
-                        <button class="btn-sig-delete" onclick="deleteSignature('${prod.id}', '${encodeURIComponent(sigName)}')">❌</button>
-                        ${neededCount > 0 ? `<div style="font-size:11px; color:#b45309; margin-left:8px; font-weight:600;">Potrzeba: ${neededCount}</div>` : ''}
-                    </div>`;
-                });
-            } else {
-                sigsHtml = '<div style="font-size:13px; color:#94a3b8; font-style:italic;">Brak zapisanych sygnatur.</div>';
-            }
-
-            html += `<div class="label-prod-card">
+            html += `
+            <div class="label-prod-card">
                 <div class="label-prod-header">
                     <div>
                         <div class="label-prod-title">${prod.name}</div>
-                        <div class="label-prod-sub">${prod.code || 'Brak kodu'} | W kartonie: ${prod.piecesPerCarton || 0}</div>
+                        <div class="label-prod-sub">Kod: ${prod.code || '—'} | W kartonie: <b>${prod.piecesPerCarton || 0} szt.</b></div>
                     </div>
-                    ${totalNeeded > 0 ? `<div class="label-prod-needed"><span class="needed-title">Do oklejenia ogółem</span><span class="needed-val">${totalNeeded} szt</span></div>` : ''}
+                    <div class="label-prod-needed">
+                        <span class="needed-title">Potrzebne etykiety</span>
+                        <span class="needed-val">${needed} szt.</span>
+                    </div>
                 </div>
+                
                 <div class="label-sigs-section">
-                    <div class="sigs-title">Stan Etykiet (wg sygnatury):</div>
-                    <div class="sigs-grid">${sigsHtml}</div>
+                    <div class="sigs-title">📋 Stan magazynowy etykiet wg sygnatur:</div>
+                    <div class="sigs-grid">
+                        ${Object.keys(sigs).length === 0 ? '<span style="color:#94a3b8; font-size:13px; font-style:italic; padding: 4px 0;">Brak zarejestrowanych sygnatur etykiet.</span>' : ''}
+                        ${Object.entries(sigs).map(([sig, count]) => `
+                            <div class="sig-row">
+                                <span class="sig-badge">${sig}</span>
+                                <input type="number" class="sig-count-input" data-prod-id="${prod.id}" data-sig="${sig}" value="${count}" min="0">
+                                <button class="btn-sig-save" data-prod-id="${prod.id}" data-sig="${sig}" title="Zapisz stan">💾</button>
+                                <button class="btn-sig-delete" data-prod-id="${prod.id}" data-sig="${sig}" title="Usuń sygnaturę">🗑️</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
                     <div class="add-sig-inline">
-                        <span style="font-size:12px; font-weight:600; color:#475569;">Dodaj nową:</span>
-                        <input type="text" id="new_sig_name_${prod.id}" class="new-sig-name" placeholder="Sygnatura (np. 15.06)">
-                        <input type="number" id="new_sig_count_${prod.id}" class="new-sig-count" placeholder="Ilość szt" min="0">
-                        <button class="btn-sig-add" onclick="addNewSignature('${prod.id}')">+ Dodaj</button>
+                        <input type="text" placeholder="Nowa sygnatura (np. 25.5)" class="new-sig-name" data-prod-id="${prod.id}">
+                        <input type="number" placeholder="Ilość (szt.)" class="new-sig-count" data-prod-id="${prod.id}" min="0">
+                        <button class="btn-sig-add" data-prod-id="${prod.id}">➕ Dodaj sygnaturę</button>
                     </div>
                 </div>
-            </div>`;
+            </div>
+            `;
+        });
+        labelsListContainer.innerHTML = html;
+        
+        document.querySelectorAll('.btn-sig-save').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const prodId = btn.dataset.prodId;
+                const sig = btn.dataset.sig;
+                const input = document.querySelector(`.sig-count-input[data-prod-id="${prodId}"][data-sig="${sig}"]`);
+                const newCount = parseInt(input.value) || 0;
+                try {
+                    const prodRef = db.collection("products").doc(prodId);
+                    const doc = await prodRef.get();
+                    if (doc.exists) {
+                        let sigs = doc.data().labelsBySignature || {};
+                        sigs[sig] = newCount;
+                        await prodRef.update({ labelsBySignature: sigs });
+                        showToast('💾 Zaktualizowano stan');
+                    }
+                } catch(err) { alert('Błąd zapisu: ' + err.message); }
+            });
         });
 
-        labelsListContainer.innerHTML = html || '<div style="color:#64748b;">Brak produktów w bazie.</div>';
+        document.querySelectorAll('.btn-sig-delete').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                if(!confirm('Usunąć tę sygnaturę etykiet z produktu?')) return;
+                const prodId = btn.dataset.prodId;
+                const sig = btn.dataset.sig;
+                try {
+                    const prodRef = db.collection("products").doc(prodId);
+                    const doc = await prodRef.get();
+                    if (doc.exists) {
+                        let sigs = doc.data().labelsBySignature || {};
+                        delete sigs[sig];
+                        await prodRef.update({ labelsBySignature: sigs });
+                        showToast('🗑️ Sygnatura usunięta');
+                    }
+                } catch(err) { alert('Błąd: ' + err.message); }
+            });
+        });
+
+        document.querySelectorAll('.btn-sig-add').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const prodId = btn.dataset.prodId;
+                const nameInput = document.querySelector(`.new-sig-name[data-prod-id="${prodId}"]`);
+                const countInput = document.querySelector(`.new-sig-count[data-prod-id="${prodId}"]`);
+                const sigName = nameInput.value.trim();
+                const sigCount = parseInt(countInput.value) || 0;
+                
+                if(!sigName) { alert('Wpisz sygnaturę (np. 25.5)'); return; }
+                try {
+                    const prodRef = db.collection("products").doc(prodId);
+                    const doc = await prodRef.get();
+                    if (doc.exists) {
+                        let sigs = doc.data().labelsBySignature || {};
+                        sigs[sigName] = (sigs[sigName] || 0) + sigCount;
+                        await prodRef.update({ labelsBySignature: sigs });
+                        showToast('➕ Dodano nową sygnaturę');
+                        nameInput.value = '';
+                        countInput.value = '';
+                    }
+                } catch(err) { alert('Błąd: ' + err.message); }
+            });
+        });
     }
 
-    window.saveSignatureCount = async function(prodId, encSigName) {
-        const sigName = decodeURIComponent(encSigName);
-        const input = document.getElementById(`sig_input_${prodId}_${btoa(encSigName)}`);
-        const newVal = parseInt(input.value) || 0;
+    manageLabelsBtn.addEventListener('click', () => {
+        renderLabelsList();
+        labelsModal.style.display = 'flex';
+    });
+    closeLabelsBtn.addEventListener('click', () => labelsModal.style.display = 'none');
+
+    function printLabelsReport() {
+        const printWindow = window.open('', '_blank');
+        let html = `
+        <html>
+        <head>
+            <title>Raport Stanu i Zapotrzebowania Etykiet</title>
+            <style>
+                body { font-family: 'Segoe UI', Arial, sans-serif; padding: 30px; color: #1e293b; }
+                h1 { font-size: 24px; color: #0f172a; margin-bottom: 5px; text-align: center; }
+                .date { font-size: 13px; color: #64748b; text-align: center; margin-bottom: 30px; }
+                table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+                th, td { border: 1px solid #cbd5e1; padding: 10px 12px; text-align: left; font-size: 14px; }
+                th { background-color: #f1f5f9; font-weight: 600; color: #1e293b; }
+                tr:nth-child(even) { background-color: #f8fafc; }
+                .needed-badge { font-weight: 700; color: #b45309; background: #fffbeb; padding: 4px 8px; border-radius: 6px; }
+                .sig-tag { display: inline-block; background: #f1f5f9; padding: 3px 6px; border-radius: 6px; margin-right: 6px; font-size: 12px; border: 1px solid #e2e8f0; }
+                .sig-tag strong { color: #2563eb; }
+                @media print {
+                    body { padding: 0; }
+                }
+            </style>
+        </head>
+        <body>
+            <h1>📋 Raport Stanu i Zapotrzebowania Etykiet</h1>
+            <div class="date">Wygenerowano: ${new Date().toLocaleString('pl-PL')}</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nazwa produktu</th>
+                        <th>Kod produktu</th>
+                        <th>W kartonie</th>
+                        <th>Zapotrzebowanie (Potrzebne)</th>
+                        <th>Aktualny stan etykiet (sygnatury)</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
         
-        try {
-            const prodRef = db.collection("products").doc(prodId);
-            const docSnap = await prodRef.get();
-            if (docSnap.exists) {
-                let sigs = docSnap.data().signatures || {};
-                if (!sigs[sigName]) sigs[sigName] = {};
-                sigs[sigName].count = newVal;
-                await prodRef.update({ signatures: sigs });
-                showToast("Zapisano stan etykiet");
-            }
-        } catch(err) {
-            console.error(err); alert("Błąd zapisu!");
-        }
-    };
-
-    window.deleteSignature = async function(prodId, encSigName) {
-        if(!confirm("Usunąć tę sygnaturę ze stanu?")) return;
-        const sigName = decodeURIComponent(encSigName);
-        try {
-            const prodRef = db.collection("products").doc(prodId);
-            const docSnap = await prodRef.get();
-            if (docSnap.exists) {
-                let sigs = docSnap.data().signatures || {};
-                delete sigs[sigName];
-                await prodRef.update({ signatures: sigs });
-                showToast("Usunięto sygnaturę");
-            }
-        } catch(err) {
-            console.error(err); alert("Błąd usuwania!");
-        }
-    };
-
-    window.addNewSignature = async function(prodId) {
-        const nameInput = document.getElementById(`new_sig_name_${prodId}`);
-        const countInput = document.getElementById(`new_sig_count_${prodId}`);
-        const sigName = nameInput.value.trim() || 'ogólne';
-        const count = parseInt(countInput.value) || 0;
-
-        try {
-            const prodRef = db.collection("products").doc(prodId);
-            const docSnap = await prodRef.get();
-            if (docSnap.exists) {
-                let sigs = docSnap.data().signatures || {};
-                if (!sigs[sigName]) sigs[sigName] = { count: 0 };
-                sigs[sigName].count += count;
-                await prodRef.update({ signatures: sigs });
-                nameInput.value = ''; countInput.value = '';
-                showToast("Dodano etykiety");
-            }
-        } catch(err) {
-            console.error(err); alert("Błąd dodawania!");
-        }
-    };
-
-    // GENEROWANIE RAPORTU ETYKIET
-    document.getElementById('printLabelsReportBtn').addEventListener('click', () => {
-        let printContent = `<html><head><title>Raport Zapotrzebowania - Etykiety</title><style>
-            body { font-family: sans-serif; padding: 20px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
-            th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-            th { background: #f1f5f9; }
-            .alert { color: #ef4444; font-weight: bold; }
-        </style></head><body>
-        <h2>Raport Stanu i Zapotrzebowania Etykiet</h2>
-        <p>Data wygenerowania: ${new Date().toLocaleString('pl-PL')}</p>
-        <table><thead><tr><th>Produkt</th><th>Sygnatura</th><th>Stan Magazynowy</th><th>Potrzeba (do oklejenia)</th><th>Bilans</th></tr></thead><tbody>`;
-
-        let sortedProducts = [...productsList].sort((a,b) => (a.name || '').localeCompare(b.name || ''));
-        let hasData = false;
-
-        sortedProducts.forEach(prod => {
-            const sigs = prod.signatures || {};
-            const sigKeys = Object.keys(sigs);
+        productsList.forEach(prod => {
+            const needed = getLabelsNeededForProduct(prod.id);
+            const sigs = prod.labelsBySignature || {};
+            let sigsStr = '';
             
-            let neededPerSig = {};
-            Object.entries(slotBatches).forEach(([locId, batches]) => {
-                batches.forEach(b => {
-                    if (b.productId === prod.id && !b.oklejony) {
-                        const sigName = (b.signature || 'ogólne').trim();
-                        const qty = (parseInt(b.cartons || 0) * (prod.piecesPerCarton || 0)) + parseInt(b.pieces || 0);
-                        if (!neededPerSig[sigName]) neededPerSig[sigName] = 0;
-                        neededPerSig[sigName] += qty;
-                    }
-                });
-            });
+            if (Object.keys(sigs).length === 0) {
+                sigsStr = '<span style="color:#94a3b8; font-style:italic;">Brak zapasów</span>';
+            } else {
+                sigsStr = Object.entries(sigs)
+                    .map(([sig, count]) => `<span class="sig-tag">Syg: <strong>${sig}</strong> — ${count} szt.</span>`)
+                    .join(' ');
+            }
+            
+            html += `
+                <tr>
+                    <td><strong>${prod.name}</strong></td>
+                    <td>${prod.code || '—'}</td>
+                    <td>${prod.piecesPerCarton || 0} szt.</td>
+                    <td><span class="needed-badge">${needed} szt.</span></td>
+                    <td>${sigsStr}</td>
+                </tr>
+            `;
+        });
+        
+        html += `
+                </tbody>
+            </table>
+            <script>
+                window.onload = function() { window.print(); }
+            <\/script>
+        </body>
+        </html>
+        `;
+        
+        printWindow.document.write(html);
+        printWindow.document.close();
+    }
 
-            const allSigNames = Array.from(new Set([...sigKeys, ...Object.keys(neededPerSig)])).sort();
+    document.getElementById('printLabelsReportBtn').addEventListener('click', printLabelsReport);
+    
+    // ========== MODAL FIFO ==========
+    function updateProductFilterSelect() {
+        const query = fifoProductSearch.value.toLowerCase();
+        productFilterSelect.innerHTML = '<option value="">-- Wybierz produkt --</option>';
+        productsList.forEach(prod => {
+            const name = prod.name.toLowerCase();
+            const code = (prod.code || '').toLowerCase();
+            if (name.includes(query) || code.includes(query)) {
+                const option = document.createElement('option');
+                option.value = prod.id;
+                option.textContent = `${prod.name} (${prod.code || 'brak kodu'})`;
+                productFilterSelect.appendChild(option);
+            }
+        });
+    }
 
-            allSigNames.forEach(sigName => {
-                const currentCount = (sigs[sigName] && sigs[sigName].count !== undefined) ? sigs[sigName].count : 0;
-                const neededCount = neededPerSig[sigName] || 0;
-                const balance = currentCount - neededCount;
-                
-                if (currentCount > 0 || neededCount > 0) {
-                    hasData = true;
-                    let balanceHtml = balance < 0 ? `<span class="alert">${balance} (BRAKUJE)</span>` : `<span style="color:#10b981;">+${balance}</span>`;
-                    printContent += `<tr>
-                        <td>${prod.name} (${prod.code || '-'})</td>
-                        <td>${sigName === 'ogólne' ? 'Ogólne' : sigName}</td>
-                        <td>${currentCount}</td>
-                        <td>${neededCount}</td>
-                        <td>${balanceHtml}</td>
-                    </tr>`;
+    fifoProductSearch.addEventListener('input', updateProductFilterSelect);
+
+    function renderBatchesForProduct(productId) {
+        const product = productsList.find(p => p.id === productId);
+        if (!product) { batchesTableBody.innerHTML = '<tr><td colspan="7">Nie znaleziono produktu</td></tr>'; return; }
+        const allBatches = [];
+        for (const [locId, batches] of Object.entries(slotBatches)) {
+            const slotData = allSlotsData[locId] || {};
+            batches.forEach(batch => {
+                if (batch.productId === productId) {
+                    allBatches.push({
+                        locationId: locId, palletType: slotData.palletType || 'magazynowa',
+                        signature: batch.signature || '',
+                        prodDateString: batch.prodDateString || '',
+                        prodDate: batch.prodDate, cartons: batch.cartons || 0, pieces: batch.pieces || 0,
+                        oklejony: batch.oklejony || false
+                    });
                 }
             });
+        }
+        allBatches.sort((a,b) => (a.prodDate?.seconds || 0) - (b.prodDate?.seconds || 0));
+        if (allBatches.length === 0) {
+            batchesTableBody.innerHTML = `<tr><td colspan="7">Brak partii dla "${product.name}"</td></tr>`;
+            return;
+        }
+        let html = '';
+        allBatches.forEach(b => {
+            const loc = b.locationId;
+            const date = b.prodDateString || (b.prodDate?.toDate().toLocaleDateString('pl-PL') || '—');
+            const signature = b.signature || '—';
+            const type = b.palletType === 'magazynowa' ? '🔴 Magazyn' : '🟢 Spedycja';
+            const oklejonyStr = b.oklejony ? '✅' : '❌';
+            html += `<tr data-location-id="${loc}"><td>${loc}</td><td>${date}</td><td>${signature}</td><td>${b.cartons}</td><td>${b.pieces}</td><td>${type}</td><td>${oklejonyStr}</td></tr>`;
         });
-
-        if (!hasData) printContent += `<tr><td colspan="5">Brak danych o etykietach i zapotrzebowaniu.</td></tr>`;
-        
-        printContent += `</tbody></table></body></html>`;
-        
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(printContent);
-        printWindow.document.close();
-        setTimeout(() => printWindow.print(), 500);
+        batchesTableBody.innerHTML = html;
+        document.querySelectorAll('#batchesTableBody tr').forEach(row => {
+            row.addEventListener('click', () => {
+                const locId = row.dataset.locationId;
+                if (!locId) return;
+                const rack = locId.charAt(1);
+                if (RACKS.includes(rack)) {
+                    currentRack = rack;
+                    tabs.forEach(t => t.classList.toggle('active', t.dataset.rack === rack));
+                    renderCurrentRack();
+                }
+                productBatchesModal.style.display = 'none';
+                openEditModal(locId);
+            });
+        });
+    }
+    productFilterSelect.addEventListener('change', () => {
+        const id = productFilterSelect.value;
+        id ? renderBatchesForProduct(id) : batchesTableBody.innerHTML = '<tr><td colspan="7">Wybierz produkt</td></tr>';
     });
-
-    openLabelGeneratorBtn.addEventListener('click', () => {
-        window.open('generator_etykiet.html', '_blank');
+    batchesByProductBtn.addEventListener('click', () => {
+        fifoProductSearch.value = '';
+        updateProductFilterSelect();
+        productBatchesModal.style.display = 'flex';
     });
+    closeProductBatchesBtn.addEventListener('click', () => productBatchesModal.style.display = 'none');
 
-    // ========== EXPORT CSV ==========
+    // ========== EKSPORT CSV ==========
+    function doExportCsv(rackChoice) {
+        const rows = [];
+        rows.push(['Lokalizacja', 'Produkt', 'Kod', 'Sygnatura', 'Data produkcji', 'Kartony', 'Sztuki', 'Typ palety', 'Oklejony'].join(';'));
+        for (const [locId, data] of Object.entries(allSlotsData)) {
+            const rack = locId.charAt(1);
+            if (rackChoice && rack !== rackChoice) continue;
+            const batches = slotBatches[locId] || [];
+            if (batches.length === 0 && !data.productName) continue;
+            if (batches.length > 0) {
+                batches.forEach(b => {
+                    const date = b.prodDateString || (b.prodDate?.toDate().toLocaleDateString('pl-PL') || '');
+                    const oklejonyStr = b.oklejony ? 'Tak' : 'Nie';
+                    rows.push([locId, b.productName || '', b.productCode || '', b.signature || '', date, b.cartons || 0, b.pieces || 0, data.palletType || 'magazynowa', oklejonyStr].join(';'));
+                });
+            } else {
+                const date = data.prodDateString || (data.prodDate?.toDate().toLocaleDateString('pl-PL') || '');
+                rows.push([locId, data.productName || '', data.productCode || '', '', date, '0', data.quantity || 0, data.palletType || 'magazynowa', 'Nie'].join(';'));
+            }
+        }
+        if (rows.length === 1) { alert('Brak danych do eksportu dla wybranego zakresu.'); return; }
+        const csvContent = rows.join('\n');
+        const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `eksport_${rackChoice || 'wszystkie'}_${new Date().toISOString().slice(0,10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('✅ Eksport zakończony');
+    }
     exportCsvBtn.addEventListener('click', () => {
         exportCsvModal.style.display = 'flex';
         exportRackSelect.value = '';
     });
-
+    confirmExportCsvBtn.addEventListener('click', () => {
+        const rackChoice = exportRackSelect.value;
+        exportCsvModal.style.display = 'none';
+        doExportCsv(rackChoice);
+    });
     cancelExportCsvBtn.addEventListener('click', () => exportCsvModal.style.display = 'none');
 
-    confirmExportCsvBtn.addEventListener('click', () => {
-        const selectedRack = exportRackSelect.value;
-        exportCsv(selectedRack);
-        exportCsvModal.style.display = 'none';
+    openLabelGeneratorBtn.addEventListener('click', () => {
+        window.open('etykieta.html', '_blank');
     });
 
-    function exportCsv(rackFilter) {
-        const rows = [
-            ["Regal", "Poziom", "Kolumna", "Lokalizacja", "Produkt", "Kod", "Sygnatura", "Data produkcji", "Kartony", "Sztuki luzem", "Oklejony", "Typ palety"]
-        ];
-
-        let targetSlots = Object.keys(allSlotsData);
-        if (rackFilter) targetSlots = targetSlots.filter(id => id.startsWith(`R${rackFilter}`));
-
-        targetSlots.forEach(locId => {
-            const parts = locId.match(/R(.)-P(\d+)-K(\d+)/);
-            if (!parts) return;
-            const r = parts[1], p = parts[2], k = parts[3];
-            const data = allSlotsData[locId];
-            const batches = slotBatches[locId] || [];
-            const type = data.palletType || 'magazynowa';
-
-            if (batches.length > 0) {
-                batches.forEach(b => {
-                    const dStr = b.prodDateString || (b.prodDate?.toDate ? b.prodDate.toDate().toLocaleDateString('pl-PL') : '');
-                    rows.push([ r, p, k, locId, `"${b.productName || ''}"`, `"${b.productCode || ''}"`, `"${b.signature || ''}"`, `"${dStr}"`, b.cartons || 0, b.pieces || 0, b.oklejony ? 'TAK' : 'NIE', type ]);
-                });
-            } else if (data.productName) {
-                const dStr = data.prodDateString || (data.prodDate?.toDate ? data.prodDate.toDate().toLocaleDateString('pl-PL') : '');
-                rows.push([ r, p, k, locId, `"${data.productName}"`, `"${data.productCode || ''}"`, "", `"${dStr}"`, 0, data.quantity || 0, 'NIE', type ]);
-            }
-        });
-
-        const csvContent = "\uFEFF" + rows.map(e => e.join(";")).join("\n");
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a");
-        const url = URL.createObjectURL(blob);
-        link.setAttribute("href", url);
-        link.setAttribute("download", `magazyn_eksport_${rackFilter || 'wszystkie'}_${new Date().toISOString().slice(0,10)}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
-
     // ========== INICJALIZACJA ==========
+    tabs.forEach(tab => tab.addEventListener('click', () => {
+        currentRack = tab.dataset.rack;
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        renderCurrentRack();
+        applySearchHighlight();
+    }));
+    window.addEventListener('click', (e) => {
+        if (e.target === editModal) editModal.style.display = 'none';
+        if (e.target === productsModal) productsModal.style.display = 'none';
+        if (e.target === productBatchesModal) productBatchesModal.style.display = 'none';
+        if (e.target === exportCsvModal) exportCsvModal.style.display = 'none';
+        if (e.target === labelsModal) labelsModal.style.display = 'none';
+    });
     subscribeToSlots();
     subscribeToBatches();
     subscribeToProducts();
 </script>
 </body>
-</html>'''
-
-with open('/mnt/data/magazyn_z_ocr.html', 'w', encoding='utf-8') as f:
-    f.write(html_content)
+</html>
