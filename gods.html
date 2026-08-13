@@ -6,7 +6,7 @@
     <title>Magazyn Regały + OKLEJENIE + ETYKIETY</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
         body { margin: 0; padding: 16px; background: #f4f6f9; }
@@ -175,7 +175,7 @@
         <label style="font-weight:600;">📦 Produkty na palecie</label>
         <div id="batchesContainer" class="batch-list"></div>
         <button class="btn btn-secondary add-batch-btn" id="addBatchBtn">➕ Dodaj produkt</button>
-        <button class="btn btn-secondary add-batch-btn" id="scanPaperBtn">📷 Odczytaj kartkę ze zdjęcia</button>
+        <button class="btn btn-secondary add-batch-btn" id="scanPaperBtn">📷 Skanuj QR z kartki</button>
         <input type="file" id="scanPhotoInput" accept="image/*" capture="environment" style="display:none;">
         <div class="flex-row">
             <button class="btn" id="cancelEditBtn">Anuluj</button>
@@ -189,18 +189,19 @@
 
 <div class="modal" id="scanModal">
     <div class="modal-card" style="max-width:760px;">
-        <h3>📷 Odczyt kartki z palety</h3>
-        <div id="scanStatus" class="scan-status active">Wybierz lub zrób zdjęcie kartki.</div>
+        <h3>▣ Skanowanie QR z kartki</h3>
+        <div id="scanStatus" class="scan-status active">Zrób zdjęcie kartki tak, aby kod QR był widoczny.</div>
         <div id="scanPreviewWrap" class="scan-preview-wrap"><canvas id="scanPreviewCanvas" class="scan-preview"></canvas></div>
         <div id="scanDetectedContainer" class="scan-results"></div>
         <div class="form-group" style="margin-top:16px;">
-            <label>Tekst rozpoznany ze zdjęcia</label>
-            <textarea id="scanRawText" class="scan-raw" readonly placeholder="Tutaj pojawi się tekst odczytany ze zdjęcia..."></textarea>
+            <label>Dane odczytane z kodu QR</label>
+            <textarea id="scanRawText" class="scan-raw" readonly placeholder="Tutaj pojawi się zawartość kodu QR..."></textarea>
         </div>
-        <p class="scan-hint">Skaner szuka jasnej kartki i czyta osobno 4 pola: kod produktu, datę, ilość oraz sygnaturę. Dzięki temu liczby z daty nie są mylone z kodem ani ilością. Zdjęcie nie jest zapisywane w Firebase.</p>
+        <p class="scan-hint">Możesz skanować kilka kartek po kolei. Po każdym poprawnym odczycie kliknij „Skanuj kolejny QR”. Wszystkie odczyty zostaną zebrane na liście i wstawione razem. Aplikacja nie używa OCR; z QR pobiera ITEM ID, BATCH, CASES i SYGNATURĘ.</p>
         <div class="flex-row">
             <button class="btn" id="scanCloseBtn">Zamknij</button>
-            <button class="btn btn-primary" id="scanApplyBtn" disabled>Wstaw rozpoznane dane</button>
+            <button class="btn btn-secondary" id="scanNextBtn" style="display:none;">📷 Skanuj kolejny QR</button>
+            <button class="btn btn-primary" id="scanApplyBtn" disabled>Wstaw dane z QR</button>
         </div>
     </div>
 </div>
@@ -365,6 +366,7 @@
     const scanRawText = document.getElementById('scanRawText');
     const scanApplyBtn = document.getElementById('scanApplyBtn');
     const scanCloseBtn = document.getElementById('scanCloseBtn');
+    const scanNextBtn = document.getElementById('scanNextBtn');
     const scanPreviewWrap = document.getElementById('scanPreviewWrap');
     const scanPreviewCanvas = document.getElementById('scanPreviewCanvas');
     
@@ -373,6 +375,7 @@
     let moveSourceLocation = null;
     let copySourceLocation = null;
     let scannedBatches = [];
+    let scannedQrKeys = new Set();
 
     function getLocationId(rack, level, col) {
         return `R${rack}-P${level}-K${col}`;
@@ -1194,21 +1197,25 @@
 
     function renderScanDetected() {
         if (!scannedBatches.length) {
-            scanDetectedContainer.innerHTML = '<div class="scan-result-item">Nie udało się pewnie dopasować produktu z bazy. Spróbuj zrobić zdjęcie bliżej białej kartki, prosto z góry i bez odbłysku.</div>';
+            scanDetectedContainer.innerHTML = '<div class="scan-result-item">Nie ma jeszcze danych z QR albo nie udało się dopasować produktu z bazy.</div>';
             scanApplyBtn.disabled = true;
             return;
         }
 
         scanDetectedContainer.innerHTML = scannedBatches.map((b, i) => {
-            const quality = (b._scanScore || 0) >= 600 ? 'wysoka' : ((b._scanScore || 0) >= 220 ? 'średnia' : 'niska');
+            const quality = b._qrScan ? 'QR' : ((b._scanScore || 0) >= 600 ? 'wysoka' : ((b._scanScore || 0) >= 220 ? 'średnia' : 'niska'));
             return `
             <div class="scan-result-item">
-                <strong>${i + 1}. ${b.productName}</strong>${b.productCode ? ` (${b.productCode})` : ''}<span class="scan-quality">pewność: ${quality}</span><br>
+                <strong>${i + 1}. ${b.productName}</strong>${b.productCode ? ` (${b.productCode})` : ''}<span class="scan-quality">${b._qrScan ? 'źródło' : 'pewność'}: ${quality}</span><br>
                 Data: <b>${b.prodDateString || 'nie rozpoznano'}</b> · Sygnatura: <b>${b.signature || '—'}</b><br>
                 Kartony: <b>${b.cartons || 0}</b> · Sztuki: <b>${b.pieces || 0}</b>
             </div>`;
         }).join('');
         scanApplyBtn.disabled = false;
+        scanNextBtn.style.display = 'inline-flex';
+        const count = scannedBatches.length;
+        const word = count === 1 ? 'pozycję' : ((count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 12 || count % 100 > 14)) ? 'pozycje' : 'pozycji');
+        scanApplyBtn.textContent = `Wstaw ${count} ${word}`;
     }
 
     function setScanStatus(message) {
@@ -1255,8 +1262,26 @@
         const valid = tokens.filter(t => t.length >= minLen && t.length <= maxLen);
         if (!valid.length) return '';
         // W pojedynczej strefie najważniejszy jest najdłuższy numer.
+        // String zostawiamy bez parseInt, żeby nie zgubić zera z przodu (np. 070).
         valid.sort((a, b) => b.length - a.length);
         return valid[0];
+    }
+
+    // V7: awaryjne szukanie kodu z luźnego OCR (np. z pilota całej kartki).
+    // Jest potrzebne szczególnie dla kodów z zerami, bo Tesseract przy whitelistcie cyfr
+    // potrafi odrzucić duże "0" jako literę O i zwrócić pusty wynik.
+    function extractLooseCodeCandidates(raw) {
+        const source = normalizeOcrDigits(raw || '');
+        if (!source.trim()) return [];
+
+        // Najpierw bierzemy numery stojące przed datą — na naszej kartce właśnie tam jest kod.
+        const dateMatch = source.match(/\d{1,2}\s*[.\/-]\s*\d{1,2}\s*[.\/-]\s*\d{2,4}/);
+        const prefix = dateMatch && typeof dateMatch.index === 'number' ? source.slice(0, dateMatch.index) : source;
+        let tokens = prefix.match(/\b\d{2,8}\b/g) || [];
+
+        // Jeśli OCR popsuł separatory/wiersze, bierzemy również liczby z całego odczytu.
+        if (!tokens.length) tokens = source.match(/\b\d{2,8}\b/g) || [];
+        return [...new Set(tokens)];
     }
 
     function normalizeZoneDate(raw) {
@@ -1347,6 +1372,19 @@
             return null;
         }
 
+        // V7: jeśli kod w bazie został kiedyś zapisany bez zera z przodu (np. 70),
+        // a kartka pokazuje 070, uznajemy je za równoważne TYLKO gdy w bazie pasuje dokładnie jeden produkt.
+        const trimLeadingZeros = value => {
+            const v = String(value || '').replace(/^0+(?=\d)/, '');
+            return v || '0';
+        };
+        for (const code of uniqueCandidates) {
+            const numericEquivalent = products.filter(x => x.digits && trimLeadingZeros(x.digits) === trimLeadingZeros(code));
+            if (numericEquivalent.length === 1) {
+                return { product: numericEquivalent[0].product, score: 1600, recognizedCode: code, corrected: false };
+            }
+        }
+
         // Korekta jednej cyfry tylko wtedy, gdy TEN SAM błędny odczyt pojawił się >=2 razy
         // oraz w bazie pasuje do niego dokładnie jeden kod.
         const counts = {};
@@ -1403,26 +1441,46 @@
         return values[0];
     }
 
-    async function recognizeStructuredCard(worker, cardCanvas, cardNo, totalCards) {
+    async function recognizeStructuredCard(worker, cardCanvas, cardNo, totalCards, pilotText = '') {
         // Strefy są celowo lekko na siebie nałożone, bo zdjęcie może być zrobione pod kątem.
-        const codeZone = cropRelative(cardCanvas, 0.08, 0.11, 0.84, 0.23);
+        // V7: kod ma szerszą strefę niż wcześniej. Przy "całym zdjęciu" nie może wypaść
+        // poza wąski środkowy pas tylko dlatego, że kartka leży z prawej/lewej strony kadru.
+        const codeZone = cropRelative(cardCanvas, 0.00, 0.06, 1.00, 0.30);
         const dateZone = cropRelative(cardCanvas, 0.02, 0.34, 0.96, 0.22);
         const qtyZone  = cropRelative(cardCanvas, 0.18, 0.55, 0.64, 0.22);
         const sigZone  = cropRelative(cardCanvas, 0.18, 0.78, 0.64, 0.18);
 
         const prefix = `Kartka ${cardNo}/${totalCards}`;
 
-        // Kod produktu czytamy zawsze kilkoma metodami i dopiero potem porównujemy z bazą.
-        // To zapobiega sytuacji, w której jedna zła próba OCR daje inny istniejący produkt.
+        // Kod produktu czytamy kilkoma metodami. Co najmniej jedna próba jest BEZ whitelisty:
+        // wtedy "070" odczytane np. jako "O7O" można bezpiecznie znormalizować z powrotem do 070.
         const codeAttempts = [];
         const codeRaw1 = await recognizeZoneOnce(worker, codeZone, '0123456789', false, 7, `${prefix}: kod produktu…`);
         codeAttempts.push({ raw: codeRaw1, value: extractNumericToken(codeRaw1, 2, 8) });
-        const codeRaw2 = await recognizeZoneOnce(worker, codeZone, '0123456789', true, 7, `${prefix}: kod produktu — druga próba…`);
+        const codeRaw2 = await recognizeZoneOnce(worker, codeZone, '', false, 11, `${prefix}: kod produktu — odczyt bez ograniczeń…`);
         codeAttempts.push({ raw: codeRaw2, value: extractNumericToken(codeRaw2, 2, 8) });
-        const codeRaw3 = await recognizeZoneOnce(worker, codeZone, '0123456789', false, 10, `${prefix}: kod produktu — potwierdzam…`);
+        const codeRaw3 = await recognizeZoneOnce(worker, codeZone, '', true, 7, `${prefix}: kod produktu — kontrast…`);
         codeAttempts.push({ raw: codeRaw3, value: extractNumericToken(codeRaw3, 2, 8) });
-        const codeCandidates = codeAttempts.map(a => a.value).filter(Boolean);
-        const productMatch = productMatchForZoneCodes(codeCandidates);
+
+        // Kandydaci z szybkiego OCR całej kartki. To naprawia przypadek, gdy pilot widzi 070,
+        // ale strefowy Tesseract przy dużym pustym tle nie zwraca nic.
+        const pilotCodeCandidates = extractLooseCodeCandidates(pilotText);
+        let codeCandidates = [...new Set([
+            ...codeAttempts.map(a => a.value).filter(Boolean),
+            ...pilotCodeCandidates
+        ])];
+        let productMatch = productMatchForZoneCodes(codeCandidates);
+
+        // Ostatni bezpieczny fallback: czytamy całą górną część obrazu trybem sparse text.
+        // Uruchamiamy go tylko, jeśli wcześniejsze próby nie dopasowały produktu.
+        if (!productMatch) {
+            const topZone = cropRelative(cardCanvas, 0.00, 0.00, 1.00, 0.44);
+            const topRaw = await recognizeZoneOnce(worker, topZone, '', false, 11, `${prefix}: kod produktu — awaryjny odczyt góry…`);
+            const topCodes = extractLooseCodeCandidates(topRaw);
+            codeAttempts.push({ raw: topRaw, value: topCodes[0] || '' });
+            codeCandidates = [...new Set([...codeCandidates, ...topCodes])];
+            productMatch = productMatchForZoneCodes(codeCandidates);
+        }
 
         // Data z końcową literą (np. 12.05.25B) najlepiej wychodzi w trybie sparse text
         // i bez whitelisty znaków — whitelist potrafi zamienić literę B na cyfrę 8.
@@ -1454,7 +1512,9 @@
         );
         const signature = chooseZoneValue(sigAttempts, value => /^\d{1,3}\.\d{1,2}$/.test(value));
 
-        const codeText = productMatch?.recognizedCode || chooseZoneValue(codeAttempts, value => /^\d{2,8}$/.test(value));
+        const codeText = productMatch?.recognizedCode
+            || codeCandidates.find(value => /^\d{2,8}$/.test(value))
+            || chooseZoneValue(codeAttempts, value => /^\d{2,8}$/.test(value));
         const rawSummary = [
             `--- KARTKA ${cardNo} / ODCZYT STREFOWY ---`,
             `KOD: ${codeText || '—'}    [${codeAttempts.map(a => a.raw || '∅').join(' | ')}]`,
@@ -1500,98 +1560,252 @@
         };
     }
 
-    scanPaperBtn.addEventListener('click', () => {
-        if (!currentEditingLocation) return;
-        if (!window.Tesseract) {
-            alert('Moduł odczytu zdjęcia nie został załadowany. Sprawdź połączenie z internetem i odśwież stronę.');
-            return;
+    // ========== ODCZYT QR Z KARTKI ==========
+    function normalizeQrField(value) {
+        return (value || '').toString().trim();
+    }
+
+    function parsePalletQr(rawText) {
+        const raw = (rawText || '').toString().replace(/\r/g, '').trim();
+        if (!raw) return null;
+
+        const readField = (labels) => {
+            for (const label of labels) {
+                const re = new RegExp('(?:^|\\n)\\s*' + label + '\\s*[:=]\\s*([^\\n]+)', 'i');
+                const m = raw.match(re);
+                if (m) return normalizeQrField(m[1]);
+            }
+            return '';
+        };
+
+        const itemId = readField(['ITEM\\s*ID', 'ITEM', 'KOD', 'PRODUCT\\s*CODE']);
+        const batch = readField(['BATCH', 'DATA', 'DATE']);
+        const casesText = readField(['CASES', 'CASE', 'KARTONY', 'CARTONS']);
+        const signature = readField(['SYGNATURA', 'SIGNATURE', 'SIG']);
+
+        const cases = parseInt((casesText || '').replace(/[^\d]/g, ''), 10) || 0;
+        if (!itemId || !batch || !cases || !signature) return {
+            raw, itemId, batch, cases, signature, complete: false
+        };
+        return { raw, itemId, batch, cases, signature, complete: true };
+    }
+
+    function qrProductCodeVariants(value) {
+        const raw = normalizeScanCode(value);
+        const variants = new Set();
+        if (raw) variants.add(raw);
+        if (/^\d+$/.test(raw)) {
+            variants.add(String(parseInt(raw, 10)));
+            variants.add(raw.padStart(3, '0'));
+            variants.add(raw.padStart(4, '0'));
         }
+        return [...variants].filter(Boolean);
+    }
+
+    function findProductFromQr(itemId) {
+        const wanted = qrProductCodeVariants(itemId);
+        if (!wanted.length) return null;
+
+        const exact = productsList.find(p => {
+            const code = normalizeScanCode(p.code || '');
+            return wanted.includes(code);
+        });
+        if (exact) return exact;
+
+        // Bezpieczna zgodność numeryczna, np. 070 w bazie i 70 w QR.
+        if (/^\d+$/.test(normalizeScanCode(itemId))) {
+            const wantedNumber = parseInt(normalizeScanCode(itemId), 10);
+            const numericMatches = productsList.filter(p => {
+                const code = normalizeScanCode(p.code || '');
+                return /^\d+$/.test(code) && parseInt(code, 10) === wantedNumber;
+            });
+            if (numericMatches.length === 1) return numericMatches[0];
+        }
+        return null;
+    }
+
+    function makeQrBatch(parsed, product) {
+        return {
+            productId: product.id,
+            productName: product.name || '',
+            productCode: product.code || '',
+            signature: parsed.signature,
+            prodDateString: parsed.batch,
+            cartons: parsed.cases,
+            pieces: 0,
+            oklejony: false,
+            _scanScore: 1000,
+            _recognizedCode: parsed.itemId,
+            _codeCorrected: false,
+            _scanQuantityType: 'cartons',
+            _scanQuantityValue: parsed.cases,
+            _structuredScan: true,
+            _qrScan: true
+        };
+    }
+
+    function contrastCanvasForQr(sourceCanvas) {
+        const c = document.createElement('canvas');
+        c.width = sourceCanvas.width;
+        c.height = sourceCanvas.height;
+        const ctx = c.getContext('2d', { willReadFrequently: true });
+        ctx.drawImage(sourceCanvas, 0, 0);
+        const img = ctx.getImageData(0, 0, c.width, c.height);
+        const d = img.data;
+        for (let i = 0; i < d.length; i += 4) {
+            const g = Math.round(0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2]);
+            const v = g < 165 ? Math.max(0, g - 35) : Math.min(255, g + 25);
+            d[i] = d[i+1] = d[i+2] = v;
+        }
+        ctx.putImageData(img, 0, 0);
+        return c;
+    }
+
+    async function decodeQrFromCanvas(canvas) {
+        // 1) Natywny detektor Chrome/Android, jeśli jest dostępny.
+        if ('BarcodeDetector' in window) {
+            try {
+                const formats = await BarcodeDetector.getSupportedFormats();
+                if (formats.includes('qr_code')) {
+                    const detector = new BarcodeDetector({ formats: ['qr_code'] });
+                    const codes = await detector.detect(canvas);
+                    if (codes && codes[0] && codes[0].rawValue) {
+                        return codes[0].rawValue.trim();
+                    }
+                }
+            } catch (e) {
+                console.warn('BarcodeDetector QR fallback:', e);
+            }
+        }
+
+        // 2) jsQR - działa również tam, gdzie BarcodeDetector nie jest dostępny.
+        if (window.jsQR) {
+            const tryCanvas = (c) => {
+                const ctx = c.getContext('2d', { willReadFrequently: true });
+                const imageData = ctx.getImageData(0, 0, c.width, c.height);
+                const found = window.jsQR(imageData.data, imageData.width, imageData.height, {
+                    inversionAttempts: 'attemptBoth'
+                });
+                return found && found.data ? found.data.trim() : '';
+            };
+
+            let found = tryCanvas(canvas);
+            if (found) return found;
+
+            found = tryCanvas(contrastCanvasForQr(canvas));
+            if (found) return found;
+        }
+
+        return '';
+    }
+
+    function openNextQrPhoto() {
         scanPhotoInput.value = '';
         scanPhotoInput.click();
+    }
+
+    function resetQrScanSession() {
+        scannedBatches = [];
+        scannedQrKeys = new Set();
+        scanDetectedContainer.innerHTML = '';
+        scanRawText.value = '';
+        scanApplyBtn.disabled = true;
+        scanApplyBtn.textContent = 'Wstaw dane z QR';
+        scanNextBtn.style.display = 'none';
+        scanPreviewWrap.classList.remove('active');
+    }
+
+    scanPaperBtn.addEventListener('click', () => {
+        if (!currentEditingLocation) return;
+        if (!('BarcodeDetector' in window) && !window.jsQR) {
+            alert('Moduł QR nie został załadowany. Sprawdź połączenie z internetem i odśwież stronę.');
+            return;
+        }
+        resetQrScanSession();
+        scanModal.style.display = 'flex';
+        setScanStatus('📷 Zeskanuj pierwszy kod QR. Potem możesz dodawać kolejne bez zamykania okna.');
+        openNextQrPhoto();
+    });
+
+    scanNextBtn.addEventListener('click', () => {
+        openNextQrPhoto();
     });
 
     scanPhotoInput.addEventListener('change', async () => {
         const file = scanPhotoInput.files && scanPhotoInput.files[0];
         if (!file) return;
 
-        scannedBatches = [];
-        scanDetectedContainer.innerHTML = '';
-        scanRawText.value = '';
-        scanApplyBtn.disabled = true;
-        scanPreviewWrap.classList.remove('active');
         scanModal.style.display = 'flex';
-        setScanStatus('⏳ Przygotowuję zdjęcie…');
+        scanNextBtn.disabled = true;
+        setScanStatus(`▣ Szukam kodu QR na zdjęciu… Odczytane wcześniej: ${scannedBatches.length}.`);
 
-        let worker = null;
         try {
             const img = await loadImageForScan(file);
-            const sourceCanvas = drawImageToCanvas(img, 2800);
-            const regions = findBrightPaperRegions(sourceCanvas);
-            const candidateItems = buildScanCandidates(sourceCanvas, regions);
+            const sourceCanvas = drawImageToCanvas(img, 3200);
+            showScanPreview(sourceCanvas);
 
-            // Na początku pokazujemy całe zdjęcie. Po szybkim teście OCR podmienimy podgląd
-            // na kadr, który naprawdę wygląda jak pełna kartka.
-            showScanPreview(preprocessForOcr(sourceCanvas, false));
-            setScanStatus('🔎 Szukam pełnej kartki na zdjęciu…');
-
-            worker = await Tesseract.createWorker(['pol', 'eng'], 1, {
-                logger: m => {
-                    if (m.status === 'recognizing text' && typeof m.progress === 'number') {
-                        const pct = Math.round(m.progress * 100);
-                        if (pct === 100) return;
-                    }
-                }
-            });
-
-            const bestCandidates = await chooseBestCardCandidates(worker, candidateItems);
-            if (!bestCandidates.length) throw new Error('Brak kandydata kartki');
-
-            // Pokazujemy dokładnie ten kadr, który skaner wybrał do odczytu.
-            showScanPreview(preprocessForOcr(bestCandidates[0].canvas, false));
-            setScanStatus(`✅ Wybrano najlepszy kadr (${bestCandidates[0].label}). Czytam kod, datę, kartony i sygnaturę…`);
-
-            const results = [];
-            const rawParts = [];
-            const maxCandidates = bestCandidates.length;
-
-            for (let i = 0; i < maxCandidates; i++) {
-                const item = bestCandidates[i];
-                const result = await recognizeStructuredCard(worker, item.canvas, i + 1, maxCandidates);
-                rawParts.push(`KADR: ${item.label} | szybki wynik: ${item.pilotScore}\n${result.rawSummary}`);
-                if (result.batch) results.push(result.batch);
+            const qrText = await decodeQrFromCanvas(sourceCanvas);
+            if (!qrText) {
+                throw new Error('Nie znaleziono kodu QR');
             }
 
-            // Usuń duplikaty tej samej kartki, gdy detektor znalazł częściowo nakładające się obszary.
-            const unique = [];
-            const seen = new Set();
-            for (const b of results) {
-                const key = `${b.productId}|${b.prodDateString}|${b.signature}|${b._scanQuantityType}|${b._scanQuantityValue}`;
-                if (seen.has(key)) continue;
-                seen.add(key);
-                unique.push(b);
+            const parsed = parsePalletQr(qrText);
+
+            if (!parsed) {
+                setScanStatus('❌ Kod QR został znaleziony, ale jest pusty lub ma nieobsługiwany format. Poprzednie odczyty zostały zachowane.');
+                renderScanDetected();
+                return;
             }
 
-            scanRawText.value = rawParts.join('\n\n');
-            scannedBatches = unique;
+            if (!parsed.complete) {
+                scanDetectedContainer.innerHTML = `
+                    <div class="scan-result-item">
+                        <strong>QR odczytany, ale brakuje danych.</strong><br>
+                        ITEM ID: <b>${parsed.itemId || '—'}</b> · BATCH: <b>${parsed.batch || '—'}</b><br>
+                        CASES: <b>${parsed.cases || '—'}</b> · SYGNATURA: <b>${parsed.signature || '—'}</b>
+                    </div>`;
+                setScanStatus('⚠️ QR nie zawiera kompletu: ITEM ID / BATCH / CASES / SYGNATURA. Poprzednie odczyty zostały zachowane.');
+                if (scannedBatches.length) renderScanDetected();
+                return;
+            }
+
+            const product = findProductFromQr(parsed.itemId);
+            if (!product) {
+                scanDetectedContainer.innerHTML = `
+                    <div class="scan-result-item">
+                        <strong>QR odczytany poprawnie, ale nie ma takiego produktu w bazie.</strong><br>
+                        ITEM ID: <b>${parsed.itemId}</b> · BATCH: <b>${parsed.batch}</b><br>
+                        CASES: <b>${parsed.cases}</b> · SYGNATURA: <b>${parsed.signature}</b>
+                    </div>`;
+                setScanStatus(`⚠️ Nie znaleziono produktu o kodzie ${parsed.itemId} w bazie produktów. Poprzednie odczyty zostały zachowane.`);
+                if (scannedBatches.length) renderScanDetected();
+                return;
+            }
+
+            const qrKey = `${normalizeScanCode(parsed.itemId)}|${parsed.batch}|${parsed.cases}|${parsed.signature}`;
+            if (scannedQrKeys.has(qrKey)) {
+                renderScanDetected();
+                setScanStatus(`⚠️ Ten QR jest już na liście: ${parsed.itemId} · ${parsed.batch} · ${parsed.cases} kartonów · ${parsed.signature}. Zeskanuj następny.`);
+                return;
+            }
+
+            scannedQrKeys.add(qrKey);
+            scannedBatches.push(makeQrBatch(parsed, product));
+            scanRawText.value += `${scanRawText.value ? '\n\n' : ''}--- QR ${scannedBatches.length} ---\n${qrText}`;
             renderScanDetected();
-
-            if (scannedBatches.length) {
-                const complete = scannedBatches.filter(b => b.prodDateString && b.signature && ((b.cartons || 0) > 0 || (b.pieces || 0) > 0)).length;
-                setScanStatus(complete === scannedBatches.length
-                    ? `✅ Odczyt zakończony. Kod, data, ilość i sygnatura zostały odczytane strefowo. Sprawdź wynik przed wstawieniem.`
-                    : `⚠️ Produkt rozpoznany, ale nie wszystkie pola są pewne. Sprawdź wynik przed wstawieniem.`);
-            } else {
-                setScanStatus('⚠️ Nie udało się pewnie odczytać kodu produktu nawet po automatycznym wyborze kadru. Nie zgaduję produktu — sprawdź podgląd wybranego kadru.');
-            }
+            setScanStatus(`✅ Dodano QR nr ${scannedBatches.length}: ${parsed.itemId} · ${parsed.batch} · ${parsed.cases} kartonów · sygnatura ${parsed.signature}. Możesz zeskanować kolejny.`);
         } catch (err) {
-            console.error('OCR error:', err);
-            setScanStatus('❌ Nie udało się odczytać zdjęcia. Spróbuj zrobić wyraźniejsze zdjęcie kartki.');
-            scanDetectedContainer.innerHTML = '';
-            scanApplyBtn.disabled = true;
-        } finally {
-            if (worker) {
-                try { await worker.terminate(); } catch (_) {}
+            console.error('QR error:', err);
+            setScanStatus(`❌ Nie udało się odczytać tego QR. Poprzednio odczytane pozycje (${scannedBatches.length}) zostały zachowane — możesz spróbować jeszcze raz.`);
+            if (!scannedBatches.length) {
+                scanDetectedContainer.innerHTML = '<div class="scan-result-item">Kod QR powinien być w całości w kadrze. Nie musisz fotografować kartki prosto — najważniejsze, żeby QR był ostry.</div>';
+                scanApplyBtn.disabled = true;
+            } else {
+                renderScanDetected();
             }
+        } finally {
+            scanNextBtn.disabled = false;
+            scanNextBtn.style.display = 'inline-flex';
         }
     });
 
@@ -1604,11 +1818,15 @@
         }));
         renderBatchesList();
         scanModal.style.display = 'none';
-        showToast('📷 Dane ze zdjęcia dodane do formularza');
+        const addedCount = scannedBatches.length;
+        showToast(`▣ Dodano ${addedCount} ${addedCount === 1 ? 'pozycję' : 'pozycji'} z QR`);
+        scannedBatches = [];
+        scannedQrKeys = new Set();
     });
 
     scanCloseBtn.addEventListener('click', () => {
         scanModal.style.display = 'none';
+        resetQrScanSession();
     });
 
     // ========== MODAL EDYCJI ==========
