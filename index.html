@@ -2503,8 +2503,9 @@
         window.open('etykieta.html', '_blank');
     });
 
-    // ========== PRZYCISK KARTONY ==========
-manageLabelsBtn.addEventListener('click', () => {
+    /// ========== PRZYCISK KARTONY ==========
+manageLabelsBtn.addEventListener('click', (e) => {
+    e.stopPropagation(); // Powstrzymuje inne akcje
     window.open('https://quizy-lime.vercel.app/kartony.html', '_blank');
 });
 
