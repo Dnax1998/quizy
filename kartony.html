@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Podsumowanie produktów 1-10</title>
+    <title>Podsumowanie kodów 1 do 10</title>
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -21,7 +21,7 @@
         td { padding: 12px 16px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
         tr:hover { background: #f8fafc; }
 
-        .badge-index { background: #2563eb; color: white; padding: 4px 10px; border-radius: 20px; font-weight: 700; display: inline-block; font-size: 13px; }
+        .badge-code { background: #2563eb; color: white; padding: 4px 10px; border-radius: 20px; font-weight: 700; display: inline-block; font-size: 13px; }
         .badge-cartons { background: #dbeafe; color: #1e40af; padding: 4px 10px; border-radius: 20px; font-weight: 600; display: inline-block; }
         .badge-pieces { background: #f1f5f9; color: #475569; padding: 4px 10px; border-radius: 20px; font-weight: 600; display: inline-block; }
         
@@ -35,16 +35,16 @@
 
 <div class="container">
     <a href="index.html" class="back-link">← Wróć do magazynu</a>
-    <h1>🔢 Podsumowanie produktów (Pozycje 1 do 10)</h1>
-    <p class="subtitle">Zestawienie sumujące kartony, sztuki oraz lokalizacje wyłącznie dla pierwszych 10 pozycji w bazie magazynowej.</p>
+    <h1>📦 Podsumowanie dla kodów: 1 do 10</h1>
+    <p class="subtitle">Zestawienie sumujące kartony, sztuki oraz lokalizacje wyłącznie dla produktów o kodach od "1" do "10".</p>
 
     <div class="card">
         <div style="overflow-x: auto;">
             <table>
                 <thead>
                     <tr>
-                        <th style="width: 80px;">Nr</th>
-                        <th>Nazwa produktu / Kod</th>
+                        <th style="width: 100px;">Kod</th>
+                        <th>Nazwa produktu</th>
                         <th>Łącznie kartonów</th>
                         <th>Łącznie sztuk</th>
                         <th>Lokalizacje (Regał, Poziom, Kolumna)</th>
@@ -73,16 +73,23 @@
     }
     const db = firebase.firestore();
 
+    // Definiujemy dozwolone kody produktów (od "1" do "10")
+    const allowedCodes = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
+
     function initDataListener() {
         db.collection("products").onSnapshot(prodSnap => {
             let productsList = [];
-            prodSnap.forEach(doc => productsList.push({ id: doc.id, ...doc.data() }));
-            
-            // Sortujemy produkty tak samo jak w głównej apce (alfabetycznie po nazwie)
-            productsList.sort((a,b) => (a.name || '').localeCompare(b.name || ''));
+            prodSnap.forEach(doc => {
+                const data = doc.data();
+                // Sprawdzamy, czy kod produktu mieści się w naszej liście od 1 do 10
+                const codeStr = String(data.code || "").trim();
+                if (allowedCodes.includes(codeStr)) {
+                    productsList.push({ id: doc.id, ...data });
+                }
+            });
 
-            // Bierzemy TYLKO pierwsze 10 produktów (indeksy od 0 do 9, czyli pozycje 1 do 10)
-            const top10Products = productsList.slice(0, 10);
+            // Sortujemy po kodzie numerycznie (1, 2, 3... 10)
+            productsList.sort((a, b) => parseInt(a.code) - parseInt(b.code));
 
             db.collection("slots").onSnapshot(slotSnap => {
                 let allSlotsData = {};
@@ -96,27 +103,27 @@
                         slotBatches[locId].push({ id: doc.id, ...doc.data() });
                     });
                     
-                    generateSummary(top10Products, allSlotsData, slotBatches);
+                    generateSummary(productsList, allSlotsData, slotBatches);
                 });
             });
         });
     }
 
-    function generateSummary(top10Products, allSlotsData, slotBatches) {
-        // Tworzymy mapę dla wybranych 10 produktów
+    function generateSummary(targetProducts, allSlotsData, slotBatches) {
         const summaryMap = {};
-        top10Products.forEach((prod, index) => {
+        
+        // Inicjalizacja dla znalezionych produktów z kodami 1-10
+        targetProducts.forEach(prod => {
             summaryMap[prod.id] = {
-                indexNumber: index + 1, // Numer od 1 do 10
+                code: String(prod.code),
                 name: prod.name,
-                code: prod.code || 'Brak kodu',
                 totalCartons: 0,
                 totalPieces: 0,
                 locations: []
             };
         });
 
-        // Przechodzimy przez partie w slotach i sumujemy dane tylko dla tej dziesiątki
+        // Sumowanie z partii w slotach
         Object.entries(slotBatches).forEach(([locId, batches]) => {
             batches.forEach(b => {
                 if (b.productId && summaryMap[b.productId]) {
@@ -132,7 +139,7 @@
             });
         });
 
-        // Obsługa starszych slotów bezpośrednich
+        // Sumowanie ze starszych slotów bezpośrednich
         Object.entries(allSlotsData).forEach(([locId, slotData]) => {
             if (slotData && slotData.productId && summaryMap[slotData.productId]) {
                 if (!slotBatches[locId] || slotBatches[locId].length === 0) {
@@ -161,7 +168,7 @@
         const tbody = document.getElementById('summaryTableBody');
 
         if (dataArray.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #64748b; padding: 30px;">Brak produktów w bazie.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #64748b; padding: 30px;">Brak produktów o kodach 1-10 w bazie.</td></tr>`;
             return;
         }
 
@@ -173,11 +180,8 @@
 
             html += `
                 <tr>
-                    <td><span class="badge-index">Nr ${item.indexNumber}</span></td>
-                    <td>
-                        <strong style="font-size: 15px; color: #0f172a;">${item.name}</strong><br>
-                        <span style="font-size: 12px; color: #64748b;">Kod: ${item.code}</span>
-                    </td>
+                    <td><span class="badge-code">Kod: ${item.code}</span></td>
+                    <td><strong style="font-size: 15px; color: #0f172a;">${item.name}</strong></td>
                     <td><span class="badge-cartons">${item.totalCartons} k</span></td>
                     <td><span class="badge-pieces">${item.totalPieces} szt.</span></td>
                     <td>${locsHtml}</td>
