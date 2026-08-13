@@ -705,7 +705,7 @@
             <select id="palletType">
                 <option value="magazynowa">🔴 Magazynowa (czerwony)</option>
                 <option value="spedycyjna">🟢 Spedycyjna (zielony)</option>
-                <option value="magazynowa">🔵 Kartony (niebieski)</option>
+                <option value="Kartony">🔵 Kartony (niebieski)</option>
             </select>
         </div>
         <hr style="margin: 20px 0; border: none; border-top: 1px solid #e2e8f0;">
@@ -1092,6 +1092,7 @@
                     const type = data?.palletType || 'magazynowa';
                     if (type === 'magazynowa') slotClass = 'occupied-mag';
                     else if (type === 'spedycyjna') slotClass = 'occupied-sped';
+                        
                     else slotClass = 'occupied-other';
                 }
                 
