@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Podsumowanie produktów 1-10</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { margin: 0; padding: 20px; background: #f4f6f9; color: #1e293b; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { font-size: 1.8rem; margin-bottom: 8px; color: #0f172a; display: flex; align-items: center; gap: 10px; }
+        p.subtitle { color: #64748b; margin-top: 0; margin-bottom: 24px; }
+        
+        .card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+        th { background: #f8fafc; padding: 12px 16px; font-weight: 600; color: #475569; border-bottom: 2px solid #e2e8f0; }
+        td { padding: 12px 16px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+        tr:hover { background: #f8fafc; }
+
+        .badge-index { background: #2563eb; color: white; padding: 4px 10px; border-radius: 20px; font-weight: 700; display: inline-block; font-size: 13px; }
+        .badge-cartons { background: #dbeafe; color: #1e40af; padding: 4px 10px; border-radius: 20px; font-weight: 600; display: inline-block; }
+        .badge-pieces { background: #f1f5f9; color: #475569; padding: 4px 10px; border-radius: 20px; font-weight: 600; display: inline-block; }
+        
+        .location-tag { display: inline-block; background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; margin: 2px; border: 1px solid #fde68a; }
+        
+        .back-link { display: inline-block; margin-bottom: 16px; text-decoration: none; color: #2563eb; font-weight: 600; font-size: 14px; }
+        .back-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="index.html" class="back-link">← Wróć do magazynu</a>
+    <h1>🔢 Podsumowanie produktów (Pozycje 1 do 10)</h1>
+    <p class="subtitle">Zestawienie sumujące kartony, sztuki oraz lokalizacje wyłącznie dla pierwszych 10 pozycji w bazie magazynowej.</p>
+
+    <div class="card">
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 80px;">Nr</th>
+                        <th>Nazwa produktu / Kod</th>
+                        <th>Łącznie kartonów</th>
+                        <th>Łącznie sztuk</th>
+                        <th>Lokalizacje (Regał, Poziom, Kolumna)</th>
+                    </tr>
+                </thead>
+                <tbody id="summaryTableBody">
+                    <tr><td colspan="5" style="text-align: center; color: #64748b; padding: 30px;">Ładowanie danych...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyAbMTVozOhIXesvF59REYnIOtmo-V5qimk",
+        authDomain: "forevermagazyn.firebaseapp.com",
+        projectId: "forevermagazyn",
+        storageBucket: "forevermagazyn.firebasestorage.app",
+        messagingSenderId: "251843942343",
+        appId: "1:251843942343:web:2c81227b12ab4ad0052be2"
+    };
+
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.firestore();
+
+    function initDataListener() {
+        db.collection("products").onSnapshot(prodSnap => {
+            let productsList = [];
+            prodSnap.forEach(doc => productsList.push({ id: doc.id, ...doc.data() }));
+            
+            // Sortujemy produkty tak samo jak w głównej apce (alfabetycznie po nazwie)
+            productsList.sort((a,b) => (a.name || '').localeCompare(b.name || ''));
+
+            // Bierzemy TYLKO pierwsze 10 produktów (indeksy od 0 do 9, czyli pozycje 1 do 10)
+            const top10Products = productsList.slice(0, 10);
+
+            db.collection("slots").onSnapshot(slotSnap => {
+                let allSlotsData = {};
+                slotSnap.forEach(doc => allSlotsData[doc.id] = doc.data());
+                
+                db.collectionGroup("batches").onSnapshot(batchSnap => {
+                    let slotBatches = {};
+                    batchSnap.forEach(doc => {
+                        const locId = doc.ref.parent.parent.id;
+                        if (!slotBatches[locId]) slotBatches[locId] = [];
+                        slotBatches[locId].push({ id: doc.id, ...doc.data() });
+                    });
+                    
+                    generateSummary(top10Products, allSlotsData, slotBatches);
+                });
+            });
+        });
+    }
+
+    function generateSummary(top10Products, allSlotsData, slotBatches) {
+        // Tworzymy mapę dla wybranych 10 produktów
+        const summaryMap = {};
+        top10Products.forEach((prod, index) => {
+            summaryMap[prod.id] = {
+                indexNumber: index + 1, // Numer od 1 do 10
+                name: prod.name,
+                code: prod.code || 'Brak kodu',
+                totalCartons: 0,
+                totalPieces: 0,
+                locations: []
+            };
+        });
+
+        // Przechodzimy przez partie w slotach i sumujemy dane tylko dla tej dziesiątki
+        Object.entries(slotBatches).forEach(([locId, batches]) => {
+            batches.forEach(b => {
+                if (b.productId && summaryMap[b.productId]) {
+                    let item = summaryMap[b.productId];
+                    item.totalCartons += parseInt(b.cartons || 0);
+                    item.totalPieces += parseInt(b.pieces || 0);
+
+                    const parsedLoc = formatLocationName(locId);
+                    if (!item.locations.includes(parsedLoc)) {
+                        item.locations.push(parsedLoc);
+                    }
+                }
+            });
+        });
+
+        // Obsługa starszych slotów bezpośrednich
+        Object.entries(allSlotsData).forEach(([locId, slotData]) => {
+            if (slotData && slotData.productId && summaryMap[slotData.productId]) {
+                if (!slotBatches[locId] || slotBatches[locId].length === 0) {
+                    let item = summaryMap[slotData.productId];
+                    item.totalPieces += parseInt(slotData.quantity || 0);
+                    const parsedLoc = formatLocationName(locId);
+                    if (!item.locations.includes(parsedLoc)) {
+                        item.locations.push(parsedLoc);
+                    }
+                }
+            }
+        });
+
+        renderTable(Object.values(summaryMap));
+    }
+
+    function formatLocationName(locId) {
+        const match = locId.match(/R([A-D])-P(\d+)-K(\d+)/i) || locId.match(/R([A-D])-(\d+)-(\d+)/i);
+        if (match) {
+            return `Regał ${match[1].toUpperCase()}, Poziom ${match[2]}, Kolumna ${match[3]}`;
+        }
+        return locId;
+    }
+
+    function renderTable(dataArray) {
+        const tbody = document.getElementById('summaryTableBody');
+
+        if (dataArray.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #64748b; padding: 30px;">Brak produktów w bazie.</td></tr>`;
+            return;
+        }
+
+        let html = '';
+        dataArray.forEach(item => {
+            const locsHtml = item.locations.length > 0 
+                ? item.locations.map(l => `<span class="location-tag">📍 ${l}</span>`).join(' ')
+                : '<span style="color:#94a3b8; font-style:italic;">Brak w magazynie</span>';
+
+            html += `
+                <tr>
+                    <td><span class="badge-index">Nr ${item.indexNumber}</span></td>
+                    <td>
+                        <strong style="font-size: 15px; color: #0f172a;">${item.name}</strong><br>
+                        <span style="font-size: 12px; color: #64748b;">Kod: ${item.code}</span>
+                    </td>
+                    <td><span class="badge-cartons">${item.totalCartons} k</span></td>
+                    <td><span class="badge-pieces">${item.totalPieces} szt.</span></td>
+                    <td>${locsHtml}</td>
+                </tr>
+            `;
+        });
+
+        tbody.innerHTML = html;
+    }
+
+    initDataListener();
+</script>
+
+</body>
+</html>
