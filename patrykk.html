@@ -491,7 +491,7 @@
 
         <div class="pro-sidebar-footer">
             <div class="pro-version-icon">▣</div>
-            <div><strong>Magazyn PRO</strong><small>QR + Firebase</small></div>
+            <div><strong>Magazyn PRO</strong><small>QR iPhone FIX · 13.08</small></div>
         </div>
     </aside>
 
@@ -711,8 +711,8 @@
         <label style="font-weight:600;">📦 Produkty na palecie</label>
         <div id="batchesContainer" class="batch-list"></div>
         <button class="btn btn-secondary add-batch-btn" id="addBatchBtn">➕ Dodaj produkt</button>
-        <button class="btn btn-secondary add-batch-btn" id="scanPaperBtn">📷 Skanuj QR z kartki</button>
-        <input type="file" id="scanPhotoInput" accept="image/*" capture="environment" style="display:none;">
+        <label class="btn btn-secondary add-batch-btn" id="scanPaperBtn" for="scanPhotoInput" role="button" tabindex="0">📷 Skanuj QR z kartki</label>
+        <input type="file" id="scanPhotoInput" accept="image/*" capture="environment" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;">
         <div class="flex-row">
             <button class="btn" id="cancelEditBtn">Anuluj</button>
             <button class="btn btn-primary" id="saveSlotBtn">Zapisz</button>
@@ -741,7 +741,7 @@
                 <div class="qr-panel-title">Skaner</div>
                 <div id="scanStatus" class="scan-status active">Zrób zdjęcie kartki tak, aby kod QR był widoczny.</div>
                 <div id="scanPreviewWrap" class="scan-preview-wrap"><canvas id="scanPreviewCanvas" class="scan-preview"></canvas></div>
-                <button class="btn btn-primary qr-capture-action" id="scanNextBtn" style="display:none;">📷 Skanuj kolejny QR</button>
+                <label class="btn btn-primary qr-capture-action" id="scanNextBtn" for="scanPhotoInput" role="button" tabindex="0" style="display:none;">📷 Skanuj kolejny QR</label>
                 <div class="qr-scan-tip"><span>✓</span><span>Nie musisz ustawiać kartki idealnie prosto. Najważniejsze, żeby cały QR był ostry i mieścił się w kadrze.</span></div>
             </section>
 
@@ -2402,9 +2402,10 @@
         return '';
     }
 
-    function openNextQrPhoto() {
+    function prepareNextQrPhoto() {
+        // iOS/Safari: NIE uruchamiamy input.click() programowo.
+        // Aparat otwiera natywne kliknięcie w <label for="scanPhotoInput">.
         scanPhotoInput.value = '';
-        scanPhotoInput.click();
     }
 
     function resetQrScanSession() {
@@ -2430,12 +2431,22 @@
         }
         resetQrScanSession();
         scanModal.style.display = 'flex';
-        setScanStatus('📷 Zeskanuj pierwszy kod QR. Potem możesz dodawać kolejne bez zamykania okna.');
-        openNextQrPhoto();
+        setScanStatus('📷 Aparat powinien otworzyć się natywnie. Zrób zdjęcie pierwszego QR. Potem możesz dodawać kolejne bez zamykania okna.');
+        prepareNextQrPhoto();
     });
 
     scanNextBtn.addEventListener('click', () => {
-        openNextQrPhoto();
+        prepareNextQrPhoto();
+    });
+
+    [scanPaperBtn, scanNextBtn].forEach(el => {
+        el.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                prepareNextQrPhoto();
+                scanPhotoInput.click();
+            }
+        });
     });
 
     scanPhotoInput.addEventListener('change', async () => {
@@ -2503,7 +2514,7 @@
             setScanStatus(`✅ Dodano QR nr ${scannedBatches.length}: ${canonicalProductCode(parsed.itemId)} · ${parsed.batch} · ${parsed.cases} kartonów · sygnatura ${parsed.signature}. Możesz zeskanować kolejny.`);
         } catch (err) {
             console.error('QR error:', err);
-            const iosHint = isIOSDevice() ? ' Na iPhonie spróbuj zrobić zdjęcie bliżej QR i trzymaj kod nieruchomo przez chwilę.' : '';
+            const iosHint = isIOSDevice() ? ' Na iPhonie otwórz plik w Safari, nie w podglądzie Gmail/Pliki. Potem spróbuj ponownie.' : '';
             setScanStatus(`❌ Nie udało się odczytać tego QR. Poprzednio odczytane pozycje (${scannedBatches.length}) zostały zachowane — możesz spróbować jeszcze raz.${iosHint}`);
             if (!scannedBatches.length) {
                 scanDetectedContainer.innerHTML = '<div class="scan-result-item">Kod QR powinien być w całości w kadrze. Nie musisz fotografować kartki prosto — najważniejsze, żeby QR był ostry.</div>';
@@ -3528,7 +3539,8 @@
                 : `<span class="stock-total-pieces">${row.totalPieces.toLocaleString('pl-PL')}</span>${row.ppc ? `<div class="stock-note">${row.ppc} szt./karton</div>` : ''}`;
             const locationsHtml = row.locationList.map(loc => `<span class="stock-location-chip">${escapeStockHtml(loc)}</span>`).join('');
             return `<tr class="stock-clickable" data-stock-key="${escapeStockHtml(row.stockKey)}" title="Kliknij, aby zobaczyć rozbicie na palety i partie">
-                <td><div class="stock-product-name">${escapeStockHtml(row.name)}</div><div class="stock-product-hint">Kliknij → palety i daty produkcji</div></td>
+                <td><div class="stock-product-name">${escapeStockHtml(row.name)}</div><div class="stock-product-hint">Kliknij → palety i daty produk
+cji</div></td>
                 <td><span class="stock-product-code">${escapeStockHtml(row.code || '—')}</span></td>
                 <td><span class="stock-number">${(row.cartons || 0).toLocaleString('pl-PL')}</span></td>
                 <td><span class="stock-number">${(row.loosePieces || 0).toLocaleString('pl-PL')}</span></td>
