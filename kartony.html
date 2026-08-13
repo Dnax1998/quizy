@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Podsumowanie kodów 1 do 10</title>
+    <title>Podsumowanie kodów 1 do 11</title>
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -35,8 +35,8 @@
 
 <div class="container">
     <a href="index.html" class="back-link">← Wróć do magazynu</a>
-    <h1>📦 Podsumowanie dla kodów: 1 do 10</h1>
-    <p class="subtitle">Zestawienie sumujące kartony, sztuki oraz lokalizacje wyłącznie dla produktów o kodach od "1" do "10".</p>
+    <h1>📦 Podsumowanie dla kodów: 1 do 11</h1>
+    <p class="subtitle">Zestawienie sumujące kartony, sztuki oraz lokalizacje wyłącznie dla produktów o kodach od "1" do "11".</p>
 
     <div class="card">
         <div style="overflow-x: auto;">
@@ -73,22 +73,22 @@
     }
     const db = firebase.firestore();
 
-    // Definiujemy dozwolone kody produktów (od "1" do "10")
-    const allowedCodes = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
+    // Definiujemy dozwolone kody produktów (od "1" do "11")
+    const allowedCodes = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"];
 
     function initDataListener() {
         db.collection("products").onSnapshot(prodSnap => {
             let productsList = [];
             prodSnap.forEach(doc => {
                 const data = doc.data();
-                // Sprawdzamy, czy kod produktu mieści się w naszej liście od 1 do 10
+                // Sprawdzamy, czy kod produktu mieści się w naszej liście od 1 do 11
                 const codeStr = String(data.code || "").trim();
                 if (allowedCodes.includes(codeStr)) {
                     productsList.push({ id: doc.id, ...data });
                 }
             });
 
-            // Sortujemy po kodzie numerycznie (1, 2, 3... 10)
+            // Sortujemy po kodzie numerycznie (1, 2, 3... 11)
             productsList.sort((a, b) => parseInt(a.code) - parseInt(b.code));
 
             db.collection("slots").onSnapshot(slotSnap => {
@@ -112,7 +112,7 @@
     function generateSummary(targetProducts, allSlotsData, slotBatches) {
         const summaryMap = {};
         
-        // Inicjalizacja dla znalezionych produktów z kodami 1-10
+        // Inicjalizacja dla znalezionych produktów z kodami 1-11
         targetProducts.forEach(prod => {
             summaryMap[prod.id] = {
                 code: String(prod.code),
@@ -168,7 +168,7 @@
         const tbody = document.getElementById('summaryTableBody');
 
         if (dataArray.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #64748b; padding: 30px;">Brak produktów o kodach 1-10 w bazie.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #64748b; padding: 30px;">Brak produktów o kodach 1-11 w bazie.</td></tr>`;
             return;
         }
 
@@ -197,3 +197,4 @@
 
 </body>
 </html>
+```[cite: 3]
