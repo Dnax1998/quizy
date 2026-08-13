@@ -6,19 +6,25 @@
     <title>Magazyn Regały + OKLEJENIE + ETYKIETY</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
         body { margin: 0; padding: 16px; background: #f4f6f9; }
-        .app { max-width: 1300px; margin: 0 auto; }
+        .app {  max-width: 1500px; margin: 0 auto; display: grid;  grid-template-columns: 280px 1fr; /* 280px dla panelu lewego, reszta na treść */ gap: 20px; align-items: start; }
+        .sidebar {  background: white; padding: 20px; border-radius: 24px;  box-shadow: 0 8px 20px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 16px; }
+        .main-content {  display: flex;  flex-direction: column;  gap: 16px; }
+        .sidebar-section-title {   font-size: 12px;  font-weight: 700;  color: #94a3b8;text-transform: uppercase;  letter-spacing: 0.5px;  margin-top: 8px;  margin-bottom: -4px}
+    /* Rozciągnięcie przycisków w lewym panelu */
+        .sidebar .btn-secondary {  width: 100%;  text-align: left; border-radius: 16px;  padding: 12px 16px; }
         h1 { font-size: 1.8rem; margin: 0 0 8px 0; color: #1e293b; display: flex; align-items: center; gap: 8px; }
         .top-bar { display: flex; gap: 12px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
         .search-group { display: flex; gap: 8px; flex: 2; min-width: 250px; }
         .search-box { flex: 1; padding: 12px 16px; font-size: 16px; border: 1px solid #cbd5e1; border-radius: 40px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
         .filter-select { padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 40px; font-size: 16px; background: white; }
         .btn-secondary { background: white; border: 1px solid #cbd5e1; padding: 10px 18px; border-radius: 40px; font-weight: 600; color: #1e293b; cursor: pointer; white-space: nowrap; }
-        .racks-tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; flex-wrap: wrap; }
-        .rack-tab { padding: 12px 24px; background: none; border: none; font-size: 18px; font-weight: 600; color: #64748b; cursor: pointer; border-radius: 20px 20px 0 0; transition: 0.2s; }
-        .rack-tab.active { color: #2563eb; background: white; box-shadow: 0 -2px 8px rgba(0,0,0,0.02); }
+        .racks-tabs { display: flex; flex-direction: column;  gap: 6px;  border-bottom: none; margin-bottom: 0; }
+        .rack-tab { padding: 12px 16px; background: none; border: none; font-size: 16px; font-weight: 600; color: #64748b; cursor: pointer; border-radius: 16px; transition: 0.2s; text-align: left; width: 100%; }
+        .rack-tab.active { color: #2563eb; background: #eff6ff; box-shadow: none; }
         .rack-container { background: white; border-radius: 24px; padding: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
         .shelf { margin-bottom: 16px; }
         .shelf-label { font-weight: 700; margin-bottom: 6px; color: #334155; font-size: 14px; display: flex; justify-content: space-between; }
@@ -102,51 +108,76 @@
         .new-sig-count { flex: 1; min-width: 80px; }
         .btn-sig-add { background: #2563eb; color: white; border: none; padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
         .btn-sig-add:hover { background: #1d4ed8; }
+
+        /* === DODATEK: SKANOWANIE KARTKI Z PALETY === */
+        .scan-status { margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: #f8fafc; color: #475569; font-size: 13px; display: none; }
+        .scan-status.active { display: block; }
+        .scan-results { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+        .scan-result-item { border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 12px; padding: 12px; font-size: 14px; }
+        .scan-result-item strong { color: #0f172a; }
+        .scan-raw { width: 100%; min-height: 150px; resize: vertical; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 12px; font-size: 13px; background: white; }
+        .scan-preview-wrap { margin-top: 12px; background: #0f172a; border-radius: 14px; padding: 8px; display: none; }
+        .scan-preview-wrap.active { display: block; }
+        .scan-preview { width: 100%; max-height: 280px; object-fit: contain; display: block; border-radius: 10px; background: #111827; }
+        .scan-hint { font-size: 12px; color: #64748b; margin: 8px 0 0; line-height: 1.4; }
+        .scan-quality { display: inline-block; margin-left: 6px; padding: 2px 7px; border-radius: 999px; background: #e2e8f0; font-size: 11px; font-weight: 700; color: #334155; }
     </style>
 </head>
 <body>
 <div class="app">
-    <h1>📦 Magazyn Regały <span style="font-size: 14px; background: #e2e8f0; padding: 4px 12px; border-radius: 40px;">A · B · C · D (5x21)</span></h1>
-    
-    <div class="top-bar">
-        <div class="search-group">
-            <input type="text" id="searchProductInput" class="search-box" placeholder="🔍 Produkt / kod / sygnatura" autocomplete="off">
-            <input type="text" id="searchDateInput" class="search-box" placeholder="📅 Data (np. 1.04.2026)" autocomplete="off">
-            <select id="oklejonyFilterSelect" class="filter-select">
-                <option value="">Wszystkie</option>
-                <option value="oklejony">Tylko oklejone</option>
-                <option value="nieoklejony">Tylko nieoklejone</option>
-            </select>
+
+    <!-- 1. LEWY PANEL (Sidebar z zakładkami regałów i przyciskami) -->
+    <div class="sidebar">
+        <div class="sidebar-section-title">Regały</div>
+        <div class="racks-tabs">
+            <button class="rack-tab active" data-rack="A">Regał A</button>
+            <button class="rack-tab" data-rack="B">Regał B</button>
+            <button class="rack-tab" data-rack="C">Regał C</button>
+            <button class="rack-tab" data-rack="D">Regał D</button>
         </div>
-        <button class="btn-secondary" id="clearSearchBtn">✖ Wyczyść</button>
+
+        <div class="sidebar-section-title">Zarządzanie</div>
         <button class="btn-secondary" id="batchesByProductBtn">📊 Partie wg produktu</button>
-        <button class="btn-secondary" id="exportCsvBtn">📥 Eksportuj CSV</button>
-        <button class="btn-secondary" id="manageProductsBtn">📋 Produkty</button>
         <button class="btn-secondary" id="manageLabelsBtn">🏷️ Stan etykiet</button>
         <button class="btn-secondary" id="openLabelGeneratorBtn">🏷️ Etykiety</button>
+        <button class="btn-secondary" id="manageProductsBtn">📋 Produkty</button>
+        <button class="btn-secondary" id="exportCsvBtn">📥 Eksportuj CSV</button>
     </div>
 
-    <div class="racks-tabs">
-        <button class="rack-tab active" data-rack="A">Regał A</button>
-        <button class="rack-tab" data-rack="B">Regał B</button>
-        <button class="rack-tab" data-rack="C">Regał C</button>
-        <button class="rack-tab" data-rack="D">Regał D</button>
+    <!-- 2. PRAWY PANEL (Główna treść z nagłówkiem, szukajką i regałem) -->
+    <div class="main-content">
+        <h1>📦 Magazyn Regały <span style="font-size: 14px; background: #e2e8f0; padding: 4px 12px; border-radius: 40px;">A · B · C · D (5x21)</span></h1>
+
+        <div class="top-bar">
+            <div class="search-group">
+                <input type="text" id="searchProductInput" class="search-box" placeholder="🔍 Produkt / kod / sygnatura" autocomplete="off">
+                <input type="text" id="searchDateInput" class="search-box" placeholder="📅 Data (np. 1.04.2026)" autocomplete="off">
+                <select id="oklejonyFilterSelect" class="filter-select">
+                    <option value="">Wszystkie</option>
+                    <option value="oklejony">Tylko oklejone</option>
+                    <option value="nieoklejony">Tylko nieoklejone</option>
+                </select>
+            </div>
+            <button class="btn-secondary" id="clearSearchBtn">✖ Wyczyść</button>
+        </div>
+
+        <div id="moveModeIndicator" class="move-mode-indicator">
+            🚚 Tryb przenoszenia – kliknij na pusty slot, aby przenieść tutaj paletę.
+            <button id="cancelMoveBtn" class="btn-sm" style="margin-left:12px; padding:4px 12px;">Anuluj</button>
+        </div>
+
+        <div id="copyModeIndicator" class="copy-mode-indicator">
+            📋 Tryb kopiowania – kliknij na pusty slot, aby skopiować tutaj paletę.
+            <button id="cancelCopyBtn" class="btn-sm" style="margin-left:12px; padding:4px 12px;">Anuluj</button>
+        </div>
+
+        <div id="rackView" class="rack-container">
+            <div style="text-align: center; padding: 40px; color: #64748b;">Ładowanie danych...</div>
+        </div>
     </div>
 
-    <div id="moveModeIndicator" class="move-mode-indicator">
-        🚚 Tryb przenoszenia – kliknij na pusty slot, aby przenieść tutaj paletę. 
-        <button id="cancelMoveBtn" class="btn-sm" style="margin-left:12px; padding:4px 12px;">Anuluj</button>
-    </div>
-    <div id="copyModeIndicator" class="copy-mode-indicator">
-        📋 Tryb kopiowania – kliknij na pusty slot, aby skopiować tutaj paletę. 
-        <button id="cancelCopyBtn" class="btn-sm" style="margin-left:12px; padding:4px 12px;">Anuluj</button>
-    </div>
-
-    <div id="rackView" class="rack-container">
-        <div style="text-align: center; padding: 40px; color: #64748b;">Ładowanie danych...</div>
-    </div>
 </div>
-
+    
 <div class="modal" id="editModal">
     <div class="modal-card">
         <h3>Pole <span id="locationCodeDisplay"></span></h3>
@@ -161,12 +192,33 @@
         <label style="font-weight:600;">📦 Produkty na palecie</label>
         <div id="batchesContainer" class="batch-list"></div>
         <button class="btn btn-secondary add-batch-btn" id="addBatchBtn">➕ Dodaj produkt</button>
+        <button class="btn btn-secondary add-batch-btn" id="scanPaperBtn">📷 Skanuj QR z kartki</button>
+        <input type="file" id="scanPhotoInput" accept="image/*" capture="environment" style="display:none;">
         <div class="flex-row">
             <button class="btn" id="cancelEditBtn">Anuluj</button>
             <button class="btn btn-primary" id="saveSlotBtn">Zapisz</button>
             <button class="btn btn-success" id="copySlotBtn">📋 Kopiuj</button>
             <button class="btn btn-warning" id="moveSlotBtn">🚚 Przenieś</button>
             <button class="btn btn-danger" id="clearSlotBtn">Wyczyść pole</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="scanModal">
+    <div class="modal-card" style="max-width:760px;">
+        <h3>▣ Skanowanie QR z kartki</h3>
+        <div id="scanStatus" class="scan-status active">Zrób zdjęcie kartki tak, aby kod QR był widoczny.</div>
+        <div id="scanPreviewWrap" class="scan-preview-wrap"><canvas id="scanPreviewCanvas" class="scan-preview"></canvas></div>
+        <div id="scanDetectedContainer" class="scan-results"></div>
+        <div class="form-group" style="margin-top:16px;">
+            <label>Dane odczytane z kodu QR</label>
+            <textarea id="scanRawText" class="scan-raw" readonly placeholder="Tutaj pojawi się zawartość kodu QR..."></textarea>
+        </div>
+        <p class="scan-hint">Możesz skanować kilka kartek po kolei. Po każdym poprawnym odczycie kliknij „Skanuj kolejny QR”. Wszystkie odczyty zostaną zebrane na liście i wstawione razem. Aplikacja nie używa OCR; z QR pobiera ITEM ID, BATCH, CASES i SYGNATURĘ.</p>
+        <div class="flex-row">
+            <button class="btn" id="scanCloseBtn">Zamknij</button>
+            <button class="btn btn-secondary" id="scanNextBtn" style="display:none;">📷 Skanuj kolejny QR</button>
+            <button class="btn btn-primary" id="scanApplyBtn" disabled>Wstaw dane z QR</button>
         </div>
     </div>
 </div>
@@ -323,11 +375,24 @@
     const copyModeIndicator = document.getElementById('copyModeIndicator');
     const cancelCopyBtn = document.getElementById('cancelCopyBtn');
     const openLabelGeneratorBtn = document.getElementById('openLabelGeneratorBtn');
+    const scanPaperBtn = document.getElementById('scanPaperBtn');
+    const scanPhotoInput = document.getElementById('scanPhotoInput');
+    const scanModal = document.getElementById('scanModal');
+    const scanStatus = document.getElementById('scanStatus');
+    const scanDetectedContainer = document.getElementById('scanDetectedContainer');
+    const scanRawText = document.getElementById('scanRawText');
+    const scanApplyBtn = document.getElementById('scanApplyBtn');
+    const scanCloseBtn = document.getElementById('scanCloseBtn');
+    const scanNextBtn = document.getElementById('scanNextBtn');
+    const scanPreviewWrap = document.getElementById('scanPreviewWrap');
+    const scanPreviewCanvas = document.getElementById('scanPreviewCanvas');
     
     let currentEditingLocation = null;
     let currentBatches = [];
     let moveSourceLocation = null;
     let copySourceLocation = null;
+    let scannedBatches = [];
+    let scannedQrKeys = new Set();
 
     function getLocationId(rack, level, col) {
         return `R${rack}-P${level}-K${col}`;
@@ -625,6 +690,1160 @@
     addBatchBtn.addEventListener('click', () => {
         currentBatches.push({ signature: '', cartons: 0, pieces: 0, oklejony: false });
         renderBatchesList();
+    });
+
+    // ========== DODATEK: ODCZYT KARTKI ZE ZDJĘCIA ==========
+    // Ten moduł jest niezależnym dodatkiem. Nie zmienia istniejącego zapisu palet ani Firebase.
+    function normalizeScanText(value) {
+        return (value || '')
+            .toString()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    function normalizeScanCode(value) {
+        return (value || '').toString().toUpperCase().replace(/[^A-Z0-9]/g, '');
+    }
+
+    function levenshteinDistance(a, b) {
+        a = a || ''; b = b || '';
+        if (a === b) return 0;
+        if (!a.length) return b.length;
+        if (!b.length) return a.length;
+        const prev = Array.from({length: b.length + 1}, (_, i) => i);
+        const curr = new Array(b.length + 1);
+        for (let i = 1; i <= a.length; i++) {
+            curr[0] = i;
+            for (let j = 1; j <= b.length; j++) {
+                const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+                curr[j] = Math.min(curr[j - 1] + 1, prev[j] + 1, prev[j - 1] + cost);
+            }
+            for (let j = 0; j <= b.length; j++) prev[j] = curr[j];
+        }
+        return prev[b.length];
+    }
+
+    function similarity(a, b) {
+        a = normalizeScanCode(a); b = normalizeScanCode(b);
+        if (!a || !b) return 0;
+        return 1 - (levenshteinDistance(a, b) / Math.max(a.length, b.length));
+    }
+
+    function extractFirstDate(text) {
+        const source = text || '';
+        // Kartki magazynowe często mają rok 2-cyfrowy, np. 12.05.25B.
+        // Do istniejącego formularza zwracamy rok 4-cyfrowy, np. 12.05.2025B.
+        let m = source.match(/\b(\d{1,2})\s*[.\/-]\s*(\d{1,2})\s*[.\/-]\s*(\d{4})([A-Za-z]?)\b/);
+        if (m) return `${m[1]}.${m[2]}.${m[3]}${(m[4] || '').toUpperCase()}`;
+        m = source.match(/\b(\d{1,2})\s*[.\/-]\s*(\d{1,2})\s*[.\/-]\s*(\d{2})([A-Za-z]?)\b/);
+        if (m) return `${m[1]}.${m[2]}.20${m[3]}${(m[4] || '').toUpperCase()}`;
+        m = source.match(/\b(\d{1,2})\s+(\d{1,2})\s+(20\d{2})([A-Za-z]?)\b/);
+        if (m) return `${m[1]}.${m[2]}.${m[3]}${(m[4] || '').toUpperCase()}`;
+        m = source.match(/\b(\d{1,2})\s+(\d{1,2})\s+(\d{2})([A-Za-z]?)\b/);
+        return m ? `${m[1]}.${m[2]}.20${m[3]}${(m[4] || '').toUpperCase()}` : '';
+    }
+
+    function extractSignature(text) {
+        const source = text || '';
+        const explicit = source.match(/(?:sygnatura|sygn\.?|syg\.?|signature|sig\.?)[\s:#-]*([A-Za-z0-9.\/-]{1,24})/i);
+        if (explicit) return explicit[1].trim().replace(',', '.');
+
+        // Na białej kartce sygnatura jest zwykle sama w ostatnim wierszu, np. 26.5.
+        const lines = source.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+        for (let i = lines.length - 1; i >= 0; i--) {
+            const line = lines[i];
+            if (/^\d{1,3}[.,]\d{1,2}$/.test(line)) return line.replace(',', '.');
+        }
+        return '';
+    }
+
+    function extractNumberNearKeyword(text, keywordPattern) {
+        const source = text || '';
+        const after = source.match(new RegExp('(?:' + keywordPattern + ')[\\s.:xX=\\-]*(\\d{1,7})', 'i'));
+        if (after) return parseInt(after[1], 10) || 0;
+        const before = source.match(new RegExp('(\\d{1,7})\\s*(?:' + keywordPattern + ')', 'i'));
+        return before ? (parseInt(before[1], 10) || 0) : 0;
+    }
+
+    function getOcrTokens(text) {
+        return (text || '').toUpperCase().match(/[A-Z0-9ĄĆĘŁŃÓŚŹŻ-]{3,}/g) || [];
+    }
+
+    function splitScanCards(text) {
+        const source = text || '';
+        const parts = source.split(/---\s*KARTKA\s+\d+\s*---/i)
+            .map(p => p.trim())
+            .filter(Boolean);
+        return parts.length ? parts : [source.trim()].filter(Boolean);
+    }
+
+    function scanCleanLines(text) {
+        return (text || '').split(/\r?\n/)
+            .map(line => line.trim())
+            .filter(line => line && !/^---/.test(line));
+    }
+
+    function findCardProduct(cardText) {
+        const lines = scanCleanLines(cardText);
+        const dateIndex = lines.findIndex(line => !!extractFirstDate(line));
+
+        // Kod produktu na naszej kartce jest osobnym numerem NAD datą.
+        // To kluczowa poprawka: nie szukamy kodów w całym tekście, bo np. kod 525
+        // mógł fałszywie wystąpić wewnątrz daty 12.05.25B.
+        let codeCandidates = [];
+        lines.forEach((line, index) => {
+            const compact = line.replace(/\s+/g, '');
+            if (/^\d{2,8}$/.test(compact) && (dateIndex < 0 || index < dateIndex)) {
+                codeCandidates.push(compact);
+            }
+        });
+
+        // Jeżeli OCR nie zachował podziału linii, bierzemy pierwszy samodzielny numer przed datą.
+        if (!codeCandidates.length) {
+            const rawDate = cardText.match(/\b\d{1,2}\s*[.\/-]\s*\d{1,2}\s*[.\/-]\s*\d{2,4}[A-Za-z]?\b/);
+            const prefix = rawDate ? cardText.slice(0, rawDate.index) : cardText;
+            codeCandidates = (prefix.match(/\b\d{2,8}\b/g) || []).slice(0, 3);
+        }
+
+        const productsWithCodes = productsList
+            .map(product => ({ product, code: normalizeScanCode(product.code || '') }))
+            .filter(x => /^\d{2,8}$/.test(x.code));
+
+        // 1) Dokładne dopasowanie kodu.
+        for (const candidate of codeCandidates) {
+            const exact = productsWithCodes.find(x => x.code === candidate);
+            if (exact) return { product: exact.product, score: 1400, recognizedCode: candidate, corrected: false };
+        }
+
+        // 2) Jedna pomylona cyfra OCR jest dozwolona, ale tylko gdy zwycięzca jest jednoznaczny.
+        // Np. OCR: 615, baza: 815 -> 1 różna cyfra.
+        let best = null;
+        for (const candidate of codeCandidates) {
+            const ranked = productsWithCodes
+                .filter(x => x.code.length === candidate.length)
+                .map(x => ({ ...x, distance: levenshteinDistance(x.code, candidate) }))
+                .sort((a, b) => a.distance - b.distance);
+            if (!ranked.length) continue;
+            const first = ranked[0];
+            const second = ranked[1];
+            if (first.distance === 1 && (!second || second.distance >= 2)) {
+                const hit = { product: first.product, score: 900, recognizedCode: candidate, corrected: true };
+                if (!best || hit.score > best.score) best = hit;
+            }
+        }
+        if (best) return best;
+
+        // 3) Awaryjnie pełna nazwa produktu, bez agresywnego fuzzy-matchingu.
+        const normalizedCard = normalizeScanText(cardText);
+        const nameMatches = productsList
+            .filter(p => {
+                const name = normalizeScanText(p.name || '');
+                return name.length >= 4 && normalizedCard.includes(name);
+            });
+        if (nameMatches.length === 1) {
+            return { product: nameMatches[0], score: 650, recognizedCode: '', corrected: false };
+        }
+        return null;
+    }
+
+    function extractCardQuantity(cardText) {
+        const lines = scanCleanLines(cardText);
+        const dateIndex = lines.findIndex(line => !!extractFirstDate(line));
+        const signature = extractSignature(cardText);
+
+        // Jeżeli na kartce jest opis jednostki, zawsze ma pierwszeństwo.
+        const explicitCartons = extractNumberNearKeyword(cardText, '(?:ilosc\\s*)?(?:karton(?:y|ow|ów)?|kart\\.?|ctn|cartons?)');
+        if (explicitCartons > 0) return { type: 'cartons', value: explicitCartons };
+
+        const explicitPieces = extractNumberNearKeyword(cardText, '(?:ilosc\\s*)?(?:szt(?:uki|uk)?\\.?|pcs|pieces?)');
+        if (explicitPieces > 0) return { type: 'pieces', value: explicitPieces };
+
+        // W naszym wzorze kartki interesuje nas pierwsza samodzielna liczba całkowita POD datą,
+        // ale NAD sygnaturą. Przykład: 289 / 16.10.25 / 4 / 25.1 -> 4 kartony.
+        const candidates = [];
+        lines.forEach((line, index) => {
+            const compact = line.replace(/\s+/g, '');
+            if (!/^\d{1,7}$/.test(compact)) return;
+            if (dateIndex >= 0 && index <= dateIndex) return;
+            if (signature && compact === signature.replace(/\D/g, '')) return;
+            candidates.push({ index, value: parseInt(compact, 10) || 0 });
+        });
+
+        if (!candidates.length) return { type: 'none', value: 0 };
+        const value = candidates[0].value;
+
+        // Krótkie wartości oznaczają kartony (np. 4, 18, 90).
+        // Duże wartości nadal traktujemy jako łączną liczbę sztuk (np. 630),
+        // aby zachować obsługę poprzedniego wzoru kartki.
+        return value <= 99
+            ? { type: 'cartons', value }
+            : { type: 'pieces', value };
+    }
+
+    function quantityToCartonsAndPieces(quantity, product) {
+        const value = parseInt(quantity?.value, 10) || 0;
+        if (value <= 0) return { cartons: 0, pieces: 0 };
+
+        if (quantity?.type === 'cartons') {
+            return { cartons: value, pieces: 0 };
+        }
+
+        const ppc = parseInt(product?.piecesPerCarton, 10) || 0;
+        if (ppc > 0) {
+            return { cartons: Math.floor(value / ppc), pieces: value % ppc };
+        }
+        // Gdy produkt nie ma ustawionej liczby sztuk w kartonie, zachowujemy odczyt jako sztuki.
+        return { cartons: 0, pieces: value };
+    }
+
+    function detectBatchesFromScan(text) {
+        const cards = splitScanCards(text);
+        const results = [];
+        const seenProducts = new Set();
+
+        cards.forEach(cardText => {
+            const match = findCardProduct(cardText);
+            if (!match || !match.product) return;
+
+            const product = match.product;
+            const scannedQuantity = extractCardQuantity(cardText);
+            const qty = quantityToCartonsAndPieces(scannedQuantity, product);
+            const date = extractFirstDate(cardText);
+            const signature = extractSignature(cardText);
+
+            // Jedna kartka = jeden produkt. Nie dopisujemy tego samego produktu dwa razy
+            // z kilku prób OCR tego samego obszaru.
+            const dedupeKey = `${product.id}|${date}|${signature}|${scannedQuantity.type}|${scannedQuantity.value}`;
+            if (seenProducts.has(dedupeKey)) return;
+            seenProducts.add(dedupeKey);
+
+            results.push({
+                productId: product.id,
+                productName: product.name || '',
+                productCode: product.code || '',
+                signature,
+                prodDateString: date,
+                cartons: qty.cartons,
+                pieces: qty.pieces,
+                oklejony: false,
+                _scanScore: match.score,
+                _recognizedCode: match.recognizedCode || '',
+                _codeCorrected: !!match.corrected,
+                _scanQuantityType: scannedQuantity.type,
+                _scanQuantityValue: scannedQuantity.value
+            });
+        });
+
+        // Jeżeli OCR zwrócił tekst bez markerów KARTKA, nadal dopuszczamy tylko jednoznaczny wynik.
+        return results;
+    }
+
+    function scanTextQuality(text) {
+        const t = (text || '').trim();
+        if (!t) return 0;
+        const useful = (t.match(/[A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż0-9]/g) || []).length;
+        const weird = (t.match(/[|_=<>~^{}\\]/g) || []).length;
+        let score = useful - weird * 2;
+        const matches = detectBatchesFromScan(t);
+        if (matches.length) {
+            score += 200 + Math.max(...matches.map(x => x._scanScore || 0));
+            // Preferujemy odczyt kompletny. Próba, która zobaczy np. środkowe „4”,
+            // ma wygrać z próbą, która odczyta produkt/datę/sygnaturę, ale zgubi ilość.
+            score += Math.max(...matches.map(x => ((x.cartons || 0) > 0 || (x.pieces || 0) > 0) ? 100 : 0));
+        }
+        if (extractFirstDate(t)) score += 30;
+        if (extractSignature(t)) score += 20;
+        return score;
+    }
+
+    function scanHasQuantity(text) {
+        const matches = detectBatchesFromScan(text || '');
+        return matches.some(x => (parseInt(x.cartons, 10) || 0) > 0 || (parseInt(x.pieces, 10) || 0) > 0);
+    }
+
+    function loadImageForScan(file) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            const url = URL.createObjectURL(file);
+            img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+            img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Nie można otworzyć zdjęcia')); };
+            img.src = url;
+        });
+    }
+
+    function drawImageToCanvas(img, maxSide = 2600) {
+        const scale = Math.min(1, maxSide / Math.max(img.naturalWidth || img.width, img.naturalHeight || img.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round((img.naturalWidth || img.width) * scale));
+        canvas.height = Math.max(1, Math.round((img.naturalHeight || img.height) * scale));
+        canvas.getContext('2d', {willReadFrequently:true}).drawImage(img, 0, 0, canvas.width, canvas.height);
+        return canvas;
+    }
+
+    function findBrightPaperRegions(sourceCanvas) {
+        // Analiza na małej kopii: szukamy jasnych, mało nasyconych prostokątnych obszarów.
+        const maxSide = 420;
+        const scale = Math.min(1, maxSide / Math.max(sourceCanvas.width, sourceCanvas.height));
+        const w = Math.max(1, Math.round(sourceCanvas.width * scale));
+        const h = Math.max(1, Math.round(sourceCanvas.height * scale));
+        const c = document.createElement('canvas'); c.width = w; c.height = h;
+        const ctx = c.getContext('2d', {willReadFrequently:true});
+        ctx.drawImage(sourceCanvas, 0, 0, w, h);
+        const data = ctx.getImageData(0, 0, w, h).data;
+        const mask = new Uint8Array(w * h);
+        for (let i = 0; i < w * h; i++) {
+            const r = data[i*4], g = data[i*4+1], b = data[i*4+2];
+            const max = Math.max(r,g,b), min = Math.min(r,g,b);
+            const lum = 0.299*r + 0.587*g + 0.114*b;
+            if (lum > 168 && (max - min) < 72) mask[i] = 1;
+        }
+
+        const seen = new Uint8Array(w * h);
+        const comps = [];
+        const minArea = Math.max(80, Math.round(w*h*0.002));
+        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+            const idx = y*w+x;
+            if (!mask[idx] || seen[idx]) continue;
+            const qx=[x], qy=[y]; seen[idx]=1;
+            let head=0, area=0, minX=x,maxX=x,minY=y,maxY=y;
+            while (head<qx.length) {
+                const cx=qx[head], cy=qy[head++]; area++;
+                if (cx<minX) minX=cx; if (cx>maxX) maxX=cx;
+                if (cy<minY) minY=cy; if (cy>maxY) maxY=cy;
+                for (let dy=-1;dy<=1;dy++) for (let dx=-1;dx<=1;dx++) {
+                    if (!dx && !dy) continue;
+                    const nx=cx+dx, ny=cy+dy;
+                    if (nx<0||ny<0||nx>=w||ny>=h) continue;
+                    const ni=ny*w+nx;
+                    if (mask[ni] && !seen[ni]) { seen[ni]=1; qx.push(nx); qy.push(ny); }
+                }
+            }
+            if (area < minArea) continue;
+            const bw=maxX-minX+1, bh=maxY-minY+1, boxArea=bw*bh;
+            const fill=area/boxArea, aspect=bw/bh;
+            const frac=boxArea/(w*h);
+            if (bw < w*0.10 || bh < h*0.045) continue;
+            if (frac < 0.004 || frac > 0.70) continue;
+            if (fill < 0.28 || aspect < 0.45 || aspect > 7.0) continue;
+            comps.push({minX,minY,maxX,maxY,area,score: boxArea*fill});
+        }
+        comps.sort((a,b)=>b.score-a.score);
+
+        // Usuń regiony prawie w całości zawarte w większym regionie.
+        const kept=[];
+        for (const cpt of comps) {
+            const contained=kept.some(k => cpt.minX>=k.minX && cpt.maxX<=k.maxX && cpt.minY>=k.minY && cpt.maxY<=k.maxY);
+            if (!contained) kept.push(cpt);
+            if (kept.length>=5) break;
+        }
+        return kept.map(r => {
+            const padX=(r.maxX-r.minX+1)*0.08, padY=(r.maxY-r.minY+1)*0.10;
+            const sx=Math.max(0,(r.minX-padX)/scale), sy=Math.max(0,(r.minY-padY)/scale);
+            const ex=Math.min(sourceCanvas.width,(r.maxX+1+padX)/scale), ey=Math.min(sourceCanvas.height,(r.maxY+1+padY)/scale);
+            return {x:Math.round(sx),y:Math.round(sy),w:Math.max(1,Math.round(ex-sx)),h:Math.max(1,Math.round(ey-sy))};
+        });
+    }
+
+    function cropCanvas(source, rect) {
+        const c=document.createElement('canvas');
+        c.width=rect.w; c.height=rect.h;
+        c.getContext('2d',{willReadFrequently:true}).drawImage(source, rect.x,rect.y,rect.w,rect.h, 0,0,rect.w,rect.h);
+        return c;
+    }
+
+
+    // === V6: AUTOMATYCZNY WYBÓR KADRU KARTKI ===
+    // Detektor jasnych obszarów może czasem znaleźć tylko fragment białej kartki.
+    // Dlatego budujemy kilka wariantów kadru i wybieramy ten, który daje najbardziej
+    // wiarygodny układ: kod / data / ilość / sygnatura.
+    function clampRectToCanvas(rect, canvas) {
+        let x = Math.max(0, Math.round(rect.x));
+        let y = Math.max(0, Math.round(rect.y));
+        let w = Math.max(1, Math.round(rect.w));
+        let h = Math.max(1, Math.round(rect.h));
+        if (x + w > canvas.width) w = canvas.width - x;
+        if (y + h > canvas.height) h = canvas.height - y;
+        return { x, y, w: Math.max(1, w), h: Math.max(1, h) };
+    }
+
+    function expandRect(rect, sourceCanvas, factorX, factorY) {
+        const cx = rect.x + rect.w / 2;
+        const cy = rect.y + rect.h / 2;
+        const w = Math.min(sourceCanvas.width, rect.w * factorX);
+        const h = Math.min(sourceCanvas.height, rect.h * factorY);
+        return clampRectToCanvas({ x: cx - w / 2, y: cy - h / 2, w, h }, sourceCanvas);
+    }
+
+    function portraitCardRectAround(rect, sourceCanvas, scale = 1.0) {
+        const cx = rect.x + rect.w / 2;
+        const cy = rect.y + rect.h / 2;
+        // Typowa kartka jest pionowa. Zachowujemy zapas na perspektywę i krzywe zdjęcie.
+        let w = Math.max(rect.w * 1.55, rect.h * 0.78) * scale;
+        let h = w * 1.38;
+        if (h < rect.h * 1.8) h = rect.h * 1.8;
+        if (w > sourceCanvas.width) w = sourceCanvas.width;
+        if (h > sourceCanvas.height) h = sourceCanvas.height;
+        return clampRectToCanvas({ x: cx - w / 2, y: cy - h / 2, w, h }, sourceCanvas);
+    }
+
+    function rectKey(r) {
+        return [r.x,r.y,r.w,r.h].map(v=>Math.round(v/10)*10).join(':');
+    }
+
+    function buildScanCandidates(sourceCanvas, regions) {
+        const items = [];
+        const seen = new Set();
+        const pushRect = (rect, label) => {
+            rect = clampRectToCanvas(rect, sourceCanvas);
+            if (rect.w < 80 || rect.h < 80) return;
+            const key = rectKey(rect);
+            if (seen.has(key)) return;
+            seen.add(key);
+            items.push({ canvas: cropCanvas(sourceCanvas, rect), label, rect });
+        };
+
+        // Pełne zdjęcie jest zawsze kandydatem bezpieczeństwa.
+        pushRect({x:0,y:0,w:sourceCanvas.width,h:sourceCanvas.height}, 'całe zdjęcie');
+
+        regions.slice(0, 3).forEach((r, i) => {
+            pushRect(r, `wykryty obszar ${i+1}`);
+            pushRect(expandRect(r, sourceCanvas, 2.1, 3.0), `rozszerzony obszar ${i+1}`);
+            pushRect(portraitCardRectAround(r, sourceCanvas, 1.15), `kadr kartki ${i+1}`);
+            pushRect(portraitCardRectAround(r, sourceCanvas, 1.65), `szeroki kadr kartki ${i+1}`);
+        });
+        return items.slice(0, 10);
+    }
+
+    function quickCardTextScore(raw) {
+        const text = (raw || '').toUpperCase();
+        let score = 0;
+        const date = normalizeZoneDate(text);
+        if (isValidZoneDate(date)) score += 500;
+        const sig = normalizeZoneSignature(text);
+        if (/^\d{1,3}\.\d{1,2}$/.test(sig)) score += 220;
+        const nums = (normalizeOcrDigits(text).match(/\b\d{1,7}\b/g) || []);
+        if (nums.length >= 2) score += 120;
+        if (nums.length >= 3) score += 100;
+        if (nums.some(n => n.length >= 2 && n.length <= 6)) score += 80;
+        const weird = (text.match(/[{}<>_=\\|]/g) || []).length;
+        score -= weird * 8;
+        return score;
+    }
+
+    async function chooseBestCardCandidates(worker, candidateItems) {
+        const ranked = [];
+        const maxPilot = Math.min(candidateItems.length, 8);
+        for (let i = 0; i < maxPilot; i++) {
+            const item = candidateItems[i];
+            const prepared = preprocessForOcr(item.canvas, false);
+            setScanStatus(`🔎 Szukam całej kartki… ${i+1}/${maxPilot}`);
+            try {
+                await worker.setParameters({
+                    tessedit_pageseg_mode: '11',
+                    tessedit_char_whitelist: '',
+                    preserve_interword_spaces: '1'
+                });
+            } catch (_) {}
+            const res = await worker.recognize(prepared);
+            const raw = (res?.data?.text || '').trim();
+            ranked.push({ ...item, pilotText: raw, pilotScore: quickCardTextScore(raw) });
+        }
+        ranked.sort((a,b) => b.pilotScore - a.pilotScore);
+        // Bierzemy maksymalnie dwa najlepsze kadry do dokładnego odczytu strefowego.
+        return ranked.slice(0, 2);
+    }
+
+    function preprocessForOcr(sourceCanvas, binary=false) {
+        const minWidth=1400, maxWidth=2300;
+        let scale=1;
+        if (sourceCanvas.width < minWidth) scale=minWidth/sourceCanvas.width;
+        if (sourceCanvas.width*scale > maxWidth) scale=maxWidth/sourceCanvas.width;
+        const c=document.createElement('canvas');
+        c.width=Math.max(1,Math.round(sourceCanvas.width*scale));
+        c.height=Math.max(1,Math.round(sourceCanvas.height*scale));
+        const ctx=c.getContext('2d',{willReadFrequently:true});
+        ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
+        ctx.drawImage(sourceCanvas,0,0,c.width,c.height);
+        const img=ctx.getImageData(0,0,c.width,c.height), d=img.data;
+        const hist=new Uint32Array(256);
+        for (let i=0;i<d.length;i+=4) {
+            const g=Math.max(0,Math.min(255,Math.round(0.299*d[i]+0.587*d[i+1]+0.114*d[i+2]))); hist[g]++;
+        }
+        const total=c.width*c.height;
+        let low=0,high=255,acc=0;
+        for (let i=0;i<256;i++){acc+=hist[i]; if(acc>=total*0.02){low=i;break;}}
+        acc=0; for(let i=255;i>=0;i--){acc+=hist[i]; if(acc>=total*0.02){high=i;break;}}
+        if (high-low<60){low=Math.max(0,low-30);high=Math.min(255,high+30);}
+
+        let threshold=150;
+        if (binary) {
+            // Otsu
+            let sum=0; for(let i=0;i<256;i++) sum+=i*hist[i];
+            let sumB=0,wB=0,maxVar=0;
+            for(let t=0;t<256;t++){
+                wB+=hist[t]; if(!wB) continue;
+                const wF=total-wB; if(!wF) break;
+                sumB+=t*hist[t];
+                const mB=sumB/wB, mF=(sum-sumB)/wF;
+                const between=wB*wF*(mB-mF)*(mB-mF);
+                if(between>maxVar){maxVar=between;threshold=t;}
+            }
+        }
+        for(let i=0;i<d.length;i+=4){
+            let g=Math.round(0.299*d[i]+0.587*d[i+1]+0.114*d[i+2]);
+            g=Math.max(0,Math.min(255,Math.round((g-low)*255/Math.max(1,high-low))));
+            if(binary) g=g>threshold?255:0;
+            d[i]=d[i+1]=d[i+2]=g; d[i+3]=255;
+        }
+        ctx.putImageData(img,0,0);
+        return c;
+    }
+
+    function showScanPreview(canvas) {
+        const maxW=900, maxH=360;
+        const scale=Math.min(maxW/canvas.width,maxH/canvas.height,1);
+        scanPreviewCanvas.width=Math.max(1,Math.round(canvas.width*scale));
+        scanPreviewCanvas.height=Math.max(1,Math.round(canvas.height*scale));
+        scanPreviewCanvas.getContext('2d').drawImage(canvas,0,0,scanPreviewCanvas.width,scanPreviewCanvas.height);
+        scanPreviewWrap.classList.add('active');
+    }
+
+    function renderScanDetected() {
+        if (!scannedBatches.length) {
+            scanDetectedContainer.innerHTML = '<div class="scan-result-item">Nie ma jeszcze danych z QR albo nie udało się dopasować produktu z bazy.</div>';
+            scanApplyBtn.disabled = true;
+            return;
+        }
+
+        scanDetectedContainer.innerHTML = scannedBatches.map((b, i) => {
+            const quality = b._qrScan ? 'QR' : ((b._scanScore || 0) >= 600 ? 'wysoka' : ((b._scanScore || 0) >= 220 ? 'średnia' : 'niska'));
+            return `
+            <div class="scan-result-item">
+                <strong>${i + 1}. ${b.productName}</strong>${b.productCode ? ` (${b.productCode})` : ''}<span class="scan-quality">${b._qrScan ? 'źródło' : 'pewność'}: ${quality}</span><br>
+                Data: <b>${b.prodDateString || 'nie rozpoznano'}</b> · Sygnatura: <b>${b.signature || '—'}</b><br>
+                Kartony: <b>${b.cartons || 0}</b> · Sztuki: <b>${b.pieces || 0}</b>
+            </div>`;
+        }).join('');
+        scanApplyBtn.disabled = false;
+        scanNextBtn.style.display = 'inline-flex';
+        const count = scannedBatches.length;
+        const word = count === 1 ? 'pozycję' : ((count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 12 || count % 100 > 14)) ? 'pozycje' : 'pozycji');
+        scanApplyBtn.textContent = `Wstaw ${count} ${word}`;
+    }
+
+    function setScanStatus(message) {
+        scanStatus.textContent = message;
+        scanStatus.classList.add('active');
+    }
+
+    async function recognizeCanvas(worker, canvas, psm, label) {
+        setScanStatus(`⏳ ${label}`);
+        try { await worker.setParameters({ tessedit_pageseg_mode: String(psm), preserve_interword_spaces: '1' }); } catch (_) {}
+        const result = await worker.recognize(canvas);
+        return (result?.data?.text || '').trim();
+    }
+
+    // === V6: ODCZYT STREFOWY + AUTOMATYCZNY WYBÓR PEŁNEGO KADRU ===
+    // Kartka ma stały układ: KOD / DATA / ILOŚĆ / SYGNATURA.
+    // Zamiast zgadywać z całego tekstu, każdą strefę czytamy osobno.
+
+    function cropRelative(sourceCanvas, x, y, w, h) {
+        const rect = {
+            x: Math.max(0, Math.round(sourceCanvas.width * x)),
+            y: Math.max(0, Math.round(sourceCanvas.height * y)),
+            w: Math.max(1, Math.round(sourceCanvas.width * w)),
+            h: Math.max(1, Math.round(sourceCanvas.height * h))
+        };
+        if (rect.x + rect.w > sourceCanvas.width) rect.w = sourceCanvas.width - rect.x;
+        if (rect.y + rect.h > sourceCanvas.height) rect.h = sourceCanvas.height - rect.y;
+        return cropCanvas(sourceCanvas, rect);
+    }
+
+    function normalizeOcrDigits(raw) {
+        return (raw || '')
+            .toUpperCase()
+            .replace(/[OQ]/g, '0')
+            .replace(/[IL|!]/g, '1')
+            .replace(/S/g, '5')
+            .replace(/Z/g, '2')
+            .replace(/G/g, '6');
+    }
+
+    function extractNumericToken(raw, minLen = 1, maxLen = 8) {
+        const cleaned = normalizeOcrDigits(raw);
+        const tokens = cleaned.match(/\d+/g) || [];
+        const valid = tokens.filter(t => t.length >= minLen && t.length <= maxLen);
+        if (!valid.length) return '';
+        // W pojedynczej strefie najważniejszy jest najdłuższy numer.
+        // String zostawiamy bez parseInt, żeby nie zgubić zera z przodu (np. 070).
+        valid.sort((a, b) => b.length - a.length);
+        return valid[0];
+    }
+
+    // V7: awaryjne szukanie kodu z luźnego OCR (np. z pilota całej kartki).
+    // Jest potrzebne szczególnie dla kodów z zerami, bo Tesseract przy whitelistcie cyfr
+    // potrafi odrzucić duże "0" jako literę O i zwrócić pusty wynik.
+    function extractLooseCodeCandidates(raw) {
+        const source = normalizeOcrDigits(raw || '');
+        if (!source.trim()) return [];
+
+        // Najpierw bierzemy numery stojące przed datą — na naszej kartce właśnie tam jest kod.
+        const dateMatch = source.match(/\d{1,2}\s*[.\/-]\s*\d{1,2}\s*[.\/-]\s*\d{2,4}/);
+        const prefix = dateMatch && typeof dateMatch.index === 'number' ? source.slice(0, dateMatch.index) : source;
+        let tokens = prefix.match(/\b\d{2,8}\b/g) || [];
+
+        // Jeśli OCR popsuł separatory/wiersze, bierzemy również liczby z całego odczytu.
+        if (!tokens.length) tokens = source.match(/\b\d{2,8}\b/g) || [];
+        return [...new Set(tokens)];
+    }
+
+    function normalizeZoneDate(raw) {
+        let s = (raw || '').toUpperCase()
+            .replace(/[OQ]/g, '0')
+            .replace(/[IL|!]/g, '1')
+            .replace(/,/g, '.')
+            .replace(/\s+/g, ' ');
+
+        let date = extractFirstDate(s);
+        if (date) return date;
+
+        // OCR czasem usuwa kropki albo wstawia przypadkowe znaki.
+        let m = s.match(/(\d{1,2})\D+(\d{1,2})\D+(\d{2})([AB]?)/);
+        if (m) return `${m[1]}.${m[2]}.20${m[3]}${m[4] || ''}`;
+
+        // Typowa pomyłka: końcowe B odczytane jako 8, np. 12.05.258.
+        m = s.match(/(\d{1,2})\D+(\d{1,2})\D+(\d{2})8\b/);
+        if (m) return `${m[1]}.${m[2]}.20${m[3]}B`;
+        return '';
+    }
+
+    function isValidZoneDate(value) {
+        const m = String(value || '').match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})([AB]?)$/);
+        if (!m) return false;
+        const day = parseInt(m[1], 10), month = parseInt(m[2], 10), year = parseInt(m[3], 10);
+        return day >= 1 && day <= 31 && month >= 1 && month <= 12 && year >= 2000 && year <= 2099;
+    }
+
+    function normalizeZoneSignature(raw) {
+        const s = normalizeOcrDigits(raw).replace(/,/g, '.');
+        let m = s.match(/(\d{1,3})\s*[.]\s*(\d{1,2})/);
+        if (m) return `${m[1]}.${m[2]}`;
+        // Gdy OCR zgubi kropkę, np. 251 -> 25.1. Dopuszczamy tylko 2-3 cyfry.
+        const digits = extractNumericToken(s, 2, 3);
+        if (digits.length === 3) return `${digits.slice(0, 2)}.${digits.slice(2)}`;
+        return '';
+    }
+
+    function productMatchForZoneCodes(codeCandidates) {
+        const candidates = codeCandidates.filter(Boolean);
+        const uniqueCandidates = [...new Set(candidates)];
+        if (!uniqueCandidates.length) return null;
+
+        const products = productsList.map(product => {
+            const rawCode = String(product.code || '');
+            return {
+                product,
+                normalized: normalizeScanCode(rawCode),
+                digits: rawCode.replace(/\D/g, '')
+            };
+        });
+
+        // Zbieramy wszystkie dokładne trafienia z kolejnych prób OCR.
+        // Nie bierzemy "pierwszego lepszego" kodu, bo pojedyncza próba może pomylić cyfrę.
+        const exactHits = [];
+        for (const code of uniqueCandidates) {
+            const hits = products.filter(x => x.normalized === code || (x.digits && x.digits === code));
+            if (hits.length === 1) exactHits.push({ code, product: hits[0].product });
+        }
+
+        if (exactHits.length) {
+            const byProduct = new Map();
+            for (const hit of exactHits) {
+                if (!byProduct.has(hit.product.id)) byProduct.set(hit.product.id, { product: hit.product, codes: [] });
+                byProduct.get(hit.product.id).codes.push(hit.code);
+            }
+
+            // Jeśli tylko jeden produkt z bazy wystąpił w próbach, jest to bezpieczne trafienie.
+            if (byProduct.size === 1) {
+                const only = [...byProduct.values()][0];
+                const counts = {};
+                candidates.forEach(c => counts[c] = (counts[c] || 0) + 1);
+                const bestCode = only.codes.sort((a,b) => (counts[b] || 0) - (counts[a] || 0))[0];
+                return { product: only.product, score: 1800, recognizedCode: bestCode, corrected: false };
+            }
+
+            // Gdy dwie różne próby wskazują dwa produkty, uznajemy wynik tylko wtedy,
+            // gdy jeden kod ma wyraźny konsensus co najmniej 2 prób.
+            const counts = {};
+            candidates.forEach(c => counts[c] = (counts[c] || 0) + 1);
+            const consensusHits = exactHits.filter(h => (counts[h.code] || 0) >= 2);
+            const uniqueConsensusProducts = new Set(consensusHits.map(h => h.product.id));
+            if (uniqueConsensusProducts.size === 1 && consensusHits.length) {
+                const hit = consensusHits[0];
+                return { product: hit.product, score: 1700, recognizedCode: hit.code, corrected: false };
+            }
+            return null;
+        }
+
+        // V7: jeśli kod w bazie został kiedyś zapisany bez zera z przodu (np. 70),
+        // a kartka pokazuje 070, uznajemy je za równoważne TYLKO gdy w bazie pasuje dokładnie jeden produkt.
+        const trimLeadingZeros = value => {
+            const v = String(value || '').replace(/^0+(?=\d)/, '');
+            return v || '0';
+        };
+        for (const code of uniqueCandidates) {
+            const numericEquivalent = products.filter(x => x.digits && trimLeadingZeros(x.digits) === trimLeadingZeros(code));
+            if (numericEquivalent.length === 1) {
+                return { product: numericEquivalent[0].product, score: 1600, recognizedCode: code, corrected: false };
+            }
+        }
+
+        // Korekta jednej cyfry tylko wtedy, gdy TEN SAM błędny odczyt pojawił się >=2 razy
+        // oraz w bazie pasuje do niego dokładnie jeden kod.
+        const counts = {};
+        candidates.forEach(c => counts[c] = (counts[c] || 0) + 1);
+        for (const code of uniqueCandidates) {
+            if ((counts[code] || 0) < 2) continue;
+            const ranked = products
+                .filter(x => x.digits && x.digits.length === code.length)
+                .map(x => ({ ...x, distance: levenshteinDistance(x.digits, code) }))
+                .filter(x => x.distance === 1);
+            if (ranked.length === 1) {
+                return { product: ranked[0].product, score: 1000, recognizedCode: code, corrected: true };
+            }
+        }
+        return null;
+    }
+
+    async function recognizeZoneOnce(worker, sourceCanvas, whitelist, binary, psm, label) {
+        const prepared = preprocessForOcr(sourceCanvas, binary);
+        setScanStatus(`⏳ ${label}`);
+        try {
+            await worker.setParameters({
+                tessedit_pageseg_mode: String(psm),
+                tessedit_char_whitelist: whitelist,
+                preserve_interword_spaces: '1'
+            });
+        } catch (_) {}
+        const result = await worker.recognize(prepared);
+        return (result?.data?.text || '').trim();
+    }
+
+    async function recognizeZoneVariants(worker, zoneCanvas, whitelist, label, normalizer, isValid) {
+        const attempts = [];
+
+        const raw1 = await recognizeZoneOnce(worker, zoneCanvas, whitelist, false, 7, `${label}…`);
+        attempts.push({ raw: raw1, value: normalizer(raw1) });
+        if (isValid(attempts[0].value)) return attempts;
+
+        const raw2 = await recognizeZoneOnce(worker, zoneCanvas, whitelist, true, 7, `${label} — druga próba…`);
+        attempts.push({ raw: raw2, value: normalizer(raw2) });
+        if (isValid(attempts[1].value)) return attempts;
+
+        const raw3 = await recognizeZoneOnce(worker, zoneCanvas, whitelist, true, 13, `${label} — ostatnia próba…`);
+        attempts.push({ raw: raw3, value: normalizer(raw3) });
+        return attempts;
+    }
+
+    function chooseZoneValue(attempts, isValid) {
+        const values = attempts.map(a => a.value).filter(v => isValid(v));
+        if (!values.length) return '';
+        const counts = {};
+        values.forEach(v => counts[v] = (counts[v] || 0) + 1);
+        values.sort((a, b) => (counts[b] - counts[a]) || (String(b).length - String(a).length));
+        return values[0];
+    }
+
+    async function recognizeStructuredCard(worker, cardCanvas, cardNo, totalCards, pilotText = '') {
+        // Strefy są celowo lekko na siebie nałożone, bo zdjęcie może być zrobione pod kątem.
+        // V7: kod ma szerszą strefę niż wcześniej. Przy "całym zdjęciu" nie może wypaść
+        // poza wąski środkowy pas tylko dlatego, że kartka leży z prawej/lewej strony kadru.
+        const codeZone = cropRelative(cardCanvas, 0.00, 0.06, 1.00, 0.30);
+        const dateZone = cropRelative(cardCanvas, 0.02, 0.34, 0.96, 0.22);
+        const qtyZone  = cropRelative(cardCanvas, 0.18, 0.55, 0.64, 0.22);
+        const sigZone  = cropRelative(cardCanvas, 0.18, 0.78, 0.64, 0.18);
+
+        const prefix = `Kartka ${cardNo}/${totalCards}`;
+
+        // Kod produktu czytamy kilkoma metodami. Co najmniej jedna próba jest BEZ whitelisty:
+        // wtedy "070" odczytane np. jako "O7O" można bezpiecznie znormalizować z powrotem do 070.
+        const codeAttempts = [];
+        const codeRaw1 = await recognizeZoneOnce(worker, codeZone, '0123456789', false, 7, `${prefix}: kod produktu…`);
+        codeAttempts.push({ raw: codeRaw1, value: extractNumericToken(codeRaw1, 2, 8) });
+        const codeRaw2 = await recognizeZoneOnce(worker, codeZone, '', false, 11, `${prefix}: kod produktu — odczyt bez ograniczeń…`);
+        codeAttempts.push({ raw: codeRaw2, value: extractNumericToken(codeRaw2, 2, 8) });
+        const codeRaw3 = await recognizeZoneOnce(worker, codeZone, '', true, 7, `${prefix}: kod produktu — kontrast…`);
+        codeAttempts.push({ raw: codeRaw3, value: extractNumericToken(codeRaw3, 2, 8) });
+
+        // Kandydaci z szybkiego OCR całej kartki. To naprawia przypadek, gdy pilot widzi 070,
+        // ale strefowy Tesseract przy dużym pustym tle nie zwraca nic.
+        const pilotCodeCandidates = extractLooseCodeCandidates(pilotText);
+        let codeCandidates = [...new Set([
+            ...codeAttempts.map(a => a.value).filter(Boolean),
+            ...pilotCodeCandidates
+        ])];
+        let productMatch = productMatchForZoneCodes(codeCandidates);
+
+        // Ostatni bezpieczny fallback: czytamy całą górną część obrazu trybem sparse text.
+        // Uruchamiamy go tylko, jeśli wcześniejsze próby nie dopasowały produktu.
+        if (!productMatch) {
+            const topZone = cropRelative(cardCanvas, 0.00, 0.00, 1.00, 0.44);
+            const topRaw = await recognizeZoneOnce(worker, topZone, '', false, 11, `${prefix}: kod produktu — awaryjny odczyt góry…`);
+            const topCodes = extractLooseCodeCandidates(topRaw);
+            codeAttempts.push({ raw: topRaw, value: topCodes[0] || '' });
+            codeCandidates = [...new Set([...codeCandidates, ...topCodes])];
+            productMatch = productMatchForZoneCodes(codeCandidates);
+        }
+
+        // Data z końcową literą (np. 12.05.25B) najlepiej wychodzi w trybie sparse text
+        // i bez whitelisty znaków — whitelist potrafi zamienić literę B na cyfrę 8.
+        const dateAttempts = [];
+        const dateRaw1 = await recognizeZoneOnce(worker, dateZone, '', false, 11, `${prefix}: data…`);
+        dateAttempts.push({ raw: dateRaw1, value: normalizeZoneDate(dateRaw1) });
+        if (!isValidZoneDate(dateAttempts[0].value)) {
+            const dateRaw2 = await recognizeZoneOnce(worker, dateZone, '', true, 11, `${prefix}: data — druga próba…`);
+            dateAttempts.push({ raw: dateRaw2, value: normalizeZoneDate(dateRaw2) });
+        }
+        if (!dateAttempts.some(a => isValidZoneDate(a.value))) {
+            const dateRaw3 = await recognizeZoneOnce(worker, dateZone, '', false, 7, `${prefix}: data — ostatnia próba…`);
+            dateAttempts.push({ raw: dateRaw3, value: normalizeZoneDate(dateRaw3) });
+        }
+        const date = chooseZoneValue(dateAttempts, isValidZoneDate);
+
+        const qtyAttempts = await recognizeZoneVariants(
+            worker, qtyZone, '0123456789', `${prefix}: ilość`,
+            raw => extractNumericToken(raw, 1, 7),
+            value => /^\d{1,7}$/.test(value) && parseInt(value, 10) > 0
+        );
+        const qtyText = chooseZoneValue(qtyAttempts, value => /^\d{1,7}$/.test(value) && parseInt(value, 10) > 0);
+        const qtyValue = parseInt(qtyText, 10) || 0;
+
+        const sigAttempts = await recognizeZoneVariants(
+            worker, sigZone, '0123456789.,', `${prefix}: sygnatura`,
+            normalizeZoneSignature,
+            value => /^\d{1,3}\.\d{1,2}$/.test(value)
+        );
+        const signature = chooseZoneValue(sigAttempts, value => /^\d{1,3}\.\d{1,2}$/.test(value));
+
+        const codeText = productMatch?.recognizedCode
+            || codeCandidates.find(value => /^\d{2,8}$/.test(value))
+            || chooseZoneValue(codeAttempts, value => /^\d{2,8}$/.test(value));
+        const rawSummary = [
+            `--- KARTKA ${cardNo} / ODCZYT STREFOWY ---`,
+            `KOD: ${codeText || '—'}    [${codeAttempts.map(a => a.raw || '∅').join(' | ')}]`,
+            `DATA: ${date || '—'}    [${dateAttempts.map(a => a.raw || '∅').join(' | ')}]`,
+            `ILOŚĆ: ${qtyText || '—'}    [${qtyAttempts.map(a => a.raw || '∅').join(' | ')}]`,
+            `SYGNATURA: ${signature || '—'}    [${sigAttempts.map(a => a.raw || '∅').join(' | ')}]`
+        ].join('\n');
+
+        if (!productMatch || !productMatch.product) {
+            return { batch: null, rawSummary, recognizedCode: codeText || '' };
+        }
+
+        let quantity = { type: 'none', value: 0 };
+        if (qtyValue > 0) quantity = qtyValue <= 99
+            ? { type: 'cartons', value: qtyValue }
+            : { type: 'pieces', value: qtyValue };
+
+        const converted = quantityToCartonsAndPieces(quantity, productMatch.product);
+        let completeness = 0;
+        if (date) completeness += 1;
+        if (qtyValue > 0) completeness += 1;
+        if (signature) completeness += 1;
+
+        return {
+            batch: {
+                productId: productMatch.product.id,
+                productName: productMatch.product.name || '',
+                productCode: productMatch.product.code || '',
+                signature,
+                prodDateString: date,
+                cartons: converted.cartons,
+                pieces: converted.pieces,
+                oklejony: false,
+                _scanScore: productMatch.score + completeness * 150,
+                _recognizedCode: productMatch.recognizedCode || '',
+                _codeCorrected: !!productMatch.corrected,
+                _scanQuantityType: quantity.type,
+                _scanQuantityValue: quantity.value,
+                _structuredScan: true
+            },
+            rawSummary,
+            recognizedCode: codeText || ''
+        };
+    }
+
+    // ========== ODCZYT QR Z KARTKI ==========
+    function normalizeQrField(value) {
+        return (value || '').toString().trim();
+    }
+
+    function parsePalletQr(rawText) {
+        const raw = (rawText || '').toString().replace(/\r/g, '').trim();
+        if (!raw) return null;
+
+        const readField = (labels) => {
+            for (const label of labels) {
+                const re = new RegExp('(?:^|\\n)\\s*' + label + '\\s*[:=]\\s*([^\\n]+)', 'i');
+                const m = raw.match(re);
+                if (m) return normalizeQrField(m[1]);
+            }
+            return '';
+        };
+
+        const itemId = readField(['ITEM\\s*ID', 'ITEM', 'KOD', 'PRODUCT\\s*CODE']);
+        const batch = readField(['BATCH', 'DATA', 'DATE']);
+        const casesText = readField(['CASES', 'CASE', 'KARTONY', 'CARTONS']);
+        const signature = readField(['SYGNATURA', 'SIGNATURE', 'SIG']);
+
+        const cases = parseInt((casesText || '').replace(/[^\d]/g, ''), 10) || 0;
+        if (!itemId || !batch || !cases || !signature) return {
+            raw, itemId, batch, cases, signature, complete: false
+        };
+        return { raw, itemId, batch, cases, signature, complete: true };
+    }
+
+    function qrProductCodeVariants(value) {
+        const raw = normalizeScanCode(value);
+        const variants = new Set();
+        if (raw) variants.add(raw);
+        if (/^\d+$/.test(raw)) {
+            variants.add(String(parseInt(raw, 10)));
+            variants.add(raw.padStart(3, '0'));
+            variants.add(raw.padStart(4, '0'));
+        }
+        return [...variants].filter(Boolean);
+    }
+
+    function findProductFromQr(itemId) {
+        const wanted = qrProductCodeVariants(itemId);
+        if (!wanted.length) return null;
+
+        const exact = productsList.find(p => {
+            const code = normalizeScanCode(p.code || '');
+            return wanted.includes(code);
+        });
+        if (exact) return exact;
+
+        // Bezpieczna zgodność numeryczna, np. 070 w bazie i 70 w QR.
+        if (/^\d+$/.test(normalizeScanCode(itemId))) {
+            const wantedNumber = parseInt(normalizeScanCode(itemId), 10);
+            const numericMatches = productsList.filter(p => {
+                const code = normalizeScanCode(p.code || '');
+                return /^\d+$/.test(code) && parseInt(code, 10) === wantedNumber;
+            });
+            if (numericMatches.length === 1) return numericMatches[0];
+        }
+        return null;
+    }
+
+    function makeQrBatch(parsed, product) {
+        return {
+            productId: product.id,
+            productName: product.name || '',
+            productCode: product.code || '',
+            signature: parsed.signature,
+            prodDateString: parsed.batch,
+            cartons: parsed.cases,
+            pieces: 0,
+            oklejony: false,
+            _scanScore: 1000,
+            _recognizedCode: parsed.itemId,
+            _codeCorrected: false,
+            _scanQuantityType: 'cartons',
+            _scanQuantityValue: parsed.cases,
+            _structuredScan: true,
+            _qrScan: true
+        };
+    }
+
+    function contrastCanvasForQr(sourceCanvas) {
+        const c = document.createElement('canvas');
+        c.width = sourceCanvas.width;
+        c.height = sourceCanvas.height;
+        const ctx = c.getContext('2d', { willReadFrequently: true });
+        ctx.drawImage(sourceCanvas, 0, 0);
+        const img = ctx.getImageData(0, 0, c.width, c.height);
+        const d = img.data;
+        for (let i = 0; i < d.length; i += 4) {
+            const g = Math.round(0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2]);
+            const v = g < 165 ? Math.max(0, g - 35) : Math.min(255, g + 25);
+            d[i] = d[i+1] = d[i+2] = v;
+        }
+        ctx.putImageData(img, 0, 0);
+        return c;
+    }
+
+    async function decodeQrFromCanvas(canvas) {
+        // 1) Natywny detektor Chrome/Android, jeśli jest dostępny.
+        if ('BarcodeDetector' in window) {
+            try {
+                const formats = await BarcodeDetector.getSupportedFormats();
+                if (formats.includes('qr_code')) {
+                    const detector = new BarcodeDetector({ formats: ['qr_code'] });
+                    const codes = await detector.detect(canvas);
+                    if (codes && codes[0] && codes[0].rawValue) {
+                        return codes[0].rawValue.trim();
+                    }
+                }
+            } catch (e) {
+                console.warn('BarcodeDetector QR fallback:', e);
+            }
+        }
+
+        // 2) jsQR - działa również tam, gdzie BarcodeDetector nie jest dostępny.
+        if (window.jsQR) {
+            const tryCanvas = (c) => {
+                const ctx = c.getContext('2d', { willReadFrequently: true });
+                const imageData = ctx.getImageData(0, 0, c.width, c.height);
+                const found = window.jsQR(imageData.data, imageData.width, imageData.height, {
+                    inversionAttempts: 'attemptBoth'
+                });
+                return found && found.data ? found.data.trim() : '';
+            };
+
+            let found = tryCanvas(canvas);
+            if (found) return found;
+
+            found = tryCanvas(contrastCanvasForQr(canvas));
+            if (found) return found;
+        }
+
+        return '';
+    }
+
+    function openNextQrPhoto() {
+        scanPhotoInput.value = '';
+        scanPhotoInput.click();
+    }
+
+    function resetQrScanSession() {
+        scannedBatches = [];
+        scannedQrKeys = new Set();
+        scanDetectedContainer.innerHTML = '';
+        scanRawText.value = '';
+        scanApplyBtn.disabled = true;
+        scanApplyBtn.textContent = 'Wstaw dane z QR';
+        scanNextBtn.style.display = 'none';
+        scanPreviewWrap.classList.remove('active');
+    }
+
+    scanPaperBtn.addEventListener('click', () => {
+        if (!currentEditingLocation) return;
+        if (!('BarcodeDetector' in window) && !window.jsQR) {
+            alert('Moduł QR nie został załadowany. Sprawdź połączenie z internetem i odśwież stronę.');
+            return;
+        }
+        resetQrScanSession();
+        scanModal.style.display = 'flex';
+        setScanStatus('📷 Zeskanuj pierwszy kod QR. Potem możesz dodawać kolejne bez zamykania okna.');
+        openNextQrPhoto();
+    });
+
+    scanNextBtn.addEventListener('click', () => {
+        openNextQrPhoto();
+    });
+
+    scanPhotoInput.addEventListener('change', async () => {
+        const file = scanPhotoInput.files && scanPhotoInput.files[0];
+        if (!file) return;
+
+        scanModal.style.display = 'flex';
+        scanNextBtn.disabled = true;
+        setScanStatus(`▣ Szukam kodu QR na zdjęciu… Odczytane wcześniej: ${scannedBatches.length}.`);
+
+        try {
+            const img = await loadImageForScan(file);
+            const sourceCanvas = drawImageToCanvas(img, 3200);
+            showScanPreview(sourceCanvas);
+
+            const qrText = await decodeQrFromCanvas(sourceCanvas);
+            if (!qrText) {
+                throw new Error('Nie znaleziono kodu QR');
+            }
+
+            const parsed = parsePalletQr(qrText);
+
+            if (!parsed) {
+                setScanStatus('❌ Kod QR został znaleziony, ale jest pusty lub ma nieobsługiwany format. Poprzednie odczyty zostały zachowane.');
+                renderScanDetected();
+                return;
+            }
+
+            if (!parsed.complete) {
+                scanDetectedContainer.innerHTML = `
+                    <div class="scan-result-item">
+                        <strong>QR odczytany, ale brakuje danych.</strong><br>
+                        ITEM ID: <b>${parsed.itemId || '—'}</b> · BATCH: <b>${parsed.batch || '—'}</b><br>
+                        CASES: <b>${parsed.cases || '—'}</b> · SYGNATURA: <b>${parsed.signature || '—'}</b>
+                    </div>`;
+                setScanStatus('⚠️ QR nie zawiera kompletu: ITEM ID / BATCH / CASES / SYGNATURA. Poprzednie odczyty zostały zachowane.');
+                if (scannedBatches.length) renderScanDetected();
+                return;
+            }
+
+            const product = findProductFromQr(parsed.itemId);
+            if (!product) {
+                scanDetectedContainer.innerHTML = `
+                    <div class="scan-result-item">
+                        <strong>QR odczytany poprawnie, ale nie ma takiego produktu w bazie.</strong><br>
+                        ITEM ID: <b>${parsed.itemId}</b> · BATCH: <b>${parsed.batch}</b><br>
+                        CASES: <b>${parsed.cases}</b> · SYGNATURA: <b>${parsed.signature}</b>
+                    </div>`;
+                setScanStatus(`⚠️ Nie znaleziono produktu o kodzie ${parsed.itemId} w bazie produktów. Poprzednie odczyty zostały zachowane.`);
+                if (scannedBatches.length) renderScanDetected();
+                return;
+            }
+
+            const qrKey = `${normalizeScanCode(parsed.itemId)}|${parsed.batch}|${parsed.cases}|${parsed.signature}`;
+            if (scannedQrKeys.has(qrKey)) {
+                renderScanDetected();
+                setScanStatus(`⚠️ Ten QR jest już na liście: ${parsed.itemId} · ${parsed.batch} · ${parsed.cases} kartonów · ${parsed.signature}. Zeskanuj następny.`);
+                return;
+            }
+
+            scannedQrKeys.add(qrKey);
+            scannedBatches.push(makeQrBatch(parsed, product));
+            scanRawText.value += `${scanRawText.value ? '\n\n' : ''}--- QR ${scannedBatches.length} ---\n${qrText}`;
+            renderScanDetected();
+            setScanStatus(`✅ Dodano QR nr ${scannedBatches.length}: ${parsed.itemId} · ${parsed.batch} · ${parsed.cases} kartonów · sygnatura ${parsed.signature}. Możesz zeskanować kolejny.`);
+        } catch (err) {
+            console.error('QR error:', err);
+            setScanStatus(`❌ Nie udało się odczytać tego QR. Poprzednio odczytane pozycje (${scannedBatches.length}) zostały zachowane — możesz spróbować jeszcze raz.`);
+            if (!scannedBatches.length) {
+                scanDetectedContainer.innerHTML = '<div class="scan-result-item">Kod QR powinien być w całości w kadrze. Nie musisz fotografować kartki prosto — najważniejsze, żeby QR był ostry.</div>';
+                scanApplyBtn.disabled = true;
+            } else {
+                renderScanDetected();
+            }
+        } finally {
+            scanNextBtn.disabled = false;
+            scanNextBtn.style.display = 'inline-flex';
+        }
+    });
+
+    scanApplyBtn.addEventListener('click', () => {
+        if (!scannedBatches.length) return;
+        currentBatches.push(...scannedBatches.map(b => {
+            const copy = { ...b };
+            delete copy._scanScore;
+            return copy;
+        }));
+        renderBatchesList();
+        scanModal.style.display = 'none';
+        const addedCount = scannedBatches.length;
+        showToast(`▣ Dodano ${addedCount} ${addedCount === 1 ? 'pozycję' : 'pozycji'} z QR`);
+        scannedBatches = [];
+        scannedQrKeys = new Set();
+    });
+
+    scanCloseBtn.addEventListener('click', () => {
+        scanModal.style.display = 'none';
+        resetQrScanSession();
     });
 
     // ========== MODAL EDYCJI ==========
@@ -1298,6 +2517,7 @@
         if (e.target === productBatchesModal) productBatchesModal.style.display = 'none';
         if (e.target === exportCsvModal) exportCsvModal.style.display = 'none';
         if (e.target === labelsModal) labelsModal.style.display = 'none';
+        if (e.target === scanModal) scanModal.style.display = 'none';
     });
     subscribeToSlots();
     subscribeToBatches();
