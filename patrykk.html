@@ -3469,7 +3469,7 @@
             const loc = b.locationId;
             const date = b.prodDateString || (b.prodDate?.toDate().toLocaleDateString('pl-PL') || '—');
             const signature = b.signature || '—';
-            const type = b.palletType === 'magazynowa' ? '🔴 Magazyn' : '🟢 Spedycja';
+            const type = b.palletType === 'magazynowa' ? '🔴 Magazyn' : '🟢 Spedycja' : '🟢 Kartony';
             const oklejonyStr = b.oklejony ? '✅' : '❌';
             html += `<tr data-location-id="${loc}"><td>${loc}</td><td>${date}</td><td>${signature}</td><td>${b.cartons}</td><td>${b.pieces}</td><td>${type}</td><td>${oklejonyStr}</td></tr>`;
         });
