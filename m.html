@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Porównywarka Składów</title>
+    <title>Porównywarka Składów z OCR</title>
+    <!-- Dołączamy bibliotekę Tesseract.js do rozpoznawania tekstu -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
         :root {
             --primary-color: #4f46e5;
@@ -87,11 +89,20 @@
 
         .preview-img {
             max-width: 100%;
-            max-height: 250px;
+            max-height: 200px;
             display: none;
-            margin: 10px auto 0 auto;
+            margin: 10px auto;
             border-radius: 6px;
             border: 1px solid var(--border-color);
+        }
+
+        .loading {
+            font-size: 0.9rem;
+            color: var(--primary-color);
+            text-align: center;
+            margin-top: 5px;
+            display: none;
+            font-weight: 600;
         }
 
         textarea {
@@ -145,33 +156,35 @@
 
     <div class="container">
         <h1>Porównywarka Składów</h1>
-        <p class="subtitle">Wgraj zdjęcia dwóch składów, aby łatwo je porównać.</p>
+        <p class="subtitle">Wgraj zdjęcia – aplikacja automatycznie odczyta i porówna składy.</p>
 
         <div class="grid">
             <!-- Produkt 1 -->
             <div class="card">
-                <h2>Produkt A (np. Stary / Wzorzec)</h2>
+                <h2>Produkt A</h2>
                 <div class="upload-box" onclick="document.getElementById('file1').click()">
                     <span>Kliknij, aby wgrać zdjęcie 1</span>
-                    <input type="file" id="file1" accept="image/*" onchange="previewImage(event, 'preview1')">
+                    <input type="file" id="file1" accept="image/*" onchange="processImage(event, 'preview1', 'text1', 'loading1')">
                 </div>
                 <img id="preview1" class="preview-img" alt="Podgląd 1">
+                <div id="loading1" class="loading">⏳ Odczytuję tekst ze zdjęcia...</div>
                 
-                <label for="text1" style="display:block; margin-top:15px; margin-bottom:5px; font-size:0.9rem; font-weight:600;">Skład (tekst z etykiety):</label>
-                <textarea id="text1" placeholder="Tutaj pojawi się lub wpisz tekst składu pierwszego produktu..."></textarea>
+                <label for="text1" style="display:block; margin-top:15px; margin-bottom:5px; font-size:0.9rem; font-weight:600;">Odczytany skład (możesz edytować):</label>
+                <textarea id="text1" placeholder="Tutaj pojawi się odczytany tekst..."></textarea>
             </div>
 
             <!-- Produkt 2 -->
             <div class="card">
-                <h2>Produkt B (np. Nowy / Konkurent)</h2>
+                <h2>Produkt B</h2>
                 <div class="upload-box" onclick="document.getElementById('file2').click()">
                     <span>Kliknij, aby wgrać zdjęcie 2</span>
-                    <input type="file" id="file2" accept="image/*" onchange="previewImage(event, 'preview2')">
+                    <input type="file" id="file2" accept="image/*" onchange="processImage(event, 'preview2', 'text2', 'loading2')">
                 </div>
                 <img id="preview2" class="preview-img" alt="Podgląd 2">
+                <div id="loading2" class="loading">⏳ Odczytuję tekst ze zdjęcia...</div>
                 
-                <label for="text2" style="display:block; margin-top:15px; margin-bottom:5px; font-size:0.9rem; font-weight:600;">Skład (tekst z etykiety):</label>
-                <textarea id="text2" placeholder="Tutaj pojawi się lub wpisz tekst składu drugiego produktu..."></textarea>
+                <label for="text2" style="display:block; margin-top:15px; margin-bottom:5px; font-size:0.9rem; font-weight:600;">Odczytany skład (możesz edytować):</label>
+                <textarea id="text2" placeholder="Tutaj pojawi się odczytany tekst..."></textarea>
             </div>
         </div>
 
@@ -186,16 +199,34 @@
     </div>
 
     <script>
-        function previewImage(event, previewId) {
+        async function processImage(event, previewId, textId, loadingId) {
             const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = document.getElementById(previewId);
-                    img.src = e.target.result;
-                    img.style.display = 'block';
-                }
-                reader.readAsDataURL(file);
+            if (!file) return;
+
+            // 1. Pokaż podgląd zdjęcia
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.getElementById(previewId);
+                img.src = e.target.result;
+                img.style.display = 'block';
+            }
+            reader.readAsDataURL(file);
+
+            // 2. Pokaż komunikat ładowania i uruchom Tesseract OCR (język polski i angielski)
+            const loadingBox = document.getElementById(loadingId);
+            const textBox = document.getElementById(textId);
+            
+            loadingBox.style.display = 'block';
+            textBox.value = "Trwa skanowanie tekstu...";
+
+            try {
+                const result = await Tesseract.recognize(file, 'pol+eng');
+                textBox.value = result.data.text.trim();
+            } catch (error) {
+                console.error(error);
+                textBox.value = "Błąd podczas odczytu tekstu. Wpisz go ręcznie.";
+            } finally {
+                loadingBox.style.display = 'none';
             }
         }
 
@@ -206,13 +237,21 @@
             const resultContent = document.getElementById('result-content');
 
             if (!t1 || !t2) {
-                alert('Proszę uzupełnić teksty składów dla obu produktów (możesz przepisać lub skopiować z etykiet).');
+                alert('Upewnij się, że oba pola zawierają tekst składników.');
                 return;
             }
 
-            // Proste dzielenie na składniki po przecinku
-            const ingredients1 = t1.split(',').map(s => s.trim().toLowerCase()).filter(s => s.length > 0);
-            const ingredients2 = t2.split(',').map(s => s.trim().toLowerCase()).filter(s => s.length > 0);
+            // Dzielimy tekst po przecinkach, średnikach lub nowych liniach
+            const parseText = (text) => {
+                return text
+                    .replace(/[\n\r]+/g, ',') // zamień nowe linie na przecinki
+                    .split(/[,;]/)
+                    .map(s => s.trim().toLowerCase())
+                    .filter(s => s.length > 2); // odrzuć bardzo krótkie znaki
+            };
+
+            const ingredients1 = parseText(t1);
+            const ingredients2 = parseText(t2);
 
             const set1 = new Set(ingredients1);
             const set2 = new Set(ingredients2);
